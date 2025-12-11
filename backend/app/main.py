@@ -54,6 +54,12 @@ async def get_config():
             "polling_interval": settings.artifact_polling_interval
         },
         "artifacts_path": settings.dbt_artifacts_path,
+        "lineage": {
+            "default_grouping_mode": settings.default_grouping_mode,
+            "max_initial_depth": settings.max_initial_lineage_depth,
+            "load_column_lineage_by_default": settings.load_column_lineage_by_default,
+            "performance_mode": settings.lineage_performance_mode,
+        },
         "execution": {
             "dbt_project_path": settings.dbt_project_path,
             "max_concurrent_runs": settings.max_concurrent_runs,

@@ -37,6 +37,9 @@ class ArtifactService:
     def get_run_results(self) -> Optional[Dict[str, Any]]:
         return self._load_json("run_results.json")
 
+    def get_catalog(self) -> Optional[Dict[str, Any]]:
+        return self._load_json("catalog.json")
+
     def list_models(self) -> List[Dict[str, Any]]:
         manifest = self.get_manifest()
         if not manifest:
@@ -55,6 +58,7 @@ class ArtifactService:
                     "database": node.get("database"),
                     "schema": node.get("schema"),
                     "alias": node.get("alias") or node.get("name"),
+                    "tags": node.get("tags", []),
                 }
             )
         return models
@@ -82,6 +86,7 @@ class ArtifactService:
             "description": node.get("description", ""),
             "columns": node.get("columns", {}),
             "children": children,
+            "tags": node.get("tags", []),
         }
 
     def lineage_graph(self) -> Dict[str, List[Dict[str, str]]]:

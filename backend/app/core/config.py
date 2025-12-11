@@ -1,10 +1,18 @@
 from functools import lru_cache
 from typing import List
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        populate_by_name=True,
+        extra="ignore",
+    )
+
     postgres_user: str = Field("user", alias="POSTGRES_USER")
     postgres_password: str = Field("password", alias="POSTGRES_PASSWORD")
     postgres_host: str = Field("localhost", alias="POSTGRES_HOST")
@@ -26,6 +34,12 @@ class Settings(BaseSettings):
         default=["manifest.json", "run_results.json", "catalog.json"],
         alias="MONITORED_ARTIFACT_FILES"
     )
+
+    # Lineage configuration
+    default_grouping_mode: str = Field("none", alias="DEFAULT_GROUPING_MODE")
+    max_initial_lineage_depth: int = Field(4, alias="MAX_INITIAL_LINEAGE_DEPTH")
+    load_column_lineage_by_default: bool = Field(False, alias="LOAD_COLUMN_LINEAGE_BY_DEFAULT")
+    lineage_performance_mode: str = Field("balanced", alias="LINEAGE_PERFORMANCE_MODE")
     
     # dbt execution settings
     dbt_project_path: str = Field("./dbt_project", alias="DBT_PROJECT_PATH")
@@ -33,11 +47,6 @@ class Settings(BaseSettings):
     max_run_history: int = Field(100, alias="MAX_RUN_HISTORY")
     max_artifact_sets: int = Field(50, alias="MAX_ARTIFACT_SETS")
     log_buffer_size: int = Field(1000, alias="LOG_BUFFER_SIZE")  # lines
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
 
 
 @lru_cache

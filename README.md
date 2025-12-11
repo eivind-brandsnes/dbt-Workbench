@@ -109,10 +109,17 @@ dbt-Workbench/
 - Persist artifacts per run  
 
 ### **Phase 4 — Metadata Persistence Layer**
-- PostgreSQL backend  
-- Historical model snapshots  
-- Model diff viewer  
-- Historical lineage browser  
+- PostgreSQL backend
+- Historical model snapshots
+- Model diff viewer
+- Historical lineage browser
+
+### **Phase 5 — Advanced Lineage (Complete)**
+- Column-level lineage derived from manifest and catalog artifacts
+- Grouping by schema, resource type, and tags with collapsible aggregates
+- Interactive expand/collapse of subgraphs to simplify large projects
+- Upstream and downstream impact highlighting at model and column granularity
+- Configurable defaults for grouping mode, graph depth, and column-level loading
 
 ---
 
@@ -127,6 +134,21 @@ pytest
 ```bash
 npm test
 ```
+
+## 🔗 Lineage API
+
+- `GET /lineage/graph?max_depth=` — model-level lineage with grouping metadata
+- `GET /lineage/columns` — column-level lineage graph
+- `GET /lineage/model/{unique_id}` — parents, children, and columns for a model
+- `GET /lineage/upstream/{id}` / `GET /lineage/downstream/{id}` — impact highlighting for models or columns (via `column` query param)
+- `GET /lineage/groups` — grouping metadata for schemas, resource types, and tags
+
+Configuration flags (via environment variables or `/config` endpoint):
+
+- `DEFAULT_GROUPING_MODE`
+- `MAX_INITIAL_LINEAGE_DEPTH`
+- `LOAD_COLUMN_LINEAGE_BY_DEFAULT`
+- `LINEAGE_PERFORMANCE_MODE`
 
 ---
 

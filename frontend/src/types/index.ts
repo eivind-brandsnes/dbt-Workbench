@@ -57,18 +57,23 @@ export interface ModelSummary {
   database?: string
   schema?: string
   alias?: string
+  tags?: string[]
 }
 
 export interface ModelDetail extends ModelSummary {
   description?: string
-  columns: Record<string, { name?: string; description?: string }>
+  columns: Record<string, { name?: string; description?: string; type?: string }>
   children: string[]
+  tags?: string[]
 }
 
 export interface LineageNode {
   id: string
   label: string
   type: string
+  database?: string
+  schema?: string
+  tags?: string[]
 }
 
 export interface LineageEdge {
@@ -79,6 +84,42 @@ export interface LineageEdge {
 export interface LineageGraph {
   nodes: LineageNode[]
   edges: LineageEdge[]
+  groups?: LineageGroup[]
+}
+
+export interface LineageGroup {
+  id: string
+  label: string
+  type: string
+  members: string[]
+}
+
+export interface ColumnNode {
+  id: string
+  column: string
+  model_id: string
+  label: string
+  type: string
+  database?: string
+  schema?: string
+  tags?: string[]
+  data_type?: string
+  description?: string
+}
+
+export interface ColumnLineageEdge extends LineageEdge {
+  source_column: string
+  target_column: string
+}
+
+export interface ColumnLineageGraph {
+  nodes: ColumnNode[]
+  edges: ColumnLineageEdge[]
+}
+
+export interface ImpactResponse {
+  upstream: string[]
+  downstream: string[]
 }
 
 export interface RunRecord {
