@@ -27,6 +27,7 @@ class ModelSummary(BaseModel):
     database: Optional[str] = None
     schema: Optional[str] = None
     alias: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
 
 
 class ModelDetail(ModelSummary):

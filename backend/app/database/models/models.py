@@ -12,6 +12,7 @@ class Model(Base):
     database = Column(String)
     resource_type = Column(String)
     columns = Column(JSON)
+    tags = Column(JSON, default=list)
     checksum = Column(String)
     timestamp = Column(DateTime)
     run_id = Column(Integer, ForeignKey("runs.id"))
@@ -38,6 +39,17 @@ class Lineage(Base):
     id = Column(Integer, primary_key=True, index=True)
     parent_id = Column(String, ForeignKey("models.unique_id"))
     child_id = Column(String, ForeignKey("models.unique_id"))
+    run_id = Column(Integer, ForeignKey("runs.id"))
+
+
+class ColumnLineage(Base):
+    __tablename__ = "column_lineage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_column = Column(String, index=True)
+    target_column = Column(String, index=True)
+    source_node = Column(String, ForeignKey("models.unique_id"))
+    target_node = Column(String, ForeignKey("models.unique_id"))
     run_id = Column(Integer, ForeignKey("runs.id"))
 
 class Test(Base):
