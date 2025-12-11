@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DBT_ARTIFACTS_PATH=/app/dbt_artifacts
+      - BACKEND_PORT=8000
+    volumes:
+      - ./sample_artifacts:/app/dbt_artifacts:ro
+    networks:
+      - dbt_workbench
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - dbt_workbench
+
+networks:
+  dbt_workbench:
+    driver: bridge
