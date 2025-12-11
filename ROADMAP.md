@@ -1,0 +1,5 @@
+- v0.1: Model browser + run viewer + lineage SVG
+- v0.2: Real-time run logs
+- v0.3: Environment selection
+- v0.4: DAG filters + metadata search
+- v0.5: User permissions (optional)
