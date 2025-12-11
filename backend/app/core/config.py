@@ -60,6 +60,18 @@ class Settings(BaseSettings):
     scheduler_max_catchup_runs: int = Field(10, alias="SCHEDULER_MAX_CATCHUP_RUNS")
     scheduler_default_timezone: str = Field("UTC", alias="SCHEDULER_DEFAULT_TIMEZONE")
 
+    # SQL workspace settings
+    sql_workspace_default_connection_url: str | None = Field(
+        default=None,
+        alias="SQL_WORKSPACE_DEFAULT_CONNECTION_URL",
+    )
+    sql_workspace_max_rows: int = Field(5000, alias="SQL_WORKSPACE_MAX_ROWS")
+    sql_workspace_timeout_seconds: int = Field(60, alias="SQL_WORKSPACE_TIMEOUT_SECONDS")
+    sql_workspace_allow_destructive_default: bool = Field(
+        False,
+        alias="SQL_WORKSPACE_ALLOW_DESTRUCTIVE_DEFAULT",
+    )
+
     # Notification settings
     notifications_slack_timeout_seconds: int = Field(10, alias="NOTIFICATIONS_SLACK_TIMEOUT_SECONDS")
     notifications_webhook_timeout_seconds: int = Field(10, alias="NOTIFICATIONS_WEBHOOK_TIMEOUT_SECONDS")

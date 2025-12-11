@@ -4,6 +4,7 @@ const navItems = [
   { label: 'Dashboard', to: '/' },
   { label: 'Models', to: '/models' },
   { label: 'Lineage', to: '/lineage' },
+  { label: 'SQL Workspace', to: '/sql' },
   { label: 'Runs', to: '/runs' },
   { label: 'Run History', to: '/run-history' },
   { label: 'Schedules', to: '/schedules' },

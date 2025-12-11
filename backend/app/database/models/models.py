@@ -95,6 +95,7 @@ class Environment(Base):
     updated_at = Column(DateTime)
 
     schedules = relationship("Schedule", back_populates="environment")
+    sql_queries = relationship("SqlQuery", back_populates="environment")
 
 
 class Schedule(Base):
@@ -196,3 +197,21 @@ class NotificationEvent(Base):
     created_at = Column(DateTime)
 
     scheduled_run = relationship("ScheduledRun", back_populates="notification_events")
+
+
+class SqlQuery(Base):
+    __tablename__ = "sql_queries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+    environment_id = Column(Integer, ForeignKey("environments.id"), nullable=True)
+    query_text = Column(String)
+    status = Column(String)
+    error_message = Column(String, nullable=True)
+    execution_time_ms = Column(Integer, nullable=True)
+    row_count = Column(Integer, nullable=True)
+    truncated = Column(Boolean, default=False)
+    model_ref = Column(String, nullable=True)
+
+    environment = relationship("Environment", back_populates="sql_queries")

@@ -11,6 +11,7 @@ import RunHistoryPage from './pages/RunHistory'
 import DocsPage from './pages/Docs'
 import SettingsPage from './pages/Settings'
 import SchedulesPage from './pages/Schedules'
+import SqlWorkspacePage from './pages/SqlWorkspace'
 
 function App() {
   const handleRefreshNeeded = (updatedArtifacts: string[]) => {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/models" element={<ModelsPage />} />
             <Route path="/models/:modelId" element={<ModelDetailPage />} />
             <Route path="/lineage" element={<LineagePage />} />
+            <Route path="/sql" element={<SqlWorkspacePage />} />
             <Route path="/runs" element={<RunsPage />} />
             <Route path="/run-history" element={<RunHistoryPage />} />
             <Route path="/schedules" element={<SchedulesPage />} />
