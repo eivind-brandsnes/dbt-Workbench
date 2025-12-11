@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.core.config import get_settings, Settings
-from app.schemas.responses import LineageGraph, LineageEdge, LineageNode
-from app.services.artifact_service import ArtifactService
+from app.database.services import dbt_service
+from app.schemas import dbt as dbt_schemas
 
 router = APIRouter()
 
 
-def get_service(settings: Settings = Depends(get_settings)) -> ArtifactService:
-    return ArtifactService(settings.dbt_artifacts_path)
+@router.get("/lineage/graph", response_model=dbt_schemas.LineageGraph)
+def get_lineage(db: Session = Depends(dbt_service.get_db)):
+    graph = dbt_service.get_lineage_graph(db)
+    return graph
 
 
-@router.get("/lineage/graph", response_model=LineageGraph)
-def get_lineage(service: ArtifactService = Depends(get_service)) -> LineageGraph:
-    graph = service.lineage_graph()
-    nodes = [LineageNode(**node) for node in graph.get("nodes", [])]
-    edges = [LineageEdge(**edge) for edge in graph.get("edges", [])]
-    return LineageGraph(nodes=nodes, edges=edges)
+@router.get("/lineage/graph/{run_id}", response_model=dbt_schemas.LineageGraph)
+def get_lineage_for_run(run_id: int, db: Session = Depends(dbt_service.get_db)):
+    graph = dbt_service.get_lineage_graph(db, run_id=run_id)
+    return graph

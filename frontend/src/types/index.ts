@@ -4,6 +4,45 @@ export interface HealthResponse {
   version: string
 }
 
+export interface Run {
+  id: number;
+  run_id: string;
+  command: string;
+  timestamp: string;
+  status: string;
+  summary: any;
+}
+
+export interface Model {
+  id: number;
+  unique_id: string;
+  name: string;
+  schema_: string;
+  database: string;
+  resource_type: string;
+  columns: any;
+  checksum: string;
+  timestamp: string;
+  run_id: number;
+}
+
+export interface ModelDiff {
+  structural_diff: {
+    added: any[];
+    removed: any[];
+    changed: any[];
+  };
+  metadata_diff: {
+    description: { from: string; to: string };
+    tags: { from: string[]; to: string[] };
+    tests: { from: any[]; to: any[] };
+  };
+  checksum_diff: {
+    from: string;
+    to: string;
+  };
+}
+
 export interface ArtifactSummary {
   manifest: boolean
   run_results: boolean
