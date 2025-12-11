@@ -2,14 +2,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import artifacts, health, lineage, models, projects, runs, execution
+from app.api.routes import artifacts, health, lineage, models, projects, runs, execution, diff
 from app.core.config import get_settings
 from app.core.watcher_manager import start_watcher, stop_watcher
+from app.database.connection import engine, Base
+import app.database.models.models
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    Base.metadata.create_all(bind=engine)
     start_watcher()
     yield
     # Shutdown
@@ -39,6 +42,7 @@ app.include_router(models.router)
 app.include_router(lineage.router)
 app.include_router(runs.router)
 app.include_router(execution.router)
+app.include_router(diff.router)
 
 @app.get("/config")
 async def get_config():

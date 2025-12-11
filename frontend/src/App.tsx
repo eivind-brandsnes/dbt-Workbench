@@ -7,6 +7,7 @@ import ModelsPage from './pages/Models'
 import ModelDetailPage from './pages/ModelDetail'
 import LineagePage from './pages/Lineage'
 import RunsPage from './pages/Runs'
+import RunHistoryPage from './pages/RunHistory'
 import DocsPage from './pages/Docs'
 import SettingsPage from './pages/Settings'
 
@@ -33,6 +34,7 @@ function App() {
             <Route path="/models/:modelId" element={<ModelDetailPage />} />
             <Route path="/lineage" element={<LineagePage />} />
             <Route path="/runs" element={<RunsPage />} />
+            <Route path="/run-history" element={<RunHistoryPage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

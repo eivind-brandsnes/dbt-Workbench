@@ -1,17 +1,21 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-from app.core.config import get_settings, Settings
-from app.schemas.responses import RunRecord
-from app.services.artifact_service import ArtifactService
+from app.database.services import dbt_service
+from app.schemas import dbt as dbt_schemas
 
 router = APIRouter()
 
 
-def get_service(settings: Settings = Depends(get_settings)) -> ArtifactService:
-    return ArtifactService(settings.dbt_artifacts_path)
+@router.get("/runs", response_model=list[dbt_schemas.Run])
+def list_runs(db: Session = Depends(dbt_service.get_db), skip: int = 0, limit: int = 100):
+    runs = dbt_service.get_runs(db, skip=skip, limit=limit)
+    return runs
 
 
-@router.get("/runs", response_model=list[RunRecord])
-def list_runs(service: ArtifactService = Depends(get_service)) -> list[RunRecord]:
-    runs = service.list_runs()
-    return [RunRecord(**run) for run in runs]
+@router.get("/runs/{run_id}", response_model=dbt_schemas.Run)
+def get_run(run_id: int, db: Session = Depends(dbt_service.get_db)):
+    db_run = dbt_service.get_run(db, run_id=run_id)
+    if db_run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return db_run

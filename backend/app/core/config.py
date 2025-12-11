@@ -5,6 +5,16 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    postgres_user: str = Field("user", alias="POSTGRES_USER")
+    postgres_password: str = Field("password", alias="POSTGRES_PASSWORD")
+    postgres_host: str = Field("localhost", alias="POSTGRES_HOST")
+    postgres_port: int = Field(5432, alias="POSTGRES_PORT")
+    postgres_db: str = Field("dbt_workbench", alias="POSTGRES_DB")
+    database_url: str = Field(
+        "postgresql://user:password@localhost:5432/dbt_workbench",
+        alias="DATABASE_URL"
+    )
+
     backend_port: int = Field(8000, alias="BACKEND_PORT")
     dbt_artifacts_path: str = Field("./dbt_artifacts", alias="DBT_ARTIFACTS_PATH")
     backend_version: str = "0.1.0"
