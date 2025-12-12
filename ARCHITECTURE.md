@@ -115,10 +115,13 @@ Both containers run independently and communicate via internal Docker network.
 
 ## 5. Scaling & Extensibility
 
-- Backend supports plugin modules (planned)
+- Backend supports plugin modules (Phase 10)
 - Postgres optional for metadata storage (planned)
 - Scheduler module (planned)
 - SQL editor module for warehouse interaction (planned)
+- Plugin & extensibility system:
+  - See `PLUGIN_SYSTEM.md` for the functional and behavioral specification of the plugin architecture.
+  - Core system remains fully functional with no plugins installed and supports a plugin-disabled mode.
 
 ---
 

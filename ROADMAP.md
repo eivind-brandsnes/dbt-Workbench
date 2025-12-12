@@ -75,9 +75,18 @@ This document tracks the future development milestones of dbt-Workbench.
 ---
 
 ## Phase 10 — Plugin System
-- Extend backend / UI  
-- Graph overlays  
-- Custom metadata processors  
+- Plugin architecture enabling extensions across:
+  - UI (custom tabs, pages, widgets, dashboards)
+  - Backend API (new routes, services)
+  - Lineage visualization (overlays, transformations, annotations)
+  - Metadata processing and enrichment
+  - SQL workspace extensions
+  - Scheduling and automation hooks
+- Marketplace-style plugin packaging and discovery
+- Manifest-driven capabilities and permissions model
+- Hot-reloadable plugins with safe enable/disable/update flows
+- Plugin lifecycle events across artifacts, lineage, catalog, and scheduler
+- Strict sandboxing, isolation, and compatibility validation
 
 ---
 
