@@ -19,6 +19,7 @@ from app.api.routes import (
     workspaces,
     admin,
     plugins,
+    git,
 )
 from app.core.config import get_settings
 from app.core.scheduler_manager import start_scheduler, stop_scheduler
@@ -80,6 +81,7 @@ app.include_router(schedules.router)
 app.include_router(sql_workspace.router)
 app.include_router(catalog.router)
 app.include_router(plugins.router)
+app.include_router(git.router)
 
 
 @app.get("/config")

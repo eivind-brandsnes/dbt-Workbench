@@ -118,6 +118,12 @@ dbt-Workbench/
 ### **Phase 4 — Metadata Persistence Layer**
 - PostgreSQL backend
 - Historical model snapshots
+
+### **Phase 11 — Git-Integrated dbt Workspace**
+- Workspace-scoped Git connections with branch switching, pull, push, and commit workflows
+- In-app file tree with SQL/Jinja editor for models and YAML editor support for dbt configs
+- Git-aware commit diffing, status, and history panels plus audit log visibility
+- Role-aware editing controls for protected configuration files and conflict handling cues
 - Model diff viewer
 - Historical lineage browser
 

@@ -204,6 +204,75 @@ export interface RunSummary {
   artifacts_available: boolean;
 }
 
+export interface GitChange {
+  path: string
+  change_type: string
+  staged?: boolean
+}
+
+export interface GitStatus {
+  branch: string
+  is_clean: boolean
+  ahead: number
+  behind: number
+  changes: GitChange[]
+  has_conflicts: boolean
+}
+
+export interface GitBranch {
+  name: string
+  is_active: boolean
+}
+
+export interface GitFileNode {
+  name: string
+  path: string
+  type: string
+  category?: string | null
+  children?: GitFileNode[] | null
+}
+
+export interface GitFileContent {
+  path: string
+  content: string
+  readonly?: boolean
+}
+
+export interface GitRepository {
+  id: number
+  workspace_id: number
+  remote_url: string
+  provider?: string | null
+  default_branch: string
+  directory: string
+  last_synced_at?: string | null
+}
+
+export interface GitDiff {
+  path: string
+  diff: string
+}
+
+export interface GitHistoryEntry {
+  commit_hash: string
+  author: string
+  message: string
+  timestamp: string
+}
+
+export interface AuditRecord {
+  id: number
+  workspace_id: number
+  user_id?: number | null
+  username?: string | null
+  action: string
+  resource: string
+  metadata: Record<string, any>
+  created_at: string
+  commit_hash?: string | null
+  environment?: string | null
+}
+
 export interface RunDetail extends RunSummary {
   parameters: Record<string, any>;
   log_lines: string[];
