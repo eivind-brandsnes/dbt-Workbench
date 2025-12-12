@@ -11,7 +11,9 @@ from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.database.models import models as db_models
+from app.database.services import auth_service
 from app.schemas.git import (
     AuditRecord,
     BranchSummary,
@@ -39,6 +41,34 @@ CRITICAL_FILES = {
     "selectors.yml",
     "manifest.json",
 }
+
+
+def _resolve_workspace_id(db: Session, requested_id: int | None) -> int:
+    """Map a provided workspace id to a real DB workspace, creating the default if needed."""
+    settings = get_settings()
+
+    if requested_id not in (None, 0):
+        workspace = auth_service.get_workspace(db, requested_id)
+        if not workspace:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "workspace_not_found", "message": "Workspace not found."},
+            )
+        return workspace.id
+
+    # Single-project / auth-disabled path: ensure the default workspace exists
+    workspace = auth_service.get_workspace_by_key(db, settings.default_workspace_key)
+    if workspace:
+        return workspace.id
+
+    workspace = auth_service.create_workspace(
+        db,
+        key=settings.default_workspace_key,
+        name=settings.default_workspace_name,
+        description=settings.default_workspace_description,
+        artifacts_path=settings.dbt_artifacts_path,
+    )
+    return workspace.id
 
 
 def _ensure_repo(path: str) -> Repo:
@@ -89,6 +119,7 @@ def connect_repository(
     user_id: int | None,
     username: str | None,
 ) -> GitRepositorySummary:
+    workspace_id = _resolve_workspace_id(db, workspace_id)
     target_path = Path(directory)
     target_path.mkdir(parents=True, exist_ok=True)
 

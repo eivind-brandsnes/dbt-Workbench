@@ -64,6 +64,7 @@ export default function VersionControlPage() {
   const [branch, setBranch] = useState('main')
   const [directory, setDirectory] = useState('/app/dbt_project')
   const [provider, setProvider] = useState('')
+  const workspaceIdMissing = activeWorkspace?.id === undefined || activeWorkspace?.id === null
 
   const reload = async () => {
     setLoading(true)
@@ -135,13 +136,14 @@ export default function VersionControlPage() {
     event.preventDefault()
     setConnectError(null)
     setConnectSuccess(null)
-    if (!activeWorkspace?.id) {
+    if (workspaceIdMissing) {
       setConnectError('Select a workspace before connecting a repository.')
       return
     }
+    const workspaceId = activeWorkspace.id
     try {
       await GitService.connect({
-        workspace_id: activeWorkspace.id,
+        workspace_id: workspaceId,
         remote_url: remoteUrl,
         branch: branch || 'main',
         directory,
@@ -223,7 +225,7 @@ export default function VersionControlPage() {
               <button
                 type="submit"
                 className="btn"
-                disabled={!remoteUrl || !activeWorkspace?.id || loading}
+                disabled={!remoteUrl || workspaceIdMissing || loading}
               >
                 {loading ? 'Connecting…' : 'Clone & Connect'}
               </button>
