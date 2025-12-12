@@ -129,8 +129,21 @@ class Settings(BaseSettings):
     )
     notifications_email_smtp_port: int = Field(25, alias="NOTIFICATIONS_EMAIL_SMTP_PORT")
     notifications_email_use_tls: bool = Field(False, alias="NOTIFICATIONS_EMAIL_USE_TLS")
-    notifications_email_username: str = Field("", alias="NOTIFICATIONS_EMAIL_USERNAME")
+    notifications_email_username: str = Field(
+        "",
+        alias="NOTIFICATIONS_EMAIL_USERNAME",
+    )
     notifications_email_password: str = Field("", alias="NOTIFICATIONS_EMAIL_PASSWORD")
+
+    # Plugin system settings
+    plugin_system_enabled: bool = Field(True, alias="PLUGIN_SYSTEM_ENABLED")
+    plugins_directory: str = Field("./plugins", alias="PLUGINS_DIRECTORY")
+    plugin_hot_reload_enabled: bool = Field(True, alias="PLUGIN_HOT_RELOAD_ENABLED")
+    plugin_api_version: str = Field("1.0.0", alias="PLUGIN_API_VERSION")
+    plugin_allowed_env_prefixes: List[str] = Field(
+        default=["DBT_", "DBT_WORKBENCH_"],
+        alias="PLUGIN_ALLOWED_ENV_PREFIXES",
+    )
 
 
 @lru_cache
