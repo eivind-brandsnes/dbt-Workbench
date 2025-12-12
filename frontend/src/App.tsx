@@ -15,6 +15,7 @@ import SqlWorkspacePage from './pages/SqlWorkspace'
 import LoginPage from './pages/Login'
 import PluginsInstalledPage from './pages/PluginsInstalled'
 import PluginMarketplacePage from './pages/PluginMarketplace'
+import VersionControlPage from './pages/VersionControl'
 import { useAuth } from './context/AuthContext'
 
 function App() {
@@ -64,6 +65,7 @@ function App() {
             <Route path="/schedules" element={<SchedulesPage />} />
             <Route path="/plugins/installed" element={<PluginsInstalledPage />} />
             <Route path="/plugins/marketplace" element={<PluginMarketplacePage />} />
+            <Route path="/version-control" element={<VersionControlPage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/login" element={<LoginPage />} />

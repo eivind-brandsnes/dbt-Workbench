@@ -60,6 +60,20 @@ class UserWorkspace(Base):
     workspace = relationship("Workspace", back_populates="user_links")
 
 
+class GitRepository(Base):
+    __tablename__ = "git_repositories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False)
+    remote_url = Column(String, nullable=False)
+    provider = Column(String, nullable=True)
+    default_branch = Column(String, nullable=False, default="main")
+    directory = Column(String, nullable=False)
+    last_synced_at = Column(DateTime, nullable=True)
+
+    workspace = relationship("Workspace")
+
+
 class Model(Base):
     __tablename__ = "models"
 
@@ -328,3 +342,21 @@ class SqlQuery(Base):
     model_ref = Column(String, nullable=True)
 
     environment = relationship("Environment", back_populates="sql_queries")
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    username = Column(String, nullable=True)
+    action = Column(String, nullable=False)
+    resource = Column(String, nullable=False)
+    metadata_ = Column("metadata", JSON, default=dict)
+    created_at = Column(DateTime)
+    commit_hash = Column(String, nullable=True)
+    environment = Column(String, nullable=True)
+
+    workspace = relationship("Workspace")
+    user = relationship("User")

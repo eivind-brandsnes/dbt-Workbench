@@ -17,6 +17,14 @@ body {
   background: #0f172a;
 }
 
+.btn {
+  @apply bg-accent/20 text-accent px-3 py-2 rounded border border-accent/40 text-sm transition;
+}
+
+.btn:hover {
+  @apply bg-accent/30;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

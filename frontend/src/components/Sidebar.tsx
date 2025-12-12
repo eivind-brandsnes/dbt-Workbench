@@ -8,6 +8,7 @@ const baseNavItems = [
   { label: 'SQL Workspace', to: '/sql', minRole: 'developer' as const },
   { label: 'Runs', to: '/runs', minRole: 'developer' as const },
   { label: 'Run History', to: '/run-history', minRole: 'viewer' as const },
+  { label: 'Version Control', to: '/version-control', minRole: 'developer' as const },
   { label: 'Schedules', to: '/schedules', minRole: 'developer' as const },
   { label: 'Plugins', to: '/plugins/installed', minRole: 'admin' as const },
   { label: 'Docs', to: '/docs' },
