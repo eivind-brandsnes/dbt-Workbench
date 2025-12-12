@@ -27,7 +27,7 @@ router = APIRouter(prefix="/sql", tags=["sql"], dependencies=[Depends(get_curren
 def get_service(
     workspace: WorkspaceContext = Depends(get_current_workspace),
 ) -> SqlWorkspaceService:
-    return get_sql_workspace_service_for_path(workspace.artifacts_path)
+    return get_sql_workspace_service_for_path(workspace.artifacts_path, workspace.id)
 
 
 @router.post(
@@ -157,7 +157,10 @@ def profile_sql(
     return result.profiling
 
 
-@router.delete("/history/{entry_id}")
+@router.delete(
+    "/history/{entry_id}",
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
 def delete_sql_history_entry(
     entry_id: int,
     service: SqlWorkspaceService = Depends(get_service),

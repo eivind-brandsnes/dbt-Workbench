@@ -35,23 +35,67 @@ class ActiveQuery:
 
 
 class SqlWorkspaceService:
-    def __init__(self, artifacts_path: str, settings: Optional[Settings] = None):
+    def __init__(
+        self,
+        artifacts_path: str,
+        workspace_id: Optional[int] = None,
+        settings: Optional[Settings] = None,
+    ):
         from app.services.artifact_service import ArtifactService
 
         self.settings = settings or get_settings()
         self.artifact_service = ArtifactService(artifacts_path)
+        self.workspace_id = workspace_id
         self._engines: Dict[str, Engine] = {}
         self._engines_lock = threading.Lock()
         self._active_queries: Dict[str, ActiveQuery] = {}
 
     # ---- Engine and environment helpers ----
 
-    def _get_environment(self, environment_id: Optional[int]) -> Optional[db_models.Environment]:
-        if environment_id is None:
+    def _get_default_environment(self) -> Optional[db_models.Environment]:
+        if self.workspace_id is None:
             return None
         db = SessionLocal()
         try:
-            return db.query(db_models.Environment).filter(db_models.Environment.id == environment_id).first()
+            env = (
+                db.query(db_models.Environment)
+                .filter(db_models.Environment.workspace_id == self.workspace_id)
+                .order_by(db_models.Environment.id)
+                .first()
+            )
+            if env:
+                return env
+            now = datetime.utcnow()
+            env = db_models.Environment(
+                name="default",
+                description="Default environment",
+                dbt_target_name=None,
+                connection_profile_reference=None,
+                variables={},
+                default_retention_policy=None,
+                created_at=now,
+                updated_at=now,
+                workspace_id=self.workspace_id,
+            )
+            db.add(env)
+            db.commit()
+            db.refresh(env)
+            return env
+        finally:
+            db.close()
+
+    def _get_environment(self, environment_id: Optional[int]) -> Optional[db_models.Environment]:
+        if environment_id is None:
+            return self._get_default_environment()
+        db = SessionLocal()
+        try:
+            query = db.query(db_models.Environment).filter(db_models.Environment.id == environment_id)
+            if self.workspace_id is not None:
+                query = query.filter(db_models.Environment.workspace_id == self.workspace_id)
+            env = query.first()
+            if env is None and self.workspace_id is not None:
+                raise ValueError("Environment does not belong to the active workspace")
+            return env
         finally:
             db.close()
 
@@ -292,6 +336,7 @@ class SqlWorkspaceService:
 
     def execute_query(self, request: SqlQueryRequest) -> SqlQueryResult:
         environment = self._get_environment(request.environment_id)
+        environment_id = environment.id if environment else request.environment_id
         self._validate_query_allowed(request.sql, environment)
 
         connection_url = self._get_connection_url(environment)
@@ -307,7 +352,7 @@ class SqlWorkspaceService:
             db_query = db_models.SqlQuery(
                 created_at=now,
                 updated_at=now,
-                environment_id=request.environment_id,
+                environment_id=environment_id,
                 query_text=request.sql,
                 status="running",
                 model_ref=request.model_ref,
@@ -323,7 +368,7 @@ class SqlWorkspaceService:
         self._active_queries[query_id] = ActiveQuery(
             cancel_event=cancel_event,
             started_at=datetime.utcnow(),
-            environment_id=request.environment_id,
+            environment_id=environment_id,
         )
 
         try:
@@ -482,6 +527,9 @@ class SqlWorkspaceService:
                 db_models.SqlQuery.environment_id == db_models.Environment.id,
             )
 
+            if self.workspace_id is not None:
+                query = query.filter(db_models.Environment.workspace_id == self.workspace_id)
+
             if environment_id is not None:
                 query = query.filter(db_models.SqlQuery.environment_id == environment_id)
             if model_ref:
@@ -525,7 +573,18 @@ class SqlWorkspaceService:
     def delete_history_entry(self, entry_id: int) -> bool:
         db = SessionLocal()
         try:
-            obj = db.query(db_models.SqlQuery).filter(db_models.SqlQuery.id == entry_id).first()
+            query = (
+                db.query(db_models.SqlQuery)
+                .outerjoin(
+                    db_models.Environment,
+                    db_models.SqlQuery.environment_id == db_models.Environment.id,
+                )
+                .filter(db_models.SqlQuery.id == entry_id)
+            )
+            if self.workspace_id is not None:
+                query = query.filter(db_models.Environment.workspace_id == self.workspace_id)
+
+            obj = query.first()
             if not obj:
                 return False
             db.delete(obj)
@@ -543,19 +602,20 @@ class QueryTimeoutError(Exception):
     pass
 
 
-_default_sql_workspace_service = SqlWorkspaceService(get_settings().dbt_artifacts_path)
+_default_sql_workspace_service = SqlWorkspaceService(get_settings().dbt_artifacts_path, workspace_id=None)
 
 
-_sql_services_by_path: dict[str, SqlWorkspaceService] = {}
+_sql_services_by_path: dict[tuple[str, Optional[int]], SqlWorkspaceService] = {}
 
 
-def get_sql_workspace_service_for_path(artifacts_path: str) -> SqlWorkspaceService:
-    service = _sql_services_by_path.get(artifacts_path)
+def get_sql_workspace_service_for_path(artifacts_path: str, workspace_id: Optional[int]) -> SqlWorkspaceService:
+    key = (artifacts_path, workspace_id)
+    service = _sql_services_by_path.get(key)
     if service is None:
-        service = SqlWorkspaceService(artifacts_path)
-        _sql_services_by_path[artifacts_path] = service
+        service = SqlWorkspaceService(artifacts_path, workspace_id=workspace_id)
+        _sql_services_by_path[key] = service
     return service
 
 
 def get_default_sql_workspace_service() -> SqlWorkspaceService:
-    return get_sql_workspace_service_for_path(get_settings().dbt_artifacts_path)
+    return get_sql_workspace_service_for_path(get_settings().dbt_artifacts_path, workspace_id=None)

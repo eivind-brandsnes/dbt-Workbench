@@ -46,6 +46,32 @@ CRITICAL_FILES = {
 
 
 
+def _resolve_workspace(db: Session, workspace_id: int | None) -> db_models.Workspace:
+    settings = get_settings()
+
+    if workspace_id not in (None, 0):
+        workspace = auth_service.get_workspace(db, workspace_id)
+        if workspace:
+            return workspace
+
+    if settings.single_project_mode or workspace_id in (None, 0):
+        workspace = auth_service.get_workspace_by_key(db, settings.default_workspace_key)
+        if workspace:
+            return workspace
+        return auth_service.create_workspace(
+            db,
+            key=settings.default_workspace_key,
+            name=settings.default_workspace_name,
+            description=settings.default_workspace_description,
+            artifacts_path=settings.dbt_artifacts_path,
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={"error": "workspace_not_found", "message": "Workspace not found."},
+    )
+
+
 def _ensure_repo(path: str) -> Repo:
     try:
         return Repo(path)
@@ -95,28 +121,8 @@ def connect_repository(
     username: str | None,
 ) -> GitRepositorySummary:
     settings = get_settings()
-    
-    # In single-project mode, workspace_id may be 0 (virtual ID)
-    # Try to find the default workspace by key, or create it if needed
-    workspace = auth_service.get_workspace(db, workspace_id)
-    if not workspace and (workspace_id == 0 or settings.single_project_mode):
-        # Try to find by default key
-        workspace = auth_service.get_workspace_by_key(db, settings.default_workspace_key)
-        if not workspace:
-            # Create the default workspace
-            workspace = auth_service.create_workspace(
-                db,
-                key=settings.default_workspace_key,
-                name=settings.default_workspace_name,
-                description=settings.default_workspace_description,
-                artifacts_path=settings.dbt_artifacts_path,
-            )
-    
-    if not workspace:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": "workspace_not_found", "message": "Workspace not found."},
-        )
+    workspace = _resolve_workspace(db, workspace_id)
+    resolved_workspace_id = workspace.id
 
     if directory:
         target_path = Path(directory)
@@ -132,7 +138,7 @@ def connect_repository(
 
     record = _get_or_create_repo_record(
         db,
-        workspace_id=workspace_id,
+        workspace_id=resolved_workspace_id,
         remote_url=remote_url,
         branch=branch,
         directory=str(target_path),
@@ -144,7 +150,7 @@ def connect_repository(
 
     audit_service.record_audit(
         db,
-        workspace_id=workspace_id,
+        workspace_id=resolved_workspace_id,
         user_id=user_id,
         username=username,
         action="connect_repository",

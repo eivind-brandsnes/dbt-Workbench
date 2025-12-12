@@ -214,11 +214,28 @@ async def get_current_workspace(
     db: Session = Depends(get_db),
 ) -> WorkspaceContext:
     if settings.single_project_mode or not settings.auth_enabled:
+        workspace = (
+            db.query(db_models.Workspace)
+            .filter(db_models.Workspace.key == settings.default_workspace_key, db_models.Workspace.is_active.is_(True))
+            .first()
+        )
+        if not workspace:
+            workspace = db_models.Workspace(
+                key=settings.default_workspace_key,
+                name=settings.default_workspace_name,
+                description=settings.default_workspace_description,
+                artifacts_path=settings.dbt_artifacts_path,
+                is_active=True,
+            )
+            db.add(workspace)
+            db.commit()
+            db.refresh(workspace)
+
         return WorkspaceContext(
-            id=None,
-            key=settings.default_workspace_key,
-            name=settings.default_workspace_name,
-            artifacts_path=settings.dbt_artifacts_path,
+            id=workspace.id,
+            key=workspace.key,
+            name=workspace.name,
+            artifacts_path=workspace.artifacts_path,
         )
 
     active_id = current_user.active_workspace_id

@@ -63,6 +63,7 @@ export default function VersionControlPage() {
   const [remoteUrl, setRemoteUrl] = useState('')
   const [branch, setBranch] = useState('main')
   const [provider, setProvider] = useState('')
+  const workspaceId = activeWorkspace?.id ?? null
 
   const reload = async () => {
     setLoading(true)
@@ -107,8 +108,24 @@ export default function VersionControlPage() {
   }
 
   useEffect(() => {
+    setStatus(null)
+    setBranches([])
+    setFiles([])
+    setHistory([])
+    setDiffs([])
+    setSelectedPath('')
+    setFileContent(null)
+    setRepoMissing(false)
+    setConnectError(null)
+    setConnectSuccess(null)
+
+    if (workspaceId == null) {
+      setRepoMissing(true)
+      return
+    }
+
     reload().catch((err) => console.error(err))
-  }, [])
+  }, [workspaceId])
 
   const loadFile = async (path: string) => {
     const content = await GitService.readFile(path)
@@ -132,16 +149,15 @@ export default function VersionControlPage() {
 
   const handleConnect = async (event: FormEvent) => {
     event.preventDefault()
-    console.log('Connect started for:', remoteUrl)
     setConnectError(null)
     setConnectSuccess(null)
-    if (activeWorkspace?.id == null) {
+    if (workspaceId == null) {
       setConnectError('Select a workspace before connecting a repository.')
       return
     }
     try {
       await GitService.connect({
-        workspace_id: activeWorkspace.id,
+        workspace_id: workspaceId,
         remote_url: remoteUrl,
         branch: branch || 'main',
         provider: provider || undefined,
@@ -213,7 +229,7 @@ export default function VersionControlPage() {
               <button
                 type="submit"
                 className="btn"
-                disabled={!remoteUrl || activeWorkspace?.id == null || loading}
+                disabled={!remoteUrl || workspaceId == null || loading}
               >
                 {loading ? 'Connecting…' : 'Clone & Connect'}
               </button>
