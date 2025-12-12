@@ -95,7 +95,23 @@ def connect_repository(
     username: str | None,
 ) -> GitRepositorySummary:
     settings = get_settings()
+    
+    # In single-project mode, workspace_id may be 0 (virtual ID)
+    # Try to find the default workspace by key, or create it if needed
     workspace = auth_service.get_workspace(db, workspace_id)
+    if not workspace and (workspace_id == 0 or settings.single_project_mode):
+        # Try to find by default key
+        workspace = auth_service.get_workspace_by_key(db, settings.default_workspace_key)
+        if not workspace:
+            # Create the default workspace
+            workspace = auth_service.create_workspace(
+                db,
+                key=settings.default_workspace_key,
+                name=settings.default_workspace_name,
+                description=settings.default_workspace_description,
+                artifacts_path=settings.dbt_artifacts_path,
+            )
+    
     if not workspace:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
