@@ -62,9 +62,7 @@ export default function VersionControlPage() {
   const [connectSuccess, setConnectSuccess] = useState<string | null>(null)
   const [remoteUrl, setRemoteUrl] = useState('')
   const [branch, setBranch] = useState('main')
-  const [directory, setDirectory] = useState('/app/dbt_project')
   const [provider, setProvider] = useState('')
-  const workspaceIdMissing = activeWorkspace?.id === undefined || activeWorkspace?.id === null
 
   const reload = async () => {
     setLoading(true)
@@ -136,17 +134,15 @@ export default function VersionControlPage() {
     event.preventDefault()
     setConnectError(null)
     setConnectSuccess(null)
-    if (workspaceIdMissing) {
+    if (!activeWorkspace?.id) {
       setConnectError('Select a workspace before connecting a repository.')
       return
     }
-    const workspaceId = activeWorkspace.id
     try {
       await GitService.connect({
-        workspace_id: workspaceId,
+        workspace_id: activeWorkspace.id,
         remote_url: remoteUrl,
         branch: branch || 'main',
-        directory,
         provider: provider || undefined,
       })
       setConnectSuccess('Repository cloned and connected.')
@@ -201,16 +197,6 @@ export default function VersionControlPage() {
                 placeholder="main"
               />
             </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Directory</label>
-              <input
-                type="text"
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
-                value={directory}
-                onChange={(e) => setDirectory(e.target.value)}
-                placeholder="/app/dbt_project"
-              />
-            </div>
             <div className="md:col-span-2">
               <label className="block text-xs text-gray-400 mb-1">Provider (optional)</label>
               <input
@@ -225,7 +211,7 @@ export default function VersionControlPage() {
               <button
                 type="submit"
                 className="btn"
-                disabled={!remoteUrl || workspaceIdMissing || loading}
+                disabled={!remoteUrl || !activeWorkspace?.id || loading}
               >
                 {loading ? 'Connecting…' : 'Clone & Connect'}
               </button>

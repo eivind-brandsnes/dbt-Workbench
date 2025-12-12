@@ -23,7 +23,7 @@ class ConnectRepositoryRequest(BaseModel):
     remote_url: str
     provider: Optional[str] = None
     branch: str = Field(default="main")
-    directory: str
+    directory: Optional[str] = None
     auth_token: Optional[str] = None
 
 

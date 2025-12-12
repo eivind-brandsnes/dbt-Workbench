@@ -11,6 +11,7 @@ import RunHistoryPage from './pages/RunHistory'
 import DocsPage from './pages/Docs'
 import SettingsPage from './pages/Settings'
 import SchedulesPage from './pages/Schedules'
+import EnvironmentsPage from './pages/Environments'
 import SqlWorkspacePage from './pages/SqlWorkspace'
 import LoginPage from './pages/Login'
 import PluginsInstalledPage from './pages/PluginsInstalled'
@@ -63,6 +64,7 @@ function App() {
             <Route path="/runs" element={<RunsPage />} />
             <Route path="/run-history" element={<RunHistoryPage />} />
             <Route path="/schedules" element={<SchedulesPage />} />
+            <Route path="/environments" element={<EnvironmentsPage />} />
             <Route path="/plugins/installed" element={<PluginsInstalledPage />} />
             <Route path="/plugins/marketplace" element={<PluginMarketplacePage />} />
             <Route path="/version-control" element={<VersionControlPage />} />

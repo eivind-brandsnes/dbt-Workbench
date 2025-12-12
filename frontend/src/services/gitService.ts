@@ -15,7 +15,7 @@ export class GitService {
     workspace_id: number
     remote_url: string
     branch: string
-    directory: string
+    directory?: string
     provider?: string
   }): Promise<GitRepository> {
     const response = await api.post<GitRepository>('/git/connect', payload)

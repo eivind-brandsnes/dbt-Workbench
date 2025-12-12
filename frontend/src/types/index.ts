@@ -384,6 +384,29 @@ export interface EnvironmentConfig {
   updated_at: string;
 }
 
+export interface RetentionPolicy {
+  max_days?: number | null;
+  max_runs?: number | null;
+  on_success: boolean;
+  on_failure: boolean;
+}
+
+export interface Environment {
+  id: number;
+  name: string;
+  description?: string | null;
+  dbt_target_name?: string | null;
+  connection_profile_reference?: string | null;
+  variables: Record<string, any>;
+  default_retention_policy?: RetentionPolicy | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EnvironmentCreate = Omit<Environment, 'id' | 'created_at' | 'updated_at'>;
+
+export type EnvironmentUpdate = Partial<EnvironmentCreate>;
+
 export interface ScheduleSummary {
   id: number;
   name: string;
