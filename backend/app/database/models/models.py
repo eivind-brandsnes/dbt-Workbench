@@ -18,6 +18,7 @@ class Workspace(Base):
 
     environments = relationship("Environment", back_populates="workspace")
     user_links = relationship("UserWorkspace", back_populates="workspace")
+    plugin_configs = relationship("PluginWorkspaceConfig", back_populates="workspace")
 
 
 class User(Base):
