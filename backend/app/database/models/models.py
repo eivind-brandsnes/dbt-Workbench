@@ -18,6 +18,19 @@ class Workspace(Base):
 
     environments = relationship("Environment", back_populates="workspace")
     user_links = relationship("UserWorkspace", back_populates="workspace")
+    plugin_configs = relationship("PluginWorkspaceConfig", back_populates="workspace")
+
+
+class PluginWorkspaceConfig(Base):
+    __tablename__ = "plugin_workspace_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    plugin_name = Column(String, nullable=False)
+    enabled = Column(Boolean, default=True)
+    settings = Column(JSON, default=dict)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False)
+
+    workspace = relationship("Workspace", back_populates="plugin_configs")
 
 
 class User(Base):
