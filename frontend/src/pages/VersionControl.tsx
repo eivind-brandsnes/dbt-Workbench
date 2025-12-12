@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import CodeMirror from '@uiw/react-codemirror'
-import { sql } from '@codemirror/lang-sql'
-import { vscodeDark } from '@uiw/codemirror-theme-vscode'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 
+import { useAuth } from '../context/AuthContext'
 import { GitService } from '../services/gitService'
 import {
   AuditRecord,
@@ -13,8 +11,6 @@ import {
   GitHistoryEntry,
   GitStatus,
 } from '../types'
-
-const CRITICAL_FILES = ['dbt_project.yml', 'profiles.yml', 'packages.yml', 'selectors.yml', 'manifest.json']
 
 function FileTree({ nodes, onSelect }: { nodes: GitFileNode[]; onSelect: (path: string) => void }) {
   const sorted = useMemo(() => nodes.slice().sort((a, b) => a.path.localeCompare(b.path)), [nodes])
@@ -50,32 +46,65 @@ function ChangeList({ status }: { status: GitStatus | null }) {
 }
 
 export default function VersionControlPage() {
+  const { activeWorkspace } = useAuth()
   const [status, setStatus] = useState<GitStatus | null>(null)
   const [branches, setBranches] = useState<GitBranch[]>([])
   const [files, setFiles] = useState<GitFileNode[]>([])
   const [selectedPath, setSelectedPath] = useState<string>('')
   const [fileContent, setFileContent] = useState<GitFileContent | null>(null)
-  const [editorText, setEditorText] = useState<string>('')
   const [commitMessage, setCommitMessage] = useState('')
   const [diffs, setDiffs] = useState<GitDiff[]>([])
   const [history, setHistory] = useState<GitHistoryEntry[]>([])
   const [auditRecords, setAuditRecords] = useState<AuditRecord[]>([])
-  const [validationErrors, setValidationErrors] = useState<string[]>([])
-  const [isSaving, setIsSaving] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [repoMissing, setRepoMissing] = useState(false)
+  const [connectError, setConnectError] = useState<string | null>(null)
+  const [connectSuccess, setConnectSuccess] = useState<string | null>(null)
+  const [remoteUrl, setRemoteUrl] = useState('')
+  const [branch, setBranch] = useState('main')
+  const [directory, setDirectory] = useState('/app/dbt_project')
+  const [provider, setProvider] = useState('')
 
   const reload = async () => {
-    const [newStatus, branchList, fileList, historyEntries, audits] = await Promise.all([
-      GitService.status(),
-      GitService.branches(),
-      GitService.files(),
-      GitService.history(),
-      GitService.audit(),
-    ])
-    setStatus(newStatus)
-    setBranches(branchList)
-    setFiles(fileList)
-    setHistory(historyEntries)
-    setAuditRecords(audits)
+    setLoading(true)
+    try {
+      const newStatus = await GitService.status()
+      if (newStatus.configured === false) {
+        setRepoMissing(true)
+        setStatus(newStatus)
+        setBranches([])
+        setFiles([])
+        setHistory([])
+        setDiffs([])
+        return
+      }
+      const [branchList, fileList, historyEntries, audits] = await Promise.all([
+        GitService.branches(),
+        GitService.files(),
+        GitService.history(),
+        GitService.audit(),
+      ])
+      setStatus(newStatus)
+      setBranches(branchList)
+      setFiles(fileList)
+      setHistory(historyEntries)
+      setAuditRecords(audits)
+      setRepoMissing(false)
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      if (err?.response?.status === 404 || detail?.error === 'git_not_configured') {
+        setRepoMissing(true)
+        setStatus(null)
+        setBranches([])
+        setFiles([])
+        setHistory([])
+        setDiffs([])
+      } else {
+        console.error('Failed to load git status', err)
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -86,27 +115,8 @@ export default function VersionControlPage() {
     const content = await GitService.readFile(path)
     setSelectedPath(path)
     setFileContent(content)
-    setEditorText(content.content)
     const diff = await GitService.diff(path)
     setDiffs(diff)
-  }
-
-  const saveFile = async () => {
-    if (!selectedPath) return
-    setIsSaving(true)
-    setValidationErrors([])
-    try {
-      const payload = { path: selectedPath, content: editorText, message: CRITICAL_FILES.includes(selectedPath.split('/').pop() || '') ? commitMessage : undefined }
-      const result = await GitService.writeFile(payload)
-      if (!result.is_valid) {
-        setValidationErrors(result.errors || [])
-        return
-      }
-      await reload()
-      await loadFile(selectedPath)
-    } finally {
-      setIsSaving(false)
-    }
   }
 
   const handleCommit = async () => {
@@ -121,31 +131,121 @@ export default function VersionControlPage() {
     await reload()
   }
 
-  const validationPanel = validationErrors.length ? (
-    <div className="bg-red-900/40 border border-red-600 text-red-100 rounded p-3 text-sm">
-      <div className="font-semibold mb-2">Validation errors</div>
-      <ul className="list-disc list-inside space-y-1">
-        {validationErrors.map((err) => (
-          <li key={err}>{err}</li>
-        ))}
-      </ul>
-    </div>
-  ) : null
+  const handleConnect = async (event: FormEvent) => {
+    event.preventDefault()
+    setConnectError(null)
+    setConnectSuccess(null)
+    if (!activeWorkspace?.id) {
+      setConnectError('Select a workspace before connecting a repository.')
+      return
+    }
+    try {
+      await GitService.connect({
+        workspace_id: activeWorkspace.id,
+        remote_url: remoteUrl,
+        branch: branch || 'main',
+        directory,
+        provider: provider || undefined,
+      })
+      setConnectSuccess('Repository cloned and connected.')
+      setRepoMissing(false)
+      await reload()
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.detail?.message ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Failed to connect repository.'
+      setConnectError(message)
+    }
+  }
+
+  const actionsDisabled = repoMissing || loading
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-2xl font-semibold text-white">Version Control</div>
+          <div className="text-sm text-gray-400">Inspect status, branches, and audits. Editing lives in SQL Workspace.</div>
+        </div>
+      </div>
+
+      {repoMissing && (
+        <div className="bg-panel border border-gray-800 rounded p-4">
+          <div className="text-white font-semibold mb-2">Clone repository</div>
+          <p className="text-sm text-gray-400 mb-3">
+            Provide a remote URL to clone into the backend workspace. Requires admin privileges.
+          </p>
+          <form className="grid grid-cols-1 md:grid-cols-2 gap-3" onSubmit={handleConnect}>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-400 mb-1">Remote URL</label>
+              <input
+                type="url"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
+                value={remoteUrl}
+                onChange={(e) => setRemoteUrl(e.target.value)}
+                placeholder="https://github.com/org/project.git"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Branch</label>
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                placeholder="main"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Directory</label>
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
+                value={directory}
+                onChange={(e) => setDirectory(e.target.value)}
+                placeholder="/app/dbt_project"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-400 mb-1">Provider (optional)</label>
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                placeholder="github/gitlab/bitbucket"
+              />
+            </div>
+            <div className="md:col-span-2 flex items-center gap-3">
+              <button
+                type="submit"
+                className="btn"
+                disabled={!remoteUrl || !activeWorkspace?.id || loading}
+              >
+                {loading ? 'Connecting…' : 'Clone & Connect'}
+              </button>
+              {connectError && <div className="text-sm text-red-400">{connectError}</div>}
+              {connectSuccess && <div className="text-sm text-green-400">{connectSuccess}</div>}
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="flex items-start gap-4">
         <div className="bg-panel border border-gray-800 rounded p-4 flex-1">
           <div className="flex items-center justify-between mb-2">
             <div>
               <div className="text-lg font-semibold text-white">Git status</div>
-              <div className="text-sm text-gray-400">Branch: {status?.branch || 'unknown'}</div>
+              <div className="text-sm text-gray-400">Branch: {repoMissing ? 'not connected' : status?.branch || 'unknown'}</div>
             </div>
             <div className="flex gap-2">
-              <button className="btn" onClick={() => GitService.pull().then(reload)}>
+              <button className="btn" onClick={() => GitService.pull().then(reload)} disabled={actionsDisabled}>
                 Pull
               </button>
-              <button className="btn" onClick={() => GitService.push().then(reload)}>
+              <button className="btn" onClick={() => GitService.push().then(reload)} disabled={actionsDisabled}>
                 Push
               </button>
             </div>
@@ -165,6 +265,7 @@ export default function VersionControlPage() {
             className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-2 text-sm"
             value={branches.find((b) => b.is_active)?.name || ''}
             onChange={(e) => handleBranchChange(e.target.value)}
+            disabled={actionsDisabled}
           >
             {branches.map((branch) => (
               <option key={branch.name} value={branch.name}>
@@ -194,49 +295,49 @@ export default function VersionControlPage() {
               <div className="text-sm text-gray-400">Browse dbt models and configuration</div>
             </div>
           </div>
-          <FileTree nodes={files} onSelect={loadFile} />
+          {repoMissing ? (
+            <div className="text-sm text-gray-500">Connect a repository to browse files.</div>
+          ) : (
+            <FileTree nodes={files} onSelect={loadFile} />
+          )}
         </div>
         <div className="bg-panel border border-gray-800 rounded p-4 col-span-2 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-white font-semibold">Editor</div>
-              <div className="text-sm text-gray-400">{selectedPath || 'Select a file to begin'}</div>
+              <div className="text-white font-semibold">File preview</div>
+              <div className="text-sm text-gray-400">{selectedPath || 'Select a file to inspect'}</div>
             </div>
             <div className="flex gap-2 items-center">
               <input
                 type="text"
                 className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
-                placeholder="Commit or file note"
+                placeholder="Commit message"
                 value={commitMessage}
                 onChange={(e) => setCommitMessage(e.target.value)}
               />
-              <button className="btn" onClick={saveFile} disabled={isSaving || !selectedPath}>
-                {fileContent?.readonly ? 'Read-only' : 'Save'}
-              </button>
-              <button className="btn" onClick={handleCommit} disabled={!commitMessage.trim()}>
+              <button className="btn" onClick={handleCommit} disabled={!commitMessage.trim() || actionsDisabled}>
                 Commit
               </button>
             </div>
           </div>
-          {fileContent?.readonly && (
-            <div className="text-xs text-yellow-300">This file is read-only. Enable edits explicitly in Git settings.</div>
+          {fileContent && (
+            <div className="bg-black/40 border border-gray-800 rounded p-3 text-sm text-gray-200">
+              <pre className="whitespace-pre-wrap text-xs font-mono overflow-auto max-h-[320px]">
+                {fileContent.content || 'Empty file'}
+              </pre>
+            </div>
           )}
-          {validationPanel}
-          <CodeMirror
-            value={editorText}
-            height="340px"
-            theme={vscodeDark}
-            onChange={(val) => setEditorText(val)}
-            extensions={[sql()]}
-            editable={!fileContent?.readonly}
-          />
           <div className="bg-gray-900 border border-gray-800 rounded p-3 text-sm text-gray-200">
             <div className="font-semibold mb-2">Diff preview</div>
-            {diffs.map((diff) => (
-              <pre key={diff.path} className="text-xs whitespace-pre-wrap bg-black/40 p-2 rounded border border-gray-800 overflow-auto">
-                {diff.diff || 'No changes'}
-              </pre>
-            ))}
+            {repoMissing ? (
+              <div className="text-sm text-gray-500">Connect a repository to view diffs.</div>
+            ) : (
+              diffs.map((diff) => (
+                <pre key={diff.path} className="text-xs whitespace-pre-wrap bg-black/40 p-2 rounded border border-gray-800 overflow-auto">
+                  {diff.diff || 'No changes'}
+                </pre>
+              ))
+            )}
           </div>
         </div>
       </div>

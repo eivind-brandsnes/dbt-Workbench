@@ -172,7 +172,22 @@ def _build_tree(base_path: Path) -> List[FileNode]:
 
 
 def get_status(db: Session, workspace_id: int) -> GitStatusResponse:
-    record = _repo_record(db, workspace_id)
+    try:
+        record = _repo_record(db, workspace_id)
+    except HTTPException as exc:
+        detail = getattr(exc, "detail", {}) or {}
+        if exc.status_code == status.HTTP_404_NOT_FOUND and detail.get("error") == "git_not_configured":
+            # Graceful response when repository is not yet connected
+            return GitStatusResponse(
+                branch="not_configured",
+                is_clean=True,
+                ahead=0,
+                behind=0,
+                changes=[],
+                has_conflicts=False,
+                configured=False,
+            )
+        raise
     repo = _ensure_repo(record.directory)
     branch_name = repo.active_branch.name
 
@@ -200,6 +215,7 @@ def get_status(db: Session, workspace_id: int) -> GitStatusResponse:
         behind=behind,
         changes=changes,
         has_conflicts=has_conflicts,
+        configured=True,
     )
 
 

@@ -29,6 +29,78 @@ from app.services.scheduler_service import scheduler_service
 router = APIRouter(prefix="/schedules", tags=["schedules"], dependencies=[Depends(get_current_user)])
 
 
+# Environment endpoints (registered first to avoid conflicts with schedule_id routes)
+@router.get("/environments", response_model=list[Environment])
+async def list_environments(
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> list[Environment]:
+    return scheduler_service.list_environments(db, workspace_id=workspace.id)
+
+
+@router.post(
+    "/environments",
+    response_model=Environment,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
+def create_environment(
+    env_in: EnvironmentCreate,
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> Environment:
+    return scheduler_service.create_environment(db, env_in, workspace_id=workspace.id)
+
+
+@router.get("/environments/{environment_id}", response_model=Environment)
+def get_environment(
+    environment_id: int,
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> Environment:
+    env = scheduler_service.get_environment(db, environment_id, workspace_id=workspace.id)
+    if not env:
+        raise HTTPException(status_code=404, detail="Environment not found")
+    return env
+
+
+@router.put(
+    "/environments/{environment_id}",
+    response_model=Environment,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
+def update_environment(
+    environment_id: int,
+    env_in: EnvironmentUpdate,
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> Environment:
+    env = scheduler_service.update_environment(
+        db,
+        environment_id,
+        env_in,
+        workspace_id=workspace.id,
+    )
+    if not env:
+        raise HTTPException(status_code=404, detail="Environment not found")
+    return env
+
+
+@router.delete(
+    "/environments/{environment_id}",
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
+def delete_environment(
+    environment_id: int,
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> dict:
+    success = scheduler_service.delete_environment(db, environment_id, workspace_id=workspace.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Environment not found")
+    return {"message": "Environment deleted"}
+
+
+# Schedule endpoints
 @router.get("", response_model=list[ScheduleSummary])
 def list_schedules(
     db: Session = Depends(get_db),
@@ -178,7 +250,6 @@ async def run_schedule_now(
     if attempt and attempt.run_id:
         background_tasks.add_task(executor.execute_run, attempt.run_id)
 
-    # Reload to include attempts
     db.refresh(scheduled_run)
     return scheduler_service._to_scheduled_run_schema(scheduled_run)
 
@@ -200,7 +271,7 @@ def get_schedule_metrics(
     metrics = scheduler_service.get_metrics_for_schedule(db, schedule_id)
     if not metrics:
         raise HTTPException(status_code=404, detail="Schedule not found or no runs")
-    return
+    return metrics
 
 
 @router.get("/{schedule_id}/logs", response_model=list[SchedulerLogEntry])
@@ -230,62 +301,5 @@ async def test_notifications(
     request: NotificationTestRequest,
     db: Session = Depends(get_db),
 ) -> NotificationTestResponse:
-    pass
-
-
-# Environment endpoints
-
-
-@router.get("/environments", response_model=list[Environment])
-async def list_environments(
-    db: Session = Depends(get_db),
-    workspace: WorkspaceContext = Depends(get_current_workspace),
-) -> list[Environment]:
-    return scheduler_service.list_environments(db, workspace_id=workspace.id)
-
-
-@router.post(
-    "/environments",
-    response_model=Environment,
-    dependencies=[Depends(require_role(Role.DEVELOPER))],
-)
-def create_environment(
-    env_in: EnvironmentCreate,
-    db: Session = Depends(get_db),
-    workspace: WorkspaceContext = Depends(get_current_workspace),
-) -> Environment:
-    return scheduler_service.create_environment(db, env_in, workspace_id=workspace.id)
-
-
-@router.get("/environments/{environment_id}", response_model=Environment)
-def get_environment(
-    environment_id: int,
-    db: Session = Depends(get_db),
-    workspace: WorkspaceContext = Depends(get_current_workspace),
-) -> Environment:
-    env = scheduler_service.get_environment(db, environment_id, workspace_id=workspace.id)
-    if not env:
-        raise HTTPException(status_code=404, detail="Environment not found")
-    return env
-
-
-@router.put(
-    "/environments/{environment_id}",
-    response_model=Environment,
-    dependencies=[Depends(require_role(Role.DEVELOPER))],
-)
-def update_environment(
-    environment_id: int,
-    env_in: EnvironmentUpdate,
-    db: Session = Depends(get_db),
-    workspace: WorkspaceContext = Depends(get_current_workspace),
-) -> Environment:
-    env = scheduler_service.update_environment(
-        db,
-        environment_id,
-        env_in,
-        workspace_id=workspace.id,
-    )
-    if not env:
-        raise HTTPException(status_code=404, detail="Environment not found")
-    return env
+    # Not yet implemented
+    raise HTTPException(status_code=501, detail="Notification testing not implemented.")

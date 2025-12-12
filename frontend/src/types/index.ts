@@ -217,6 +217,7 @@ export interface GitStatus {
   behind: number
   changes: GitChange[]
   has_conflicts: boolean
+  configured?: boolean
 }
 
 export interface GitBranch {

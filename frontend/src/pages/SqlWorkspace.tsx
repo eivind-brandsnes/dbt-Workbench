@@ -8,10 +8,13 @@ import { vscodeDark, vscodeLight } from '@uiw/codemirror-theme-vscode';
 import { Table } from '../components/Table';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { GitService } from '../services/gitService';
 import { SchedulerService } from '../services/schedulerService';
 import { SqlWorkspaceService } from '../services/sqlWorkspaceService';
 import {
   EnvironmentConfig,
+  GitFileContent,
+  GitFileNode,
   ModelPreviewResponse,
   SqlAutocompleteMetadata,
   SqlQueryHistoryEntry,
@@ -83,6 +86,13 @@ function SqlWorkspacePage() {
   const [historyModelFilter, setHistoryModelFilter] = useState<string>('all');
   const [historyDateFrom, setHistoryDateFrom] = useState<string>('');
   const [historyDateTo, setHistoryDateTo] = useState<string>('');
+  const [gitFiles, setGitFiles] = useState<GitFileNode[]>([]);
+  const [selectedFilePath, setSelectedFilePath] = useState<string>('');
+  const [selectedFileContent, setSelectedFileContent] = useState<GitFileContent | null>(null);
+  const [fileSaveMessage, setFileSaveMessage] = useState<string>('');
+  const [fileValidationErrors, setFileValidationErrors] = useState<string[]>([]);
+  const [isSavingFile, setIsSavingFile] = useState(false);
+  const [gitLoadError, setGitLoadError] = useState<string | null>(null);
 
   const aliasMap = useMemo(() => {
     if (!metadata) return {} as Record<string, string>;
@@ -121,6 +131,19 @@ function SqlWorkspacePage() {
     return map;
   }, [metadata, sqlText]);
 
+  const modelFiles = useMemo(
+    () =>
+      gitFiles
+        .filter(
+          (file) =>
+            file.type === 'file' &&
+            file.path.endsWith('.sql') &&
+            (file.category === 'models' || file.path.includes('/models/') || file.path.startsWith('models/')),
+        )
+        .sort((a, b) => a.path.localeCompare(b.path)),
+    [gitFiles],
+  );
+
   const loadEnvironments = useCallback(async () => {
     try {
       const envs = await SchedulerService.listEnvironments();
@@ -130,6 +153,20 @@ function SqlWorkspacePage() {
       }
     } catch (err) {
       console.error('Failed to load environments', err);
+      // Provide a fallback default environment to keep the UI functional
+      const now = new Date().toISOString();
+      const fallback = [
+        {
+          id: 0,
+          name: 'default',
+          description: 'Auto-created fallback environment',
+          variables: {},
+          created_at: now,
+          updated_at: now,
+        },
+      ] as EnvironmentConfig[];
+      setEnvironments(fallback);
+      setEnvironmentId(0);
     }
   }, [environmentId]);
 
@@ -173,6 +210,25 @@ function SqlWorkspacePage() {
     }
   }, [environmentId, historyDateFrom, historyDateTo, historyModelFilter, historyPage, historyStatusFilter]);
 
+  const loadGitFiles = useCallback(async () => {
+    try {
+      const status = await GitService.status();
+      if (status.configured === false) {
+        setGitLoadError('Repository not connected.');
+        setGitFiles([]);
+        return;
+      }
+      const files = await GitService.files();
+      setGitFiles(files);
+      setGitLoadError(null);
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.detail?.message || err?.response?.data?.detail || err?.message || 'Repository not connected';
+      setGitLoadError(message);
+      setGitFiles([]);
+    }
+  }, []);
+
   useEffect(() => {
     const persisted = loadPersistedState();
     if (persisted) {
@@ -191,7 +247,8 @@ function SqlWorkspacePage() {
     loadEnvironments();
     loadMetadata();
     loadHistory();
-  }, [loadEnvironments, loadMetadata, loadHistory]);
+    loadGitFiles();
+  }, [loadEnvironments, loadMetadata, loadHistory, loadGitFiles]);
 
   useEffect(() => {
     persistState({
@@ -223,9 +280,11 @@ function SqlWorkspacePage() {
   useAutoRefresh({
     onManifestUpdate: () => {
       loadMetadata();
+      loadGitFiles();
     },
     onCatalogUpdate: () => {
       loadMetadata();
+      loadGitFiles();
     },
   });
 
@@ -403,6 +462,56 @@ function SqlWorkspacePage() {
     setResult(null);
   };
 
+  const handleSelectFile = async (path: string) => {
+    try {
+      const content = await GitService.readFile(path);
+      setSelectedFilePath(path);
+      setSelectedFileContent(content);
+      setSqlText(content.content);
+      setMode('sql');
+      setFileValidationErrors([]);
+      setError(null);
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.detail?.message || err?.response?.data?.detail || err?.message || 'Failed to load file';
+      setGitLoadError(message);
+    }
+  };
+
+  const handleReloadSelectedFile = async () => {
+    if (selectedFilePath) {
+      await handleSelectFile(selectedFilePath);
+    }
+  };
+
+  const handleSaveFile = async () => {
+    if (!selectedFilePath || selectedFileContent?.readonly) return;
+    setIsSavingFile(true);
+    setFileValidationErrors([]);
+    try {
+      const result = await GitService.writeFile({
+        path: selectedFilePath,
+        content: sqlText,
+        message: fileSaveMessage || undefined,
+      });
+      if (!result.is_valid) {
+        setFileValidationErrors(result.errors || ['Validation failed']);
+        return;
+      }
+      const content = await GitService.readFile(selectedFilePath);
+      setSelectedFileContent(content);
+      setSqlText(content.content);
+      setFileSaveMessage('');
+      await loadGitFiles();
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.detail?.message || err?.response?.data?.detail || err?.message || 'Failed to save file';
+      setFileValidationErrors([message]);
+    } finally {
+      setIsSavingFile(false);
+    }
+  };
+
   const theme = editorTheme === 'dark' ? vscodeDark : vscodeLight;
 
   return (
@@ -530,8 +639,27 @@ function SqlWorkspacePage() {
           <div className="bg-panel border border-gray-800 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs text-gray-400">
-                SQL editor
+                {selectedFilePath ? `Editing model file: ${selectedFilePath}` : 'SQL editor'}
               </div>
+              {selectedFilePath && (
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    type="button"
+                    className="px-2 py-1 rounded border border-gray-700 text-gray-200"
+                    onClick={handleReloadSelectedFile}
+                  >
+                    Reload file
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3 py-1 rounded bg-accent text-white disabled:opacity-50"
+                    onClick={handleSaveFile}
+                    disabled={isSavingFile || !isDeveloperOrAdmin || selectedFileContent?.readonly}
+                  >
+                    {isSavingFile ? 'Saving…' : 'Save model'}
+                  </button>
+                </div>
+              )}
             </div>
             <div className="border border-gray-800 rounded-md overflow-hidden">
               <CodeMirror
@@ -680,6 +808,83 @@ function SqlWorkspacePage() {
         </div>
 
         <div className="space-y-4">
+          <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-gray-100">Model files</div>
+              <button
+                type="button"
+                className="text-xs text-accent hover:underline"
+                onClick={loadGitFiles}
+              >
+                Refresh
+              </button>
+            </div>
+            {gitLoadError ? (
+              <div className="text-xs text-red-300">{gitLoadError}</div>
+            ) : (
+              <div className="space-y-2 text-xs text-gray-300">
+                <div className="text-gray-400">Select a dbt model to load into the SQL editor.</div>
+                <div className="max-h-52 overflow-y-auto space-y-1">
+                  {modelFiles.map((file) => (
+                    <button
+                      key={file.path}
+                      type="button"
+                      className={`w-full text-left px-2 py-1 rounded border border-gray-800 hover:border-gray-600 ${
+                        selectedFilePath === file.path ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-200'
+                      }`}
+                      onClick={() => handleSelectFile(file.path)}
+                    >
+                      <span className="font-mono">{file.path}</span>
+                    </button>
+                  ))}
+                  {modelFiles.length === 0 && (
+                    <div className="text-gray-500">No model files found.</div>
+                  )}
+                </div>
+              </div>
+            )}
+            {selectedFilePath && (
+              <div className="space-y-2 text-xs">
+                <div className="text-gray-400">Save changes back to git.</div>
+                <input
+                  type="text"
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-100"
+                  placeholder="Optional commit or change note"
+                  value={fileSaveMessage}
+                  onChange={(e) => setFileSaveMessage(e.target.value)}
+                  disabled={!isDeveloperOrAdmin}
+                />
+                {fileValidationErrors.length > 0 && (
+                  <div className="bg-red-900/40 border border-red-700 rounded p-2 text-red-100 space-y-1">
+                    {fileValidationErrors.map((err) => (
+                      <div key={err}>{err}</div>
+                    ))}
+                  </div>
+                )}
+                {selectedFileContent?.readonly && (
+                  <div className="text-yellow-300">File is read-only; saving is disabled.</div>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveFile}
+                    disabled={isSavingFile || !isDeveloperOrAdmin || selectedFileContent?.readonly}
+                    className="px-3 py-1.5 rounded bg-accent text-white disabled:opacity-60"
+                  >
+                    {isSavingFile ? 'Saving…' : 'Save file'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReloadSelectedFile}
+                    className="px-3 py-1.5 rounded border border-gray-700 text-gray-200"
+                  >
+                    Reload
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-gray-100">Model preview</div>

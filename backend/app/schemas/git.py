@@ -45,6 +45,7 @@ class GitStatusResponse(BaseModel):
     behind: int = 0
     changes: List[FileChange]
     has_conflicts: bool = False
+    configured: bool = True
 
 
 class GitHistoryEntry(BaseModel):
