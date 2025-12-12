@@ -1,7 +1,11 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
 from app.api.routes import (
     artifacts,
@@ -28,10 +32,35 @@ from app.database.connection import Base, engine
 import app.database.models.models  # noqa: F401
 from app.services.plugin_service import PluginService
 
+logger = logging.getLogger(__name__)
+
+
+async def wait_for_db_connection(retries: int = 10, delay_seconds: float = 3) -> None:
+    """Retry database connection to handle startup ordering in containers."""
+    for attempt in range(1, retries + 1):
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+            logger.info("Database connection established.")
+            return
+        except OperationalError as exc:
+            if attempt == retries:
+                logger.exception("Database unavailable after %s attempts.", retries)
+                raise
+            logger.info(
+                "Database not ready (attempt %s/%s): %s. Retrying in %.1fs.",
+                attempt,
+                retries,
+                exc,
+                delay_seconds,
+            )
+            await asyncio.sleep(delay_seconds)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    await wait_for_db_connection()
     Base.metadata.create_all(bind=engine)
     start_watcher()
     await start_scheduler()
