@@ -390,3 +390,109 @@ export type ScheduleCreate = Omit<
 export type ScheduleUpdate = Partial<ScheduleCreate> & {
   updated_by?: string | null;
 };
+
+export interface SqlColumnMetadata {
+  name: string;
+  data_type?: string | null;
+  is_nullable?: boolean | null;
+}
+
+export interface SqlColumnProfile {
+  column_name: string;
+  null_count?: number | null;
+  min_value?: any;
+  max_value?: any;
+  distinct_count?: number | null;
+  sample_values: any[];
+}
+
+export interface SqlQueryProfile {
+  row_count: number;
+  columns: SqlColumnProfile[];
+}
+
+export interface SqlQueryResult {
+  query_id: string;
+  rows: Record<string, any>[];
+  columns: SqlColumnMetadata[];
+  execution_time_ms: number;
+  row_count: number;
+  truncated: boolean;
+  profiling?: SqlQueryProfile | null;
+}
+
+export interface SqlQueryRequest {
+  sql: string;
+  environment_id?: number | null;
+  row_limit?: number | null;
+  include_profiling?: boolean;
+  mode?: 'free' | 'preview';
+  model_ref?: string | null;
+}
+
+export interface SqlErrorResponse {
+  message: string;
+  code?: string;
+  details?: Record<string, any>;
+}
+
+export interface SqlQueryHistoryEntry {
+  id: number;
+  created_at: string;
+  environment_id?: number | null;
+  environment_name?: string | null;
+  query_text: string;
+  status: string;
+  row_count?: number | null;
+  execution_time_ms?: number | null;
+  model_ref?: string | null;
+}
+
+export interface SqlQueryHistoryResponse {
+  items: SqlQueryHistoryEntry[];
+  total_count: number;
+  page: number;
+  page_size: number;
+}
+
+export interface SqlRelationColumn {
+  name: string;
+  data_type?: string | null;
+  is_nullable?: boolean | null;
+}
+
+export interface SqlRelationInfo {
+  unique_id?: string | null;
+  name: string;
+  schema?: string | null;
+  database?: string | null;
+  relation_name: string;
+  resource_type: string;
+  columns: SqlRelationColumn[];
+  tags: string[];
+  meta: Record<string, any>;
+}
+
+export interface SqlAutocompleteMetadata {
+  models: SqlRelationInfo[];
+  sources: SqlRelationInfo[];
+  schemas: Record<string, SqlRelationInfo[]>;
+}
+
+export interface ModelPreviewRequest {
+  model_unique_id: string;
+  environment_id?: number | null;
+  row_limit?: number | null;
+  include_profiling?: boolean;
+}
+
+export interface ModelPreviewResponse {
+  query_id: string;
+  model_unique_id: string;
+  rows: Record<string, any>[];
+  columns: SqlColumnMetadata[];
+  execution_time_ms: number;
+  row_count: number;
+  truncated: boolean;
+  profiling?: SqlQueryProfile | null;
+}

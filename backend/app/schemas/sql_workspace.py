@@ -1,0 +1,113 @@
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
+
+class SqlColumnMetadata(BaseModel):
+    name: str
+    data_type: Optional[str] = None
+    is_nullable: Optional[bool] = None
+
+
+class SqlQueryRequest(BaseModel):
+    sql: str
+    environment_id: Optional[int] = None
+    row_limit: Optional[int] = None
+    include_profiling: bool = False
+    mode: str = Field(default="free", description="free or preview")
+    model_ref: Optional[str] = None
+
+
+class SqlQueryResult(BaseModel):
+    query_id: str
+    rows: List[Dict[str, Any]]
+    columns: List[SqlColumnMetadata]
+    execution_time_ms: int
+    row_count: int
+    truncated: bool = False
+    profiling: Optional["SqlQueryProfile"] = None
+
+
+class SqlErrorResponse(BaseModel):
+    message: str
+    code: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
+
+
+class SqlColumnProfile(BaseModel):
+    column_name: str
+    null_count: Optional[int] = None
+    min_value: Optional[Any] = None
+    max_value: Optional[Any] = None
+    distinct_count: Optional[int] = None
+    sample_values: List[Any] = Field(default_factory=list)
+
+
+class SqlQueryProfile(BaseModel):
+    row_count: int
+    columns: List[SqlColumnProfile]
+
+
+SqlQueryResult.model_rebuild()
+
+
+class SqlQueryHistoryEntry(BaseModel):
+    id: int
+    created_at: datetime
+    environment_id: Optional[int] = None
+    environment_name: Optional[str] = None
+    query_text: str
+    status: str
+    row_count: Optional[int] = None
+    execution_time_ms: Optional[int] = None
+    model_ref: Optional[str] = None
+
+
+class SqlQueryHistoryResponse(BaseModel):
+    items: List[SqlQueryHistoryEntry]
+    total_count: int
+    page: int
+    page_size: int
+
+
+class RelationColumn(BaseModel):
+    name: str
+    data_type: Optional[str] = None
+    is_nullable: Optional[bool] = None
+
+
+class RelationInfo(BaseModel):
+    unique_id: Optional[str] = None
+    name: str
+    schema: Optional[str] = None
+    database: Optional[str] = None
+    relation_name: str
+    resource_type: str
+    columns: List[RelationColumn] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
+    meta: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AutocompleteMetadataResponse(BaseModel):
+    models: List[RelationInfo] = Field(default_factory=list)
+    sources: List[RelationInfo] = Field(default_factory=list)
+    schemas: Dict[str, List[RelationInfo]] = Field(default_factory=dict)
+
+
+class ModelPreviewRequest(BaseModel):
+    model_unique_id: str
+    environment_id: Optional[int] = None
+    row_limit: Optional[int] = None
+    include_profiling: bool = False
+
+
+class ModelPreviewResponse(BaseModel):
+    query_id: str
+    model_unique_id: str
+    rows: List[Dict[str, Any]]
+    columns: List[SqlColumnMetadata]
+    execution_time_ms: int
+    row_count: int
+    truncated: bool = False
+    profiling: Optional[SqlQueryProfile] = None

@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import artifacts, health, lineage, models, projects, runs, execution, diff, schedules
+from app.api.routes import artifacts, health, lineage, models, projects, runs, execution, diff, schedules, sql_workspace
 from app.core.config import get_settings
 from app.core.watcher_manager import start_watcher, stop_watcher
 from app.core.scheduler_manager import start_scheduler, stop_scheduler
@@ -47,6 +47,7 @@ app.include_router(runs.router)
 app.include_router(execution.router)
 app.include_router(diff.router)
 app.include_router(schedules.router)
+app.include_router(sql_workspace.router)
 
 @app.get("/config")
 async def get_config():
