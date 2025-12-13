@@ -18,6 +18,7 @@ services:
     volumes:
       - ./data/artifacts:/app/data/artifacts
       - ./data/repos:/app/data/repos
+      - ./dbt_project:/app/dbt_project
     networks:
       - dbt_workbench
 
