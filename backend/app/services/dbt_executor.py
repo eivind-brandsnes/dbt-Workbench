@@ -35,7 +35,7 @@ class DbtExecutor:
         
         # Add default profiles directory if not specified
         if "profiles_dir" not in parameters:
-            profiles_dir = os.path.join(self.settings.dbt_project_path, 'profiles')
+            profiles_dir = os.path.abspath(os.path.join(self.settings.dbt_project_path, 'profiles'))
             if os.path.exists(profiles_dir):
                 cmd.extend(["--profiles-dir", profiles_dir])
         
