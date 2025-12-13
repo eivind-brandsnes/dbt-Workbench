@@ -13,6 +13,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=dbt_workbench
       - DBT_ARTIFACTS_PATH=/app/data/artifacts
+      - DBT_PROJECT_PATH=/app/data/repos/default
       - BACKEND_PORT=8000
       - SQL_WORKSPACE_DEFAULT_CONNECTION_URL=postgresql://user:password@db:5432/dbt_workbench
     volumes:

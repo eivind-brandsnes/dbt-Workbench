@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     lineage_performance_mode: str = Field("balanced", alias="LINEAGE_PERFORMANCE_MODE")
 
     # dbt execution settings
-    dbt_project_path: str = Field("./dbt_project", alias="DBT_PROJECT_PATH")
+    dbt_project_path: str = Field("./data/repos/default", alias="DBT_PROJECT_PATH")
     git_repos_base_path: str = Field("./data/repos", alias="GIT_REPOS_BASE_PATH")
     max_concurrent_runs: int = Field(1, alias="MAX_CONCURRENT_RUNS")
     max_run_history: int = Field(100, alias="MAX_RUN_HISTORY")
