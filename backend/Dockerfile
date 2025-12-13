@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 
-ENV DBT_ARTIFACTS_PATH=/app/dbt_artifacts
+ENV DBT_ARTIFACTS_PATH=/app/data/artifacts
 ENV BACKEND_PORT=8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     # Core application settings
     backend_port: int = Field(8000, alias="BACKEND_PORT")
-    dbt_artifacts_path: str = Field("./dbt_artifacts", alias="DBT_ARTIFACTS_PATH")
+    dbt_artifacts_path: str = Field("./data/artifacts", alias="DBT_ARTIFACTS_PATH")
     backend_version: str = "0.1.0"
 
     # Authentication and RBAC

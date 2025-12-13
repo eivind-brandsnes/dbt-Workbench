@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "generated_at": "2024-06-12T00:00:00",
+    "invocation_id": "demo-invocation"
+  },
+  "results": [
+    {
+      "status": "success",
+      "unique_id": "model.demo.orders",
+      "execution_time": 2.3,
+      "timing": [
+        {"name": "compile", "started_at": "2024-06-12T00:00:00", "completed_at": "2024-06-12T00:00:01"},
+        {"name": "execute", "started_at": "2024-06-12T00:00:01", "completed_at": "2024-06-12T00:00:02"}
+      ]
+    }
+  ]
+}
