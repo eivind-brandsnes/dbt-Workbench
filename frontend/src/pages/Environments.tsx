@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Environment, EnvironmentCreate, EnvironmentUpdate } from '../types';
 import { EnvironmentService } from '../services/environmentService';
+import { ProfileService, ProfileInfo } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 
 type Mode = 'list' | 'create' | 'edit';
@@ -16,12 +17,23 @@ function EnvironmentsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Profiles state
+  const [profiles, setProfiles] = useState<ProfileInfo[]>([]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileContent, setProfileContent] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   const loadData = async () => {
     try {
       const envs = await EnvironmentService.list();
       setEnvironments(envs);
+
+      // Load profiles
+      const profileResp = await ProfileService.get();
+      setProfiles(profileResp.profiles);
+      setProfileContent(profileResp.content);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load environments');
+      setError(err instanceof Error ? err.message : 'Failed to load data');
     }
   };
 
@@ -58,7 +70,18 @@ function EnvironmentsPage() {
 
   const handleFormChange = (field: keyof (EnvironmentCreate | EnvironmentUpdate), value: any) => {
     if (form) {
-      setForm(prev => ({ ...prev!, [field]: value }));
+      setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => ({ ...prev!, [field]: value }));
+
+      // If profile changes, reset target or auto-select first available
+      if (field === 'connection_profile_reference') {
+        const selectedProfile = profiles.find((p: ProfileInfo) => p.name === value);
+        if (selectedProfile && selectedProfile.targets.length > 0) {
+          // Optional: default to first target
+          setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => ({ ...prev!, dbt_target_name: selectedProfile.targets[0] }));
+        } else {
+          setForm((prev: EnvironmentCreate | EnvironmentUpdate | null) => ({ ...prev!, dbt_target_name: '' }));
+        }
+      }
     }
   };
 
@@ -98,6 +121,35 @@ function EnvironmentsPage() {
     }
   };
 
+  const handleManageProfiles = async () => {
+    try {
+      const resp = await ProfileService.get();
+      setProfileContent(resp.content);
+      setProfiles(resp.profiles);
+      setIsProfileModalOpen(true);
+    } catch (err) {
+      setError("Failed to load profiles");
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSavingProfile(true);
+    try {
+      const resp = await ProfileService.update(profileContent);
+      setProfiles(resp.profiles);
+      setProfileContent(resp.content);
+      setIsProfileModalOpen(false);
+      await loadData(); // Reload to refresh dropdowns
+    } catch (err) {
+      alert('Failed to save profile: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // Derived state for targets based on selected profile
+  const availableTargets = profiles.find(p => p.name === form?.connection_profile_reference)?.targets || [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -108,18 +160,57 @@ function EnvironmentsPage() {
           </p>
         </div>
         {isDeveloperOrAdmin && (
-          <button
-            onClick={handleCreateClick}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent hover:bg-accent/90"
-          >
-            New Environment
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleManageProfiles}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Manage Profiles
+            </button>
+            <button
+              onClick={handleCreateClick}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent hover:bg-accent/90"
+            >
+              New Environment
+            </button>
+          </div>
         )}
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {/* Editor Modal */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col p-6">
+            <h2 className="text-xl font-bold mb-4">Manage Profiles (profiles.yml)</h2>
+            <div className="flex-1 mb-4">
+              <textarea
+                className="w-full h-full p-4 border border-gray-300 rounded font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                value={profileContent}
+                onChange={(e) => setProfileContent(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setIsProfileModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSavingProfile}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isSavingProfile ? 'Saving...' : 'Save Profiles'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -148,13 +239,31 @@ function EnvironmentsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">dbt Target Name</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium text-gray-700">Profile</label>
+              <select
+                value={form.connection_profile_reference || ''}
+                onChange={e => handleFormChange('connection_profile_reference', e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
+              >
+                <option value="">Select Profile...</option>
+                {profiles.map(p => (
+                  <option key={p.name} value={p.name}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Target</label>
+              <select
                 value={form.dbt_target_name || ''}
                 onChange={e => handleFormChange('dbt_target_name', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-              />
+                disabled={!form.connection_profile_reference}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm disabled:opacity-50 disabled:bg-gray-50"
+              >
+                <option value="">Select Target...</option>
+                {availableTargets.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">Variables (JSON)</label>
@@ -199,7 +308,8 @@ function EnvironmentsPage() {
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">dbt Target</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -208,6 +318,7 @@ function EnvironmentsPage() {
                 <tr key={env.id}>
                   <td className="px-4 py-2 text-sm text-gray-900">{env.name}</td>
                   <td className="px-4 py-2 text-sm text-gray-900">{env.description}</td>
+                  <td className="px-4 py-2 text-sm text-gray-900">{env.connection_profile_reference}</td>
                   <td className="px-4 py-2 text-sm text-gray-900">{env.dbt_target_name}</td>
                   <td className="px-4 py-2 text-right text-sm">
                     {isDeveloperOrAdmin && (
@@ -221,7 +332,7 @@ function EnvironmentsPage() {
               ))}
               {environments.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">
                     No environments found.
                   </td>
                 </tr>

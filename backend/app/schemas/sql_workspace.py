@@ -25,6 +25,8 @@ class SqlQueryRequest(BaseModel):
 
 
 class SqlQueryResult(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     query_id: str
     rows: List[Dict[str, Any]]
     columns: List[SqlColumnMetadata]
@@ -129,6 +131,8 @@ class ModelPreviewResponse(BaseModel):
 
 
 class CompiledSqlResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     model_unique_id: str
     environment_id: Optional[int] = None
     compiled_sql: str
