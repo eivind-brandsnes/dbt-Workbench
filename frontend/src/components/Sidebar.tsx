@@ -7,7 +7,6 @@ const baseNavItems = [
   { label: 'Lineage', to: '/lineage' },
   { label: 'SQL Workspace', to: '/sql', minRole: 'viewer' as const },
   { label: 'Runs', to: '/runs', minRole: 'developer' as const },
-  { label: 'Run History', to: '/run-history', minRole: 'viewer' as const },
   { label: 'Version Control', to: '/version-control', minRole: 'developer' as const },
   { label: 'Schedules', to: '/schedules', minRole: 'developer' as const },
   { label: 'Environments', to: '/environments', minRole: 'developer' as const },
@@ -36,8 +35,7 @@ export function Sidebar() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `block px-3 py-2 rounded-md transition ${
-                isActive ? 'bg-accent/10 text-white' : 'text-gray-300 hover:bg-gray-800'
+              `block px-3 py-2 rounded-md transition ${isActive ? 'bg-accent/10 text-white' : 'text-gray-300 hover:bg-gray-800'
               }`
             }
             end={item.to === '/'}

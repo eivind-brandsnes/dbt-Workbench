@@ -62,7 +62,7 @@ export default function VersionControlPage() {
   const [repository, setRepository] = useState<GitRepository | null>(null)
   const [connectError, setConnectError] = useState<string | null>(null)
   const [connectSuccess, setConnectSuccess] = useState<string | null>(null)
-  const [remoteUrl, setRemoteUrl] = useState('')
+  const [remoteUrl, setRemoteUrl] = useState('https://github.com/dbt-labs/jaffle-shop-classic.git')
   const [branch, setBranch] = useState('main')
   const [provider, setProvider] = useState('')
   const [showCloneForm, setShowCloneForm] = useState(false)
