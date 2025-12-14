@@ -140,7 +140,8 @@ class DbtExecutor:
         self, 
         command: DbtCommand, 
         parameters: Dict[str, Any],
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        project_path: Optional[str] = None
     ) -> str:
         """Start a new dbt run."""
         run_id = self.generate_run_id()
@@ -158,7 +159,8 @@ class DbtExecutor:
             start_time=datetime.now(),
             parameters=parameters,
             description=description,
-            log_lines=[]
+            log_lines=[],
+            project_path=project_path
         )
         
         self.run_history[run_id] = run_detail
@@ -182,10 +184,13 @@ class DbtExecutor:
             # Build command
             cmd = self._get_dbt_command(run_detail.command, run_detail.parameters)
             
+            # Determine working directory: prefer run-specific project path, fallback to default
+            cwd = run_detail.project_path if run_detail.project_path else self.settings.dbt_project_path
+            
             # Start subprocess
             process = subprocess.Popen(
                 cmd,
-                cwd=self.settings.dbt_project_path,
+                cwd=cwd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

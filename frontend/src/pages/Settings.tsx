@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { ArtifactSummary } from '../types'
+import { ArtifactSummary, GitRepository } from '../types'
 import { useAuth } from '../context/AuthContext'
 
 interface ConfigResponse {
@@ -22,10 +22,12 @@ function SettingsPage() {
   const { user } = useAuth()
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [config, setConfig] = useState<ConfigResponse | null>(null)
+  const [repo, setRepo] = useState<GitRepository | null>(null)
 
   useEffect(() => {
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
     api.get<ConfigResponse>('/config').then((res) => setConfig(res.data)).catch(() => setConfig(null))
+    api.get<GitRepository>('/git/repository').then((res) => setRepo(res.data)).catch(() => setRepo(null))
   }, [])
 
   return (
@@ -42,12 +44,13 @@ function SettingsPage() {
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-gray-500">Project Path</dt>
               <dd className="mt-1 text-sm text-gray-900 font-mono bg-gray-50 p-1 rounded">
-                {config?.execution.dbt_project_path || 'Loading...'}
+                {repo?.directory || config?.execution.dbt_project_path || 'Loading...'}
               </dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-gray-500">Artifacts Path</dt>
               <dd className="mt-1 text-sm text-gray-900 font-mono bg-gray-50 p-1 rounded">
+                {/* Artifacts are stored in runs/ but displayed path often refers to where we look for them initially */}
                 {config?.artifacts_path || 'Loading...'}
               </dd>
             </div>

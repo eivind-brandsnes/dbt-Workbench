@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
-import { ArtifactSummary, HealthResponse, ModelSummary, RunSummary } from '../types'
+import { ArtifactSummary, HealthResponse, ModelSummary, RunSummary, GitRepository } from '../types'
 import { Card } from '../components/Card'
 import { useAuth } from '../context/AuthContext'
 
@@ -9,16 +9,19 @@ function DashboardPage() {
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [models, setModels] = useState<ModelSummary[]>([])
   const [runs, setRuns] = useState<RunSummary[]>([])
+  const [repo, setRepo] = useState<GitRepository | null>(null)
   const { activeWorkspace, workspaces, switchWorkspace } = useAuth()
 
   useEffect(() => {
     setArtifacts(null)
     setModels([])
     setRuns([])
+    setRepo(null)
     api.get<HealthResponse>('/health').then((res) => setHealth(res.data)).catch(() => setHealth(null))
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
     api.get<ModelSummary[]>('/models').then((res) => setModels(res.data)).catch(() => setModels([]))
     api.get<RunSummary[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
+    api.get<GitRepository>('/git/repository').then((res) => setRepo(res.data)).catch(() => setRepo(null))
   }, [activeWorkspace?.id])
 
   const lastRun = runs[0]
@@ -72,8 +75,8 @@ function DashboardPage() {
               <div>
                 <div className="text-xs uppercase text-gray-500">Active Project</div>
                 <h3 className="text-xl font-semibold text-gray-900">{activeWorkspace?.name || 'No project selected'}</h3>
-                {activeWorkspace && (
-                  <p className="text-sm text-gray-500">Artifacts at {activeWorkspace.artifacts_path}</p>
+                {repo && (
+                  <p className="text-sm text-gray-500">Connected to {repo.remote_url}</p>
                 )}
               </div>
               {workspaces.length > 1 && (
@@ -96,7 +99,9 @@ function DashboardPage() {
             <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
               <div>
                 <div className="text-gray-500">Project Root</div>
-                <div className="font-mono text-xs break-all">{activeWorkspace?.artifacts_path || 'Unknown'}</div>
+                <div className="font-mono text-xs break-all">
+                  {repo?.directory || activeWorkspace?.artifacts_path || 'Not Configured'}
+                </div>
               </div>
               <div>
                 <div className="text-gray-500">Last Activity</div>

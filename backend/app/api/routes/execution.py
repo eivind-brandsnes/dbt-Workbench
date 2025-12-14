@@ -1,24 +1,29 @@
-import asyncio
-from typing import List, Optional
-
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
-from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.auth import Role, decode_token, get_current_user, require_role
 from app.core.config import get_settings
+from app.database.connection import SessionLocal
 from app.schemas.execution import (
-    RunRequest,
-    RunSummary,
+    RunArtifactsResponse,
     RunDetail,
     RunHistoryResponse,
-    RunArtifactsResponse,
-    LogMessage,
+    RunRequest,
+    RunSummary,
 )
+from app.services import git_service
 from app.services.dbt_executor import executor
 
 
 router = APIRouter(prefix="/execution", tags=["execution"])
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @router.post(
@@ -26,14 +31,25 @@ router = APIRouter(prefix="/execution", tags=["execution"])
     response_model=RunSummary,
     dependencies=[Depends(require_role(Role.DEVELOPER))],
 )
-async def start_run(run_request: RunRequest, background_tasks: BackgroundTasks):
+async def start_run(
+    run_request: RunRequest, 
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
     """Start a new dbt run."""
     try:
+        project_path = None
+        if run_request.workspace_id:
+            repo = git_service.get_repository(db, run_request.workspace_id)
+            if repo and repo.directory:
+                project_path = repo.directory
+
         # Start the run
         run_id = await executor.start_run(
             command=run_request.command,
             parameters=run_request.parameters or {},
-            description=run_request.description
+            description=run_request.description,
+            project_path=project_path
         )
         
         # Execute in background
@@ -61,6 +77,7 @@ async def get_run_status(run_id: str):
     """Get the status of a specific run."""
     run_status = executor.get_run_status(run_id)
     if not run_status:
+        # Fallback to DB check handled by executor, ensuring 404 if really gone
         raise HTTPException(status_code=404, detail="Run not found")
     return run_status
 

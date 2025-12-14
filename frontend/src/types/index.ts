@@ -190,6 +190,7 @@ export interface RunRequest {
   command: DbtCommand;
   parameters?: Record<string, any>;
   description?: string;
+  workspace_id?: number;
 }
 
 export interface RunSummary {

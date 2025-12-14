@@ -23,6 +23,7 @@ class RunRequest(BaseModel):
     command: DbtCommand
     parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
     description: Optional[str] = None
+    workspace_id: Optional[int] = None
 
 
 class RunSummary(BaseModel):
@@ -41,6 +42,7 @@ class RunDetail(RunSummary):
     parameters: Dict[str, Any]
     log_lines: List[str] = Field(default_factory=list)
     artifacts_path: Optional[str] = None
+    project_path: Optional[str] = None
     dbt_output: Optional[Dict[str, Any]] = None
 
 

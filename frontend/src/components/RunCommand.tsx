@@ -3,13 +3,10 @@ import { DbtCommand, RunRequest, ModelSummary, Environment } from '../types';
 import { ExecutionService } from '../services/executionService';
 import { api } from '../api/client';
 import { EnvironmentService } from '../services/environmentService';
-import { Autocomplete } from './Autocomplete';
-
-interface RunCommandProps {
-  onRunStarted?: (runId: string) => void;
-}
+import { useAuth } from '../context/AuthContext';
 
 export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
+  const { activeWorkspace } = useAuth();
   const [command, setCommand] = useState<DbtCommand>('run');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -79,6 +76,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
         command,
         parameters: params,
         description: description || undefined,
+        workspace_id: activeWorkspace?.id,
       };
 
       const result = await ExecutionService.startRun(request);
