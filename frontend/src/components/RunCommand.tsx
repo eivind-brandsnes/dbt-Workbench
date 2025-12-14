@@ -4,6 +4,7 @@ import { ExecutionService } from '../services/executionService';
 import { api } from '../api/client';
 import { EnvironmentService } from '../services/environmentService';
 import { useAuth } from '../context/AuthContext';
+import { Autocomplete } from './Autocomplete';
 
 export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const { activeWorkspace } = useAuth();

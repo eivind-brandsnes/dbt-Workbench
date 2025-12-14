@@ -124,6 +124,14 @@ def create_schedule(
     return scheduler_service.create_schedule(db, schedule_in, workspace_id=workspace_id)
 
 
+@router.get("/overview", response_model=SchedulerOverview)
+async def get_scheduler_overview(
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+) -> SchedulerOverview:
+    return scheduler_service.get_overview(db, workspace_id=workspace.id)
+
+
 @router.get("/{schedule_id}", response_model=Schedule)
 def get_schedule(
     schedule_id: int,
@@ -252,14 +260,6 @@ async def run_schedule_now(
 
     db.refresh(scheduled_run)
     return scheduler_service._to_scheduled_run_schema(scheduled_run)
-
-
-@router.get("/overview", response_model=SchedulerOverview)
-async def get_scheduler_overview(
-    db: Session = Depends(get_db),
-    workspace: WorkspaceContext = Depends(get_current_workspace),
-) -> SchedulerOverview:
-    return scheduler_service.get_overview(db, workspace_id=workspace.id)
 
 
 @router.get("/{schedule_id}/metrics", response_model=ScheduleMetrics)
