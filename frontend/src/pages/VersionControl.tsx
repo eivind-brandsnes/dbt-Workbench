@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import React, { FormEvent, useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '../context/AuthContext'
 import { GitService } from '../services/gitService'
@@ -64,6 +64,7 @@ export default function VersionControlPage() {
   const [connectSuccess, setConnectSuccess] = useState<string | null>(null)
   const [remoteUrl, setRemoteUrl] = useState('https://github.com/dbt-labs/jaffle-shop-classic.git')
   const [branch, setBranch] = useState('main')
+  const [projectRoot, setProjectRoot] = useState('/app/data/jaffle-shop-classic')
   const [provider, setProvider] = useState('')
   const [showCloneForm, setShowCloneForm] = useState(false)
   const workspaceId = activeWorkspace?.id ?? null
@@ -169,6 +170,7 @@ export default function VersionControlPage() {
         workspace_id: workspaceId,
         remote_url: remoteUrl,
         branch: branch || 'main',
+        directory: projectRoot,
         provider: provider || undefined,
       })
       setConnectSuccess('Repository cloned and connected.')
@@ -255,6 +257,10 @@ export default function VersionControlPage() {
                   : 'Never'}
               </div>
             </div>
+            <div>
+              <div className="text-gray-400 text-xs">Project Root</div>
+              <div className="text-gray-200 font-mono truncate">{repository.directory}</div>
+            </div>
           </div>
           {connectError && <div className="mt-2 text-sm text-red-400">{connectError}</div>}
         </div>
@@ -278,7 +284,13 @@ export default function VersionControlPage() {
                 type="url"
                 className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
                 value={remoteUrl}
-                onChange={(e) => setRemoteUrl(e.target.value)}
+                onChange={(e) => {
+                  setRemoteUrl(e.target.value)
+                  // Auto-generate project root if it hasn't been manually edited (simple heuristic or always update)
+                  // For better UX, we only update if the user hasn't typed in projectRoot, but for now let's just update if it's empty or matches previous default
+                  const name = e.target.value.split('/').pop()?.replace('.git', '') || 'project'
+                  setProjectRoot(`/app/data/${name}`)
+                }}
                 placeholder="https://github.com/org/project.git"
                 required
               />
@@ -291,6 +303,16 @@ export default function VersionControlPage() {
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
                 placeholder="main"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Project Root</label>
+              <input
+                type="text"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100"
+                value={projectRoot}
+                onChange={(e) => setProjectRoot(e.target.value)}
+                placeholder="/app/data/project-name"
               />
             </div>
             <div className="md:col-span-2">

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
-import { ArtifactSummary, HealthResponse, ModelSummary, RunRecord } from '../types'
+import { ArtifactSummary, HealthResponse, ModelSummary, RunSummary } from '../types'
 import { Card } from '../components/Card'
 import { useAuth } from '../context/AuthContext'
 
@@ -8,7 +8,7 @@ function DashboardPage() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [models, setModels] = useState<ModelSummary[]>([])
-  const [runs, setRuns] = useState<RunRecord[]>([])
+  const [runs, setRuns] = useState<RunSummary[]>([])
   const { activeWorkspace, workspaces, switchWorkspace } = useAuth()
 
   useEffect(() => {
@@ -18,7 +18,7 @@ function DashboardPage() {
     api.get<HealthResponse>('/health').then((res) => setHealth(res.data)).catch(() => setHealth(null))
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
     api.get<ModelSummary[]>('/models').then((res) => setModels(res.data)).catch(() => setModels([]))
-    api.get<RunRecord[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
+    api.get<RunSummary[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
   }, [activeWorkspace?.id])
 
   const lastRun = runs[0]
@@ -26,7 +26,8 @@ function DashboardPage() {
   const lastActivityByWorkspace = useMemo(() => {
     const map: Record<number, string> = {}
     runs.forEach(run => {
-      const ts = run.start_time || run.timestamp
+      // RunSummary has start_time as required string
+      const ts = run.start_time
       if (!ts || activeWorkspace?.id == null) return
       map[activeWorkspace.id] = ts
     })
@@ -58,7 +59,7 @@ function DashboardPage() {
         <Card title="Sources">{modelStats['source'] || 0}</Card>
         <Card title="Tests">{modelStats['test'] || 0}</Card>
         <Card title="Latest Run">
-          <span className={`${lastRun?.status === 'success' ? 'text-green-600' : lastRun?.status === 'failed' ? 'text-red-600' : 'text-gray-600'}`}>
+          <span className={`${lastRun?.status === 'succeeded' ? 'text-green-600' : lastRun?.status === 'failed' ? 'text-red-600' : 'text-gray-600'}`}>
             {lastRun?.status || 'No runs yet'}
           </span>
         </Card>
@@ -116,7 +117,7 @@ function DashboardPage() {
                       ) : null}
                       <div className="relative flex space-x-3">
                         <div>
-                          <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${run.status === 'success' ? 'bg-green-500' : run.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+                          <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${run.status === 'succeeded' ? 'bg-green-500' : run.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
                             }`}>
                             <span className="text-white text-xs">{run.status?.[0]?.toUpperCase()}</span>
                           </span>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { ArtifactSummary } from '../types'
 import { useAuth } from '../context/AuthContext'
@@ -54,7 +54,7 @@ function SettingsPage() {
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-gray-500">API URL</dt>
               <dd className="mt-1 text-sm text-gray-900 font-mono bg-gray-50 p-1 rounded">
-                {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}
+                {(import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8000'}
               </dd>
             </div>
           </dl>
