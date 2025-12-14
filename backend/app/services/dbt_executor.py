@@ -309,48 +309,111 @@ class DbtExecutor:
     
     def get_run_status(self, run_id: str) -> Optional[RunSummary]:
         """Get the current status of a run."""
-        if run_id not in self.run_history:
+        if run_id in self.run_history:
+            run_detail = self.run_history[run_id]
+            return RunSummary(
+                run_id=run_detail.run_id,
+                command=run_detail.command,
+                status=run_detail.status,
+                start_time=run_detail.start_time,
+                end_time=run_detail.end_time,
+                duration_seconds=run_detail.duration_seconds,
+                description=run_detail.description,
+                error_message=run_detail.error_message,
+                artifacts_available=run_detail.artifacts_available
+            )
+            
+        # Fallback to DB
+        try:
+            db = SessionLocal()
+            run = db.query(db_models.Run).filter(db_models.Run.run_id == run_id).first()
+            if run:
+                summary = run.summary or {}
+                return RunSummary(
+                    run_id=run.run_id,
+                    command=DbtCommand(run.command) if run.command else DbtCommand.RUN,
+                    status=RunStatus(run.status) if run.status else RunStatus.FAILED,
+                    start_time=run.timestamp,
+                    end_time=None,
+                    duration_seconds=summary.get("duration_seconds"),
+                    description=summary.get("description"),
+                    error_message=summary.get("error_message"),
+                    artifacts_available=summary.get("artifacts_available", False)
+                )
             return None
-        
-        run_detail = self.run_history[run_id]
-        return RunSummary(
-            run_id=run_detail.run_id,
-            command=run_detail.command,
-            status=run_detail.status,
-            start_time=run_detail.start_time,
-            end_time=run_detail.end_time,
-            duration_seconds=run_detail.duration_seconds,
-            description=run_detail.description,
-            error_message=run_detail.error_message,
-            artifacts_available=run_detail.artifacts_available
-        )
+        except Exception as e:
+            print(f"Error fetching run status: {e}")
+            return None
+        finally:
+            if 'db' in locals():
+                db.close()
     
     def get_run_detail(self, run_id: str) -> Optional[RunDetail]:
         """Get detailed information about a run."""
-        return self.run_history.get(run_id)
+        # Check memory first
+        if run_id in self.run_history:
+            return self.run_history[run_id]
+            
+        # Fallback to DB
+        try:
+            db = SessionLocal()
+            run = db.query(db_models.Run).filter(db_models.Run.run_id == run_id).first()
+            if run:
+                summary = run.summary or {}
+                return RunDetail(
+                    run_id=run.run_id,
+                    command=DbtCommand(run.command) if run.command else DbtCommand.RUN,
+                    status=RunStatus(run.status) if run.status else RunStatus.FAILED,
+                    start_time=run.timestamp,
+                    end_time=None,
+                    duration_seconds=summary.get("duration_seconds"),
+                    description=summary.get("description"),
+                    error_message=summary.get("error_message"),
+                    artifacts_available=summary.get("artifacts_available", False),
+                    parameters={}, # Parameters not currently stored in Run model root, maybe in summary?
+                    log_lines=[], # Logs are not persisted in DB currently
+                    artifacts_path=None # Artifacts path reconstruction logic needed if we want to serve them
+                )
+            return None
+        except Exception as e:
+            print(f"Error fetching run detail: {e}")
+            return None
+        finally:
+            if 'db' in locals():
+                db.close()
     
     def get_run_history(self, page: int = 1, page_size: int = 20) -> List[RunSummary]:
-        """Get paginated run history."""
-        runs = list(self.run_history.values())
-        runs.sort(key=lambda x: x.start_time, reverse=True)
-        
-        start_idx = (page - 1) * page_size
-        end_idx = start_idx + page_size
-        
-        return [
-            RunSummary(
-                run_id=run.run_id,
-                command=run.command,
-                status=run.status,
-                start_time=run.start_time,
-                end_time=run.end_time,
-                duration_seconds=run.duration_seconds,
-                description=run.description,
-                error_message=run.error_message,
-                artifacts_available=run.artifacts_available
-            )
-            for run in runs[start_idx:end_idx]
-        ]
+        """Get paginated run history from database."""
+        try:
+            db = SessionLocal()
+            offset = (page - 1) * page_size
+            
+            # Query runs from DB
+            runs = db.query(db_models.Run).order_by(
+                db_models.Run.timestamp.desc()
+            ).offset(offset).limit(page_size).all()
+            
+            history = []
+            for run in runs:
+                summary = run.summary or {}
+                history.append(RunSummary(
+                    run_id=run.run_id,
+                    command=DbtCommand(run.command) if run.command else DbtCommand.RUN,
+                    status=RunStatus(run.status) if run.status else RunStatus.FAILED,
+                    start_time=run.timestamp,
+                    end_time=None, # DB model doesn't explicitly store end_time in root, implied in summary or duration
+                    duration_seconds=summary.get("duration_seconds"),
+                    description=summary.get("description"),
+                    error_message=summary.get("error_message"),
+                    artifacts_available=summary.get("artifacts_available", False)
+                ))
+            return history
+        except Exception as e:
+            print(f"Error fetching run history: {e}")
+            return []
+        finally:
+            if 'db' in locals():
+                db.close()
     
     def get_run_artifacts(self, run_id: str) -> List[ArtifactInfo]:
         """Get artifacts for a specific run."""
