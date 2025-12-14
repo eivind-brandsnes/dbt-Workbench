@@ -75,8 +75,8 @@ class SchedulerService:
             default_env = db_models.Environment(
                 name="default",
                 description="Default environment",
-                dbt_target_name=None,
-                connection_profile_reference=None,
+                dbt_target_name="dev",
+                connection_profile_reference="test_project",
                 variables={},
                 default_retention_policy=None,
                 created_at=now,

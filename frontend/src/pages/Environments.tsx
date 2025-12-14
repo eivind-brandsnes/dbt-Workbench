@@ -46,8 +46,8 @@ function EnvironmentsPage() {
     setForm({
       name: '',
       description: '',
-      dbt_target_name: '',
-      connection_profile_reference: '',
+      dbt_target_name: 'dev',
+      connection_profile_reference: 'test_project',
       variables: {},
     });
     setSelectedEnvironment(null);
