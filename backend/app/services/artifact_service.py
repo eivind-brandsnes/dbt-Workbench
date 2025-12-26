@@ -31,7 +31,33 @@ class ArtifactService:
             "manifest": (self.base_path / "manifest.json").exists(),
             "run_results": (self.base_path / "run_results.json").exists(),
             "catalog": (self.base_path / "catalog.json").exists(),
+            "docs": (self.base_path / "index.html").exists(),
         }
+
+    def get_doc_file(self, relative_path: str = "index.html") -> Optional[Path]:
+        """Resolve a documentation asset within the artifacts directory.
+
+        Path traversal outside the artifacts root is rejected and directories
+        automatically resolve to an ``index.html`` inside the directory.
+        """
+
+        sanitized = relative_path.strip("/") or "index.html"
+        requested_path = (self.base_path / sanitized).resolve()
+        base_resolved = self.base_path.resolve()
+
+        try:
+            requested_path.relative_to(base_resolved)
+        except ValueError:
+            # Attempted to escape the artifacts directory
+            return None
+
+        if requested_path.is_dir():
+            requested_path = requested_path / "index.html"
+
+        if not requested_path.exists():
+            return None
+
+        return requested_path
 
     def get_manifest(self) -> Optional[Dict[str, Any]]:
         return self._load_json("manifest.json")

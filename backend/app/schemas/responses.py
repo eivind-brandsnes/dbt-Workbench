@@ -17,6 +17,7 @@ class ArtifactSummary(BaseModel):
     manifest: bool = False
     run_results: bool = False
     catalog: bool = False
+    docs: bool = False
 
 
 class ModelSummary(BaseModel):

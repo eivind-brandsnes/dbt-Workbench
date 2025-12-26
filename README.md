@@ -94,6 +94,10 @@ Replace `sample_artifacts` with your dbt `target/` directory containing:
 - `run_results.json`
 - `catalog.json`
 
+For the in-app **Docs** page, include the full contents from `dbt docs generate` (the `index.html` and accompanying assets)
+inside your mounted `target/` directory. The viewer will automatically serve that site from the latest artifacts so you can
+browse the complete dbt documentation without leaving the UI.
+
 The UI will load and display real metadata from your dbt project automatically.
 
 ---

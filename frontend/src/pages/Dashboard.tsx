@@ -163,17 +163,21 @@ function DashboardPage() {
                 <dt className="text-sm text-gray-500">Snapshots</dt>
                 <dd className="text-sm font-medium text-gray-900">{modelStats['snapshot'] || 0}</dd>
               </div>
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex justify-between">
-                  <dt className="text-sm text-gray-500">Artifacts Status</dt>
-                  <dd className="text-sm font-medium">
-                    {artifacts?.manifest ? (
-                      <span className="text-green-600">Ready</span>
-                    ) : (
-                      <span className="text-red-600">Missing</span>
-                    )}
-                  </dd>
-                </div>
+              <div className="border-t border-gray-200 pt-4 space-y-2">
+                <dt className="text-sm text-gray-500">Artifacts Status</dt>
+                {[
+                  { label: 'Manifest', present: artifacts?.manifest },
+                  { label: 'Catalog', present: artifacts?.catalog },
+                  { label: 'Run Results', present: artifacts?.run_results },
+                  { label: 'Docs', present: artifacts?.docs },
+                ].map((item) => (
+                  <div key={item.label} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{item.label}</span>
+                    <span className={item.present ? 'text-green-600' : 'text-red-600'}>
+                      {item.present ? 'Present' : 'Missing'}
+                    </span>
+                  </div>
+                ))}
               </div>
             </dl>
           </div>

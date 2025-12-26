@@ -88,6 +88,13 @@ function SettingsPage() {
                 {artifacts?.catalog ? 'Present' : 'Missing'}
               </span>
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-700">Docs</span>
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${artifacts?.docs ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                {artifacts?.docs ? 'Available' : 'Missing'}
+              </span>
+            </div>
             <p className="text-xs text-gray-500 mt-2">
               Artifacts are monitored automatically.
               Watcher checks every {config?.artifact_watcher.polling_interval || '?'}s.
