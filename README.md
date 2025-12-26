@@ -20,7 +20,7 @@ Designed for local, on‑prem, and air‑gapped deployments.
 ## ✨ Highlights
 
 - **Unified dbt control plane** for artifacts, runs, and environments
-- **Interactive lineage** at model and column granularity
+- **Interactive lineage** at model and column granularity with a deterministic D3/dagre layout, pan/zoom, and grouping controls
 - **Workspace-aware** multi-project setup with strict path scoping
 - **Secure by design** with optional JWT authentication + RBAC
 - **Extensible** plugin system and Git-integrated workspace

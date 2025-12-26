@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { graphlib, layout as dagreLayout } from '@dagrejs/dagre'
+import { select } from 'd3-selection'
+import { zoom, zoomIdentity, type ZoomTransform } from 'd3-zoom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { api } from '../api/client'
@@ -16,11 +19,19 @@ import {
 type GroupingMode = 'none' | 'schema' | 'resource_type' | 'tag'
 type ViewMode = 'model' | 'column'
 
-type PositionedNode<T extends LineageNode | ColumnNode> = T & { x: number; y: number; isGroup?: boolean; isSubtree?: boolean }
+type GraphNode<T extends LineageNode | ColumnNode> = T & { isGroup?: boolean; isSubtree?: boolean }
+type PositionedNode<T extends LineageNode | ColumnNode> = GraphNode<T> & { x: number; y: number }
+type PositionedEdge = LineageEdge & { points: { x: number; y: number }[] }
 
 type VisibleGraph<T extends LineageNode | ColumnNode> = {
-  nodes: PositionedNode<T>[]
+  nodes: GraphNode<T>[]
   edges: LineageEdge[]
+}
+
+type LayoutResult<T extends LineageNode | ColumnNode> = {
+  nodes: PositionedNode<T>[]
+  edges: PositionedEdge[]
+  size: { width: number; height: number }
 }
 
 type LineageConfig = {
@@ -30,6 +41,7 @@ type LineageConfig = {
   performance_mode?: string
 }
 
+const nodeSize = { width: 190, height: 84 }
 const canvas = { width: 1200, height: 720 }
 const emptyImpact: ImpactResponse = { upstream: [], downstream: [] }
 const normalizeImpact = (value?: Partial<ImpactResponse>): ImpactResponse => ({
@@ -37,78 +49,71 @@ const normalizeImpact = (value?: Partial<ImpactResponse>): ImpactResponse => ({
   downstream: value?.downstream ?? [],
 })
 
-const groupColor: Record<string, string> = {
-  model: 'bg-blue-500/20 border-blue-500',
-  seed: 'bg-green-500/20 border-green-500',
-  snapshot: 'bg-purple-500/20 border-purple-500',
-  source: 'bg-orange-500/20 border-orange-500',
-  test: 'bg-yellow-500/20 border-yellow-500',
-  group: 'bg-gray-700/40 border-gray-400',
-  subtree: 'bg-gray-600/30 border-gray-300',
+const groupColor: Record<string, { fill: string; stroke: string }> = {
+  model: { fill: '#1f2937', stroke: '#3b82f6' },
+  seed: { fill: '#1f2937', stroke: '#22c55e' },
+  snapshot: { fill: '#1f2937', stroke: '#a855f7' },
+  source: { fill: '#1f2937', stroke: '#fb923c' },
+  test: { fill: '#1f2937', stroke: '#f59e0b' },
+  group: { fill: '#111827', stroke: '#9ca3af' },
+  subtree: { fill: '#0f172a', stroke: '#e5e7eb' },
 }
 
-const getNodeColor = (node: LineageNode | ColumnNode): string => {
-  if ((node as PositionedNode<LineageNode>).isGroup) return groupColor.group
-  if ((node as PositionedNode<LineageNode>).isSubtree) return groupColor.subtree
-  return groupColor[node.type] || 'bg-gray-700/40 border-gray-400'
+const getNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: string } => {
+  if ((node as GraphNode<LineageNode>).isGroup) return groupColor.group
+  if ((node as GraphNode<LineageNode>).isSubtree) return groupColor.subtree
+  return groupColor[node.type] || { fill: '#111827', stroke: '#9ca3af' }
 }
 
 const normalizeColumnId = (columnId: string) => columnId.replace(/\s+/g, '')
 
-const buildPositionMap = <T extends LineageNode | ColumnNode>(nodes: T[], edges: LineageEdge[]): PositionedNode<T>[] => {
-  if (nodes.length === 0) return []
+const buildLayout = <T extends LineageNode | ColumnNode>(visibleGraph: VisibleGraph<T>): LayoutResult<T> => {
+  if (visibleGraph.nodes.length === 0) return { nodes: [], edges: [], size: canvas }
 
-  const incoming = new Map<string, number>()
-  const outgoing = new Map<string, string[]>()
+  const dag = new graphlib.Graph({ multigraph: true, compound: false })
+  dag.setDefaultEdgeLabel(() => ({}))
+  dag.setGraph({ rankdir: 'LR', ranksep: 140, nodesep: 80, marginx: 48, marginy: 48 })
 
-  nodes.forEach((node) => {
-    incoming.set(node.id, 0)
-    outgoing.set(node.id, [])
+  visibleGraph.nodes.forEach((node) => {
+    dag.setNode(node.id, { width: nodeSize.width, height: nodeSize.height })
   })
 
-  edges.forEach((edge) => {
-    incoming.set(edge.target, (incoming.get(edge.target) || 0) + 1)
-    outgoing.set(edge.source, [...(outgoing.get(edge.source) || []), edge.target])
+  visibleGraph.edges.forEach((edge) => {
+    dag.setEdge(edge.source, edge.target, {})
   })
 
-  const queue: string[] = []
-  incoming.forEach((value, key) => {
-    if (value === 0) queue.push(key)
-  })
-  if (queue.length === 0) queue.push(nodes[0].id)
+  dagreLayout(dag)
 
-  const levels = new Map<string, number>()
-  while (queue.length) {
-    const current = queue.shift() as string
-    const currentLevel = levels.get(current) ?? 0
-    for (const neighbor of outgoing.get(current) || []) {
-      if (!levels.has(neighbor)) {
-        levels.set(neighbor, currentLevel + 1)
-        queue.push(neighbor)
-      }
+  const graphLabel = dag.graph()
+  const width = Math.max(graphLabel?.width || canvas.width, canvas.width)
+  const height = Math.max(graphLabel?.height || canvas.height, canvas.height)
+
+  const positionedNodes: PositionedNode<T>[] = visibleGraph.nodes.map((node) => {
+    const dagNode = dag.node(node.id)
+    return {
+      ...node,
+      x: dagNode?.x ?? nodeSize.width,
+      y: dagNode?.y ?? nodeSize.height,
     }
-  }
-
-  const levelBuckets: Record<number, string[]> = {}
-  nodes.forEach((node, idx) => {
-    const level = levels.get(node.id) ?? 0
-    if (!levelBuckets[level]) levelBuckets[level] = []
-    levelBuckets[level].push(node.id)
-    if (!levels.has(node.id)) levels.set(node.id, level)
   })
 
-  const positioned: PositionedNode<T>[] = nodes.map((node) => {
-    const level = levels.get(node.id) ?? 0
-    const bucket = levelBuckets[level]
-    const index = bucket.indexOf(node.id)
-    const horizontalSpacing = Math.max(canvas.width / Math.max(Object.keys(levelBuckets).length, 1), 200)
-    const verticalSpacing = Math.max(canvas.height / Math.max(bucket.length, 1), 120)
-    const x = 80 + level * horizontalSpacing
-    const y = 80 + index * verticalSpacing
-    return { ...node, x, y }
+  const positionedEdges: PositionedEdge[] = visibleGraph.edges.map((edge) => {
+    const dagEdge = dag.edge(edge.source, edge.target)
+    return {
+      ...edge,
+      points: dagEdge?.points || [],
+    }
   })
 
-  return positioned
+  return { nodes: positionedNodes, edges: positionedEdges, size: { width, height } }
+}
+
+const buildPathFromPoints = (points: { x: number; y: number }[]): string => {
+  if (!points.length) return ''
+  const [first, ...rest] = points
+  if (!rest.length) return `M ${first.x} ${first.y}`
+  const segments = rest.map((p) => `L ${p.x} ${p.y}`).join(' ')
+  return `M ${first.x} ${first.y} ${segments}`
 }
 
 const buildGroupedGraph = <T extends LineageNode | ColumnNode>(
@@ -196,8 +201,7 @@ const buildGroupedGraph = <T extends LineageNode | ColumnNode>(
     edges = nextEdges
   })
 
-  const positioned = buildPositionMap(nodes as T[], edges)
-  return { nodes: positioned, edges }
+  return { nodes, edges }
 }
 
 function LineagePage() {
@@ -279,6 +283,24 @@ function LineagePage() {
     )
   }, [activeGraph.edges, activeGraph.nodes, collapsedGroups, collapsedSubtrees, groupMode, groups])
 
+  const layout = useMemo(() => buildLayout(visibleGraph), [visibleGraph])
+
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity)
+
+  useEffect(() => {
+    if (!svgRef.current) return
+    const svg = select(svgRef.current)
+    const zoomBehavior = zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 2])
+      .on('zoom', (event) => setTransform(event.transform))
+
+    svg.call(zoomBehavior as any).on('dblclick.zoom', null)
+    return () => {
+      svg.on('.zoom', null)
+    }
+  }, [])
+
   const toggleGroup = (groupId: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev)
@@ -340,7 +362,10 @@ function LineagePage() {
     }
   }
 
-  const visibleGroups = useMemo(() => groups.filter((g) => groupMode === 'none' ? true : g.type === groupMode), [groupMode, groups])
+  const visibleGroups = useMemo(
+    () => groups.filter((g) => (groupMode === 'none' ? true : g.type === groupMode)),
+    [groupMode, groups],
+  )
 
   const deselectColumnView = () => {
     setViewMode('model')
@@ -402,57 +427,104 @@ function LineagePage() {
           {!hasData ? (
             <div className="text-gray-400">No lineage data available.</div>
           ) : (
-            <div className="relative" style={{ width: canvas.width, height: canvas.height }}>
-              <svg width={canvas.width} height={canvas.height} className="absolute inset-0">
-                {visibleGraph.edges.map((edge) => {
-                  const source = visibleGraph.nodes.find((n) => n.id === edge.source)
-                  const target = visibleGraph.nodes.find((n) => n.id === edge.target)
-                  if (!source || !target) return null
-                  const isHighlighted = highlightNodes.has(edge.source) && highlightNodes.has(edge.target)
-                  return (
-                    <line
-                      key={`${edge.source}-${edge.target}`}
-                      x1={source.x}
-                      y1={source.y}
-                      x2={target.x}
-                      y2={target.y}
-                      stroke={isHighlighted ? '#22d3ee' : '#374151'}
-                      strokeWidth={isHighlighted ? 3 : 1.5}
-                      markerEnd="url(#arrowhead)"
-                      opacity={isHighlighted || highlightNodes.size === 0 ? 0.95 : 0.2}
-                    />
-                  )
-                })}
+            <div className="relative rounded-lg overflow-hidden border border-gray-800/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900">
+              <svg
+                ref={svgRef}
+                width="100%"
+                height={canvas.height}
+                viewBox={`0 0 ${layout.size.width} ${layout.size.height}`}
+                className="w-full h-[720px] text-gray-200"
+              >
                 <defs>
                   <marker
-                    id="arrowhead"
-                    markerWidth="10"
-                    markerHeight="7"
-                    refX="10"
-                    refY="3.5"
+                    id="lineage-arrow"
+                    markerWidth="12"
+                    markerHeight="10"
+                    refX="12"
+                    refY="5"
                     orient="auto"
                     markerUnits="strokeWidth"
                   >
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
+                    <polygon points="0 0, 12 5, 0 10" fill="#38bdf8" />
                   </marker>
+                  <filter id="node-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0ea5e9" floodOpacity="0.12" />
+                  </filter>
+                  <pattern id="lineage-grid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1f2937" strokeWidth="0.5" />
+                  </pattern>
                 </defs>
+                <rect
+                  width={layout.size.width}
+                  height={layout.size.height}
+                  fill="url(#lineage-grid)"
+                  rx={16}
+                  ry={16}
+                  className="text-gray-800"
+                />
+                <g transform={transform.toString()}>
+                  {layout.edges.map((edge) => {
+                    const sourceHighlighted = highlightNodes.has(edge.source) && highlightNodes.has(edge.target)
+                    const opacity = sourceHighlighted || highlightNodes.size === 0 ? 0.92 : 0.25
+                    return (
+                      <path
+                        key={`${edge.source}-${edge.target}`}
+                        d={buildPathFromPoints(edge.points)}
+                        fill="none"
+                        stroke={sourceHighlighted ? '#38bdf8' : '#475569'}
+                        strokeWidth={sourceHighlighted ? 3 : 1.5}
+                        markerEnd="url(#lineage-arrow)"
+                        opacity={opacity}
+                      />
+                    )
+                  })}
+
+                  {layout.nodes.map((node) => {
+                    const { fill, stroke } = getNodeColor(node)
+                    const emphasized = highlightNodes.size === 0 || highlightNodes.has(node.id)
+                    const faded = emphasized ? 1 : 0.35
+                    const isCollapsed = (node as PositionedNode<LineageNode>).isGroup || (node as PositionedNode<LineageNode>).isSubtree
+                    return (
+                      <g
+                        key={node.id}
+                        transform={`translate(${node.x - nodeSize.width / 2}, ${node.y - nodeSize.height / 2})`}
+                        onClick={() => handleNodeClick(node)}
+                        data-node-id={node.id}
+                        data-testid={`lineage-node-${node.id}`}
+                        role="button"
+                        className="cursor-pointer transition duration-150"
+                        opacity={faded}
+                      >
+                        <rect
+                          width={nodeSize.width}
+                          height={nodeSize.height}
+                          rx={12}
+                          ry={12}
+                          fill={fill}
+                          stroke={stroke}
+                          strokeWidth={isCollapsed ? 1 : 1.75}
+                          strokeDasharray={isCollapsed ? '6 4' : '0'}
+                          filter="url(#node-shadow)"
+                        />
+                        <text x={16} y={26} className="text-sm font-semibold" fill="#e5e7eb">
+                          {node.label}
+                        </text>
+                        {node.schema && (
+                          <text x={16} y={46} className="text-[11px]" fill="#cbd5e1">
+                            {node.schema}
+                          </text>
+                        )}
+                        {node.type && (
+                          <text x={16} y={62} className="text-[10px] uppercase" fill="#94a3b8">
+                            {node.type}
+                          </text>
+                        )}
+                        <title>{node.label}</title>
+                      </g>
+                    )
+                  })}
+                </g>
               </svg>
-              {visibleGraph.nodes.map((node) => {
-                const color = getNodeColor(node)
-                const emphasized = highlightNodes.size === 0 || highlightNodes.has(node.id)
-                return (
-                  <div
-                    key={node.id}
-                    className={`absolute rounded-lg border px-3 py-2 text-xs cursor-pointer shadow ${color} ${emphasized ? 'opacity-100' : 'opacity-25'}`}
-                    style={{ left: node.x, top: node.y, transform: 'translate(-50%, -50%)', minWidth: 120 }}
-                    onClick={() => handleNodeClick(node)}
-                  >
-                    <div className="font-semibold text-white truncate" title={node.label}>{node.label}</div>
-                    {node.schema && <div className="text-[10px] text-gray-300">{node.schema}</div>}
-                    {node.type && <div className="text-[10px] uppercase text-gray-400">{node.type}</div>}
-                  </div>
-                )
-              })}
             </div>
           )}
         </div>
