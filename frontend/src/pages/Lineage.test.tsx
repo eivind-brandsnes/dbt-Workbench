@@ -65,9 +65,33 @@ describe('LineagePage', () => {
 
     await waitFor(() => expect(mockedGet).toHaveBeenCalled())
 
-    expect(await screen.findByText('Lineage')).toBeInTheDocument()
-    expect(await screen.findByText('one')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Lineage' })).toBeInTheDocument()
+    expect(document.querySelector('[data-node-id="model.one"]')).not.toBeNull()
     expect(screen.getByText('Grouping')).toBeInTheDocument()
+  })
+
+  it('positions nodes with a deterministic layout', async () => {
+    render(
+      <MemoryRouter>
+        <LineagePage />
+      </MemoryRouter>
+    )
+
+    const twoNode = await screen.findByTestId('lineage-node-model.two')
+    fireEvent.click(twoNode)
+
+    const graphNodes = document.querySelectorAll('[data-node-id]')
+    expect(graphNodes.length).toBeGreaterThanOrEqual(2)
+
+    graphNodes.forEach((node) => {
+      expect(node.getAttribute('transform')).toContain('translate')
+    })
+
+    const edgePaths = document.querySelectorAll('path')
+    expect(edgePaths.length).toBeGreaterThan(0)
+    edgePaths.forEach((edge) => {
+      expect(edge.getAttribute('d')).toMatch(/M .+ L .+/)
+    })
   })
 
   it('allows selecting a model and viewing column-level details', async () => {
@@ -76,9 +100,9 @@ describe('LineagePage', () => {
         <LineagePage />
       </MemoryRouter>
     )
-    await waitFor(() => screen.findByText('two'))
+    await waitFor(() => expect(document.querySelector('[data-node-id="model.two"]')).not.toBeNull())
 
-    fireEvent.click(screen.getByText('two'))
+    fireEvent.click(screen.getByTestId('lineage-node-model.two'))
 
     const labels = await screen.findAllByText('model.two')
     expect(labels.length).toBeGreaterThan(0)
