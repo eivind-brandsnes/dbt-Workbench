@@ -17,10 +17,6 @@ run orchestration, documentation previews, and environment management — withou
 Designed for local, on‑prem, and air‑gapped deployments.
 
 ---
-
-
-
----
 ## ✨ Highlights
 
 - **Unified dbt control plane** for artifacts, runs, and environments
