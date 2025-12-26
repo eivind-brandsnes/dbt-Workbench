@@ -32,7 +32,7 @@ describe('DashboardPage', () => {
     mockedApi.get = vi
       .fn()
       .mockRejectedValueOnce(new Error('fail'))
-      .mockResolvedValueOnce({ data: { manifest: false, run_results: false, catalog: false } })
+      .mockResolvedValueOnce({ data: { manifest: false, run_results: false, catalog: false, docs: false } })
       .mockResolvedValueOnce({ data: [] })
       .mockResolvedValueOnce({ data: [] })
       .mockResolvedValueOnce({
@@ -55,7 +55,7 @@ describe('DashboardPage', () => {
 
     await waitFor(() => expect(mockedApi.get).toHaveBeenCalled())
     expect(screen.getByText(/Projects: 1/)).toBeInTheDocument()
-    expect(screen.getByText('Missing')).toBeInTheDocument()
+    expect(screen.getAllByText('Missing').length).toBeGreaterThan(0)
     expect(screen.getAllByText('No runs yet').length).toBeGreaterThan(0)
   })
 })

@@ -10,10 +10,12 @@ def write_file(base: Path, name: str, payload: dict):
 
 def test_artifact_summary(tmp_path: Path):
     write_file(tmp_path, "manifest.json", {})
+    (tmp_path / "index.html").write_text("<html></html>")
     service = ArtifactService(str(tmp_path))
     summary = service.get_artifact_summary()
     assert summary["manifest"] is True
     assert summary["run_results"] is False
+    assert summary["docs"] is True
 
 
 def test_models_listing(tmp_path: Path):
@@ -105,3 +107,19 @@ def test_runs_parsing(tmp_path: Path):
     runs = ArtifactService(str(tmp_path)).list_runs()
     assert runs[0]["status"] == "success"
     assert runs[0]["invocation_id"] == "123"
+
+
+def test_doc_resolution(tmp_path: Path):
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "index.html").write_text("<html>docs</html>")
+    (tmp_path / "index.html").write_text("<html>root docs</html>")
+    service = ArtifactService(str(tmp_path))
+
+    resolved = service.get_doc_file("docs")
+    assert resolved is not None
+    assert resolved.name == "index.html"
+    assert "docs" in resolved.parts
+
+    traversal = service.get_doc_file("../secret.txt")
+    assert traversal is None

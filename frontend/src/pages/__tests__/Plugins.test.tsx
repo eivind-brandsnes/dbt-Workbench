@@ -70,8 +70,7 @@ describe('Plugin pages', () => {
   it('renders marketplace view and toggles plugin state', async () => {
     render(<PluginMarketplacePage />)
     await waitFor(() => screen.getByText(/Plugin Marketplace/))
-
-    expect(screen.getByText('Demo plugin')).toBeInTheDocument()
+    await waitFor(() => screen.getByText('Demo plugin'))
 
     const toggle = screen.getByRole('button', { name: /disable/i })
     await userEvent.click(toggle)

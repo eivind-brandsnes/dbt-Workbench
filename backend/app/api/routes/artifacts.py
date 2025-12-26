@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends
+import mimetypes
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 
 from app.core.auth import WorkspaceContext, get_current_user, get_current_workspace
 from app.core.config import Settings, get_settings
@@ -63,8 +65,27 @@ def check_version_updates(
         "updates_available": updates_available,
         "any_updates": any(updates_available.values()),
         "current_versions": {
-            filename: info["current_version"] 
+            filename: info["current_version"]
             for filename, info in version_info.items()
         },
         "version_info": version_info
     }
+
+
+def _doc_response(file_path):
+    media_type, _ = mimetypes.guess_type(str(file_path))
+    return FileResponse(file_path, media_type=media_type or "application/octet-stream")
+
+
+@router.get("/artifacts/docs", include_in_schema=False)
+@router.get("/artifacts/docs/{path:path}", include_in_schema=False)
+def serve_docs(
+    path: str = "index.html",
+    service: ArtifactService = Depends(get_service),
+):
+    """Serve the static dbt docs generated assets from the artifacts directory."""
+
+    doc_path = service.get_doc_file(path)
+    if not doc_path:
+        raise HTTPException(status_code=404, detail="Documentation assets not found")
+    return _doc_response(doc_path)

@@ -86,6 +86,7 @@ export interface ArtifactSummary {
   manifest: boolean
   run_results: boolean
   catalog: boolean
+  docs: boolean
 }
 
 export interface ModelSummary {

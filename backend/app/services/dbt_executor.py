@@ -93,30 +93,30 @@ class DbtExecutor:
         if not artifacts_dir:
             return artifacts
         
-        # Standard dbt artifacts
-        artifact_files = [
-            "manifest.json",
-            "run_results.json", 
-            "catalog.json",
-            "sources.json",
-            "index.html"  # from docs generate
-        ]
-        
         project_path = Path(self.settings.dbt_project_path)
         target_dir = project_path / "target"
+
+        if not target_dir.exists():
+            return artifacts
+
+        # Copy full target directory so the complete docs site (including assets)
+        # is available for the current run and the latest snapshot.
+        destinations = [Path(artifacts_dir), Path(self.settings.dbt_artifacts_path)]
+        for destination in destinations:
+            shutil.copytree(target_dir, destination, dirs_exist_ok=True)
+
+        # Standard dbt artifacts we want metadata for and to notify the watcher about
+        artifact_files = [
+            "manifest.json",
+            "run_results.json",
+            "catalog.json",
+            "sources.json",
+            "index.html",  # from docs generate
+        ]
         
         for filename in artifact_files:
-            source_file = target_dir / filename
-            if source_file.exists():
-                # Copy to run artifacts directory
-                dest_file = Path(artifacts_dir) / filename
-                shutil.copy2(source_file, dest_file)
-                
-                # ALSO copy to the root artifacts directory (current state)
-                # allowing ArtifactService to serve the latest state
-                current_state_file = Path(self.settings.dbt_artifacts_path) / filename
-                shutil.copy2(source_file, current_state_file)
-                
+            copied_file = Path(artifacts_dir) / filename
+            if copied_file.exists():
                 # Notify watcher to update cache immediately
                 try:
                     watcher = get_watcher(self.settings.dbt_artifacts_path)
@@ -126,12 +126,12 @@ class DbtExecutor:
                     print(f"Failed to notify watcher: {e}")
 
                 # Create artifact info
-                stat = dest_file.stat()
+                stat = copied_file.stat()
                 artifacts.append(ArtifactInfo(
                     filename=filename,
                     size_bytes=stat.st_size,
                     last_modified=datetime.fromtimestamp(stat.st_mtime),
-                    checksum=self._calculate_file_checksum(str(dest_file))
+                    checksum=self._calculate_file_checksum(str(copied_file))
                 ))
         
         return artifacts
