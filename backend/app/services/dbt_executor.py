@@ -277,6 +277,7 @@ class DbtExecutor:
                         "duration_seconds": run_detail.duration_seconds,
                         "artifacts_available": run_detail.artifacts_available,
                     }
+                    db_run.logs = run_detail.log_lines
                 db.add(db_run)
                 db.commit()
             except Exception:
@@ -394,9 +395,9 @@ class DbtExecutor:
                     description=summary.get("description"),
                     error_message=summary.get("error_message"),
                     artifacts_available=summary.get("artifacts_available", False),
-                    parameters={}, # Parameters not currently stored in Run model root, maybe in summary?
-                    log_lines=[], # Logs are not persisted in DB currently
-                    artifacts_path=None # Artifacts path reconstruction logic needed if we want to serve them
+                    parameters={},
+                    log_lines=run.logs or [],
+                    artifacts_path=None
                 )
             return None
         except Exception as e:
