@@ -102,6 +102,7 @@ class Run(Base):
     timestamp = Column(DateTime)
     status = Column(String)
     summary = Column(JSON)
+    logs = Column(JSON, nullable=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
 
     models = relationship("Model", back_populates="run")

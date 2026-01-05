@@ -868,7 +868,7 @@ class SchedulerService:
         Execution page. If no repository is configured, we fall back to the
         default project path configured in settings.
         """
-
+        project_path = None
         try:
             environment = schedule.environment
             if environment is None:
@@ -879,18 +879,17 @@ class SchedulerService:
                 )
 
             workspace_id = environment.workspace_id if environment else None
-            if not workspace_id:
-                return None
+            if workspace_id:
+                repo = git_service.get_repository(db, workspace_id)
+                if repo and repo.directory:
+                    project_path = repo.directory
 
-            repo = git_service.get_repository(db, workspace_id)
-            if repo and repo.directory:
-                return repo.directory
         except Exception as exc:  # pragma: no cover - defensive logging only
             logger.warning(
                 "Failed to resolve project path for schedule %s: %s", schedule.id, exc
             )
 
-        return None
+        return project_path or self.settings.dbt_project_path
 
     # --- Retry utilities ---
 
