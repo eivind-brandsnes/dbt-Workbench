@@ -80,7 +80,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
     <div className="bg-white rounded-lg shadow">
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Run History</h2>
+          <h2 className="text-xl font-semibold text-gray-700">Run History</h2>
           <button
             onClick={() => fetchHistory(currentPage)}
             className="text-sm text-blue-600 hover:text-blue-800"
