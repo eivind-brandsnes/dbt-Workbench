@@ -8,6 +8,7 @@ import {
   ScheduleSummary,
   ScheduleStatus,
   ScheduledRun,
+  RunFinalResult,
   SchedulerOverview,
   NotificationTestResponse,
 } from '../types';
@@ -261,6 +262,17 @@ function SchedulesPage() {
     }
 
     return 'No diagnostic information available.';
+  };
+
+  const getRunStatusForDisplay = (run: ScheduledRun) => {
+    const finalStatuses: RunFinalResult[] = ['success', 'failure', 'cancelled', 'skipped'];
+
+    if (!finalStatuses.includes(run.status)) {
+      const latestAttempt = run.attempts.slice().sort((a, b) => a.attempt_number - b.attempt_number).at(-1);
+      return latestAttempt?.status || run.status;
+    }
+
+    return run.status;
   };
 
   return (
@@ -720,7 +732,7 @@ function SchedulesPage() {
                             {run.triggering_event}
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-900">
-                            <StatusBadge status={run.status} />
+                            <StatusBadge status={getRunStatusForDisplay(run)} />
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-900">
                             {run.attempts_total}

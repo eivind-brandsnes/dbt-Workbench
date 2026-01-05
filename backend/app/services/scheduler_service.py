@@ -47,6 +47,13 @@ from app.services.notification_service import notification_service
 
 logger = logging.getLogger(__name__)
 
+TERMINAL_RUN_STATUSES = {
+    RunFinalResult.SUCCESS.value,
+    RunFinalResult.FAILURE.value,
+    RunFinalResult.CANCELLED.value,
+    RunFinalResult.SKIPPED.value,
+}
+
 
 class SchedulerService:
     def __init__(self) -> None:
@@ -590,14 +597,7 @@ class SchedulerService:
                 db.query(db_models.ScheduledRun)
                 .filter(
                     db_models.ScheduledRun.schedule_id == db_schedule.id,
-                    db_models.ScheduledRun.status.notin_(
-                        [
-                            RunFinalResult.SUCCESS.value,
-                            RunFinalResult.FAILURE.value,
-                            RunFinalResult.CANCELLED.value,
-                            RunFinalResult.SKIPPED.value,
-                        ]
-                    ),
+                    db_models.ScheduledRun.status.notin_(tuple(TERMINAL_RUN_STATUSES)),
                 )
                 .first()
             )
@@ -626,7 +626,7 @@ class SchedulerService:
         db_run = db_models.ScheduledRun(
             schedule_id=db_schedule.id,
             triggering_event=triggering_event.value,
-            status=RunFinalResult.SKIPPED.value,
+            status=RunFinalResult.PENDING.value,
             retry_status=RetryStatus.NOT_APPLICABLE.value,
             attempts_total=0,
             scheduled_at=scheduled_time,
@@ -705,13 +705,22 @@ class SchedulerService:
         db.add(db_attempt)
 
         db_scheduled_run.attempts_total = attempt_number
-        db_scheduled_run.status = RunFinalResult.SKIPPED.value
+        db_scheduled_run.status = RunFinalResult.IN_PROGRESS.value
         db_scheduled_run.retry_status = (
             RetryStatus.NOT_APPLICABLE.value if retry_policy.max_retries == 0 else RetryStatus.IN_PROGRESS.value
         )
         db_scheduled_run.queued_at = now
         db_scheduled_run.started_at = None
         db_scheduled_run.finished_at = None
+
+        if run_id:
+            db_scheduled_run.log_links = {
+                "run_detail": f"/execution/runs/{run_id}/detail",
+                "logs": f"/execution/runs/{run_id}/logs",
+            }
+            db_scheduled_run.artifact_links = {
+                "artifacts": f"/execution/runs/{run_id}/artifacts",
+            }
 
         db.add(db_scheduled_run)
         db.commit()
@@ -761,6 +770,21 @@ class SchedulerService:
         db.commit()
 
         scheduled_run = db_attempt.scheduled_run
+        if summary.status in (RunStatus.QUEUED, RunStatus.RUNNING):
+            scheduled_run.status = RunFinalResult.IN_PROGRESS.value
+            scheduled_run.queued_at = db_attempt.queued_at
+            scheduled_run.started_at = db_attempt.started_at
+            if db_attempt.run_id:
+                scheduled_run.log_links = {
+                    "run_detail": f"/execution/runs/{db_attempt.run_id}/detail",
+                    "logs": f"/execution/runs/{db_attempt.run_id}/logs",
+                }
+                scheduled_run.artifact_links = {
+                    "artifacts": f"/execution/runs/{db_attempt.run_id}/artifacts",
+                }
+            db.add(scheduled_run)
+            db.commit()
+            return
         if summary.status in (RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED):
             self._update_scheduled_run_aggregate(db, scheduled_run)
 
