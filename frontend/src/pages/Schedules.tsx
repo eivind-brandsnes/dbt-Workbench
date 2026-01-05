@@ -15,6 +15,7 @@ import {
 import { SchedulerService } from '../services/schedulerService';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api/client';
 
 type Mode = 'list' | 'detail' | 'create' | 'edit';
 
@@ -62,6 +63,25 @@ const defaultFormState: ScheduleFormState = {
   overlap_policy: 'no_overlap',
   enabled: true,
 };
+
+function resolveDebugLink(link: string): string {
+  if (!link) {
+    return '#';
+  }
+
+  // If the link is already absolute (e.g. https://..., http://..., mailto:...), return as‑is
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(link)) {
+    return link;
+  }
+
+  const base = (api.defaults.baseURL || '').replace(/\/+$/, '');
+  if (!base) {
+    return link;
+  }
+
+  const normalizedPath = link.startsWith('/') ? link : `/${link}`;
+  return `${base}${normalizedPath}`;
+}
 
 function SchedulesPage() {
   const { user, isAuthEnabled } = useAuth();
@@ -834,7 +854,7 @@ function SchedulesPage() {
                               {Object.entries(run.log_links || {}).map(([label, link]) => (
                                 <a
                                   key={`log-${label}`}
-                                  href={link}
+                                  href={resolveDebugLink(link)}
                                   className="text-accent hover:underline"
                                   target="_blank"
                                   rel="noreferrer"
@@ -845,7 +865,7 @@ function SchedulesPage() {
                               {Object.entries(run.artifact_links || {}).map(([label, link]) => (
                                 <a
                                   key={`artifact-${label}`}
-                                  href={link}
+                                  href={resolveDebugLink(link)}
                                   className="text-accent hover:underline"
                                   target="_blank"
                                   rel="noreferrer"
