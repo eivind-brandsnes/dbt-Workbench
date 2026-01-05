@@ -334,7 +334,13 @@ export type OverlapPolicy = 'no_overlap' | 'allow_overlap';
 
 export type ScheduleStatus = 'active' | 'paused';
 
-export type RunFinalResult = 'success' | 'failure' | 'cancelled' | 'skipped';
+export type RunFinalResult =
+  | 'pending'
+  | 'in_progress'
+  | 'success'
+  | 'failure'
+  | 'cancelled'
+  | 'skipped';
 
 export type RetryStatus = 'not_applicable' | 'in_progress' | 'exhausted';
 

@@ -3,17 +3,20 @@ interface StatusBadgeProps {
 }
 
 const statusColors: Record<string, string> = {
-  success: 'bg-green-600/20 text-green-300',
-  succeeded: 'bg-green-600/20 text-green-300',
-  error: 'bg-red-600/20 text-red-300',
-  fail: 'bg-red-600/20 text-red-300',
-  failed: 'bg-red-600/20 text-red-300',
-  running: 'bg-yellow-600/20 text-yellow-200',
-  queued: 'bg-blue-600/20 text-blue-200',
-  cancelled: 'bg-gray-600/20 text-gray-300',
-  skipped: 'bg-gray-600/20 text-gray-300',
-  active: 'bg-green-600/20 text-green-300',
-  paused: 'bg-yellow-600/20 text-yellow-200',
+  success: 'bg-green-100 text-green-800 border border-green-200',
+  succeeded: 'bg-green-100 text-green-800 border border-green-200',
+  error: 'bg-red-100 text-red-800 border border-red-200',
+  fail: 'bg-red-100 text-red-800 border border-red-200',
+  failure: 'bg-red-100 text-red-800 border border-red-200',
+  failed: 'bg-red-100 text-red-800 border border-red-200',
+  running: 'bg-blue-100 text-blue-800 border border-blue-200',
+  in_progress: 'bg-blue-100 text-blue-800 border border-blue-200',
+  queued: 'bg-blue-50 text-blue-700 border border-blue-200',
+  pending: 'bg-blue-50 text-blue-700 border border-blue-200',
+  cancelled: 'bg-gray-100 text-gray-800 border border-gray-200',
+  skipped: 'bg-gray-100 text-gray-800 border border-gray-200',
+  active: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  paused: 'bg-amber-100 text-amber-800 border border-amber-200',
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {

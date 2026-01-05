@@ -69,6 +69,39 @@ const scheduledRun = {
   ],
 }
 
+const queuedRun = {
+  id: 2,
+  schedule_id: 1,
+  triggering_event: 'manual' as const,
+  status: 'pending' as const,
+  retry_status: 'in_progress' as const,
+  attempts_total: 1,
+  scheduled_at: '2025-12-31T20:14:28Z',
+  queued_at: '2025-12-31T20:14:28Z',
+  started_at: null,
+  finished_at: null,
+  environment_snapshot: {},
+  command: {},
+  log_links: {
+    run_detail: 'https://example.com/runs/2/detail',
+    logs: 'https://example.com/runs/2/logs',
+    artifacts: 'https://example.com/runs/2/artifacts',
+  },
+  artifact_links: {},
+  attempts: [
+    {
+      id: 11,
+      attempt_number: 1,
+      run_id: 'def456',
+      status: 'queued' as const,
+      queued_at: '2025-12-31T20:14:28Z',
+      started_at: null,
+      finished_at: null,
+      error_message: null,
+    },
+  ],
+}
+
 const scheduleDetails = {
   id: 1,
   name: 'Nightly Build',
@@ -131,7 +164,7 @@ describe('SchedulesPage', () => {
       total_failed_runs: 1,
     })
     mockedScheduler.getSchedule.mockResolvedValue(scheduleDetails)
-    mockedScheduler.getScheduleRuns.mockResolvedValue({ schedule_id: 1, runs: [scheduledRun] })
+    mockedScheduler.getScheduleRuns.mockResolvedValue({ schedule_id: 1, runs: [scheduledRun, queuedRun] })
   })
 
   it('shows failure reasons for scheduled runs', async () => {
@@ -146,12 +179,32 @@ describe('SchedulesPage', () => {
     expect(await screen.findByText('dbt compile failed: relation not found')).toBeInTheDocument()
   })
 
+  it('shows the latest attempt status for in-progress runs', async () => {
+    render(<SchedulesPage />)
+
+    await userEvent.click(await screen.findByText('Nightly Build'))
+
+    await waitFor(() => {
+      expect(mockedScheduler.getScheduleRuns).toHaveBeenCalledWith(1)
+    })
+
+    expect(await screen.findByText('queued')).toBeInTheDocument()
+    const detailButtons = await screen.findAllByRole('button', { name: /view details/i })
+    await userEvent.click(detailButtons[1])
+
+    expect(await screen.findByText('View run_detail log')).toHaveAttribute(
+      'href',
+      'https://example.com/runs/2/detail',
+    )
+  })
+
   it('expands run details with attempts and debug links', async () => {
     render(<SchedulesPage />)
     const user = userEvent.setup()
 
     await user.click(await screen.findByText('Nightly Build'))
-    await user.click(await screen.findByRole('button', { name: /view details/i }))
+    const detailButtons = await screen.findAllByRole('button', { name: /view details/i })
+    await user.click(detailButtons[0])
 
     expect(await screen.findByText('Attempt 1')).toBeInTheDocument()
     expect(screen.getByText('View stderr log')).toHaveAttribute('href', 'https://example.com/stderr.log')

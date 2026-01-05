@@ -51,6 +51,8 @@ class ScheduleStatus(str, Enum):
 
 
 class RunFinalResult(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
     SUCCESS = "success"
     FAILURE = "failure"
     CANCELLED = "cancelled"
