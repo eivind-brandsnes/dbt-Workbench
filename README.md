@@ -328,6 +328,10 @@ dbt-Workbench/
 | `SCHEDULER_MAX_CATCHUP_RUNS` | `10` | Maximum catch-up runs on restart |
 | `SCHEDULER_DEFAULT_TIMEZONE` | `UTC` | Default timezone for schedules |
 
+The scheduler normalizes all persisted timestamps to UTC before evaluating due
+runs. This prevents timezone-aware/naive comparison errors and keeps cron
+calculations consistent when databases return naive datetimes.
+
 ### SQL Workspace
 
 | Variable | Default | Description |
