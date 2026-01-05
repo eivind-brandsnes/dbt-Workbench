@@ -70,7 +70,7 @@ function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-purple-100 shadow rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-xs uppercase text-gray-500">Active Project</div>
@@ -110,7 +110,7 @@ function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-purple-100 shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
             <div className="flow-root">
               <ul className="-mb-8">
@@ -148,7 +148,7 @@ function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-purple-100 shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Project Overview</h3>
             <dl className="space-y-4">
               <div className="flex justify-between">
