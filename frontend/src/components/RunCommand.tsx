@@ -113,7 +113,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow text-gray-700 p-6">
       <h2 className="text-xl font-semibold mb-4">Run dbt Command</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -230,7 +230,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
         )}
 
         {/* Execute Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-4 gap-1">
           {commands.map((cmd) => (
             <button
               key={cmd.id}
