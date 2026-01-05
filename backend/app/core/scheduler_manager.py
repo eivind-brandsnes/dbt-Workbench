@@ -51,6 +51,22 @@ async def _tick() -> None:
         db.close()
 
 
+def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    """Normalize datetimes to timezone-aware UTC values.
+
+    Datetimes persisted in the database can come back as offset-naive values
+    because the SQLAlchemy columns are not timezone-aware. The scheduler makes
+    comparisons against ``datetime.now(timezone.utc)``, so we need to align
+    everything to UTC to avoid ``TypeError`` when mixing aware/naive values.
+    """
+
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def _process_due_schedule(db, db_schedule: db_models.Schedule, now: datetime) -> None:
     catch_up = CatchUpPolicy(db_schedule.catch_up_policy)
     max_catchup = get_settings().scheduler_max_catchup_runs
@@ -58,19 +74,20 @@ def _process_due_schedule(db, db_schedule: db_models.Schedule, now: datetime) ->
     cron_expression = db_schedule.cron_expression
     timezone_name = db_schedule.timezone or get_settings().scheduler_default_timezone
 
-    next_run_time = db_schedule.next_run_time or now
+    next_run_time = _ensure_utc(db_schedule.next_run_time) or _ensure_utc(now)
+    now = _ensure_utc(now) or datetime.now(timezone.utc)
     created = 0
 
     while next_run_time and next_run_time <= now and created < max_catchup:
         scheduled_run = scheduler_service.create_scheduled_run(
             db=db,
             db_schedule=db_schedule,
-            scheduled_time=next_run_time,
+            scheduled_time=_ensure_utc(next_run_time),
             triggering_event=TriggeringEvent.CRON,
         )
         if scheduled_run:
             # Start first attempt asynchronously
-            asyncio.create_task(_start_attempt_async(scheduled_run.id))
+            _schedule_attempt_start(scheduled_run.id)
 
         created += 1
         next_run_time = scheduler_service._compute_next_run_time(
@@ -112,6 +129,16 @@ async def _start_attempt_async(scheduled_run_id: int) -> None:
             asyncio.create_task(executor.execute_run(attempt.run_id))
     finally:
         db.close()
+
+
+def _schedule_attempt_start(scheduled_run_id: int) -> None:
+    """Start attempt execution, working both inside and outside running loops."""
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_start_attempt_async(scheduled_run_id))
+    except RuntimeError:
+        asyncio.run(_start_attempt_async(scheduled_run_id))
 
 
 def _update_attempt_statuses(db) -> None:

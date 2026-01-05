@@ -328,7 +328,7 @@ function SchedulesPage() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow">
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">All Schedules</h2>
+              <h2 className="text-lg font-semibold text-accent">All Schedules</h2>
             </div>
             <div className="divide-y divide-gray-200">
               {schedules.map(schedule => (
@@ -593,7 +593,7 @@ function SchedulesPage() {
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold">{selectedSchedule.name}</h2>
+                    <h2 className="text-lg font-semibold text-accent">{selectedSchedule.name}</h2>
                     <p className="text-sm text-gray-500">
                       dbt {selectedSchedule.dbt_command} ·{' '}
                       {renderStatusBadge(selectedSchedule.status)}
@@ -687,7 +687,7 @@ function SchedulesPage() {
 
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                  <h3 className="text-md font-semibold">Historical Runs</h3>
+                  <h3 className="text-md font-semibold text-accent">Historical Runs</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
