@@ -578,6 +578,10 @@ cd frontend
 npm test
 ```
 
+> **Frontend CI note:** GitHub Actions caches npm dependencies from `frontend/package-lock.json`. If you add or update
+> UI dependencies, commit the updated lockfile in `frontend/` so the `actions/setup-node` step can restore the cache
+> and avoid lockfile-missing failures.
+
 Unit and integration coverage uses **Vitest** with **React Testing Library** (jsdom). The suite exercises the Version Control workflows (connected vs. missing repositories), dashboard fallbacks, and plugin pages. End-to-end UI checks use Playwright:
 
 ```bash
