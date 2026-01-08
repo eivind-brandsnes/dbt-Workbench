@@ -332,6 +332,10 @@ The scheduler normalizes all persisted timestamps to UTC before evaluating due
 runs. This prevents timezone-aware/naive comparison errors and keeps cron
 calculations consistent when databases return naive datetimes.
 
+Scheduled runs inherit the dbt profile and target from their selected
+environment, ensuring the scheduled execution matches the active environment
+settings.
+
 ### SQL Workspace
 
 | Variable | Default | Description |

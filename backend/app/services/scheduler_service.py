@@ -670,9 +670,16 @@ class SchedulerService:
         env_snapshot = db_scheduled_run.environment_snapshot or {}
         variables = env_snapshot.get("variables") or {}
         target_name = env_snapshot.get("dbt_target_name")
+        profile_name = env_snapshot.get("connection_profile_reference")
+        if not target_name and schedule.environment:
+            target_name = schedule.environment.dbt_target_name
+        if not profile_name and schedule.environment:
+            profile_name = schedule.environment.connection_profile_reference
 
         if target_name:
             parameters["target"] = target_name
+        if profile_name:
+            parameters["profile"] = profile_name
         if variables:
             parameters["vars"] = variables
 
