@@ -132,7 +132,7 @@ backend/app/
 | `user_workspaces` | User-workspace membership |
 | `environments` | dbt execution environments |
 | `schedules` | Cron-based schedule definitions |
-| `scheduled_runs` | Schedule execution history |
+| `scheduled_runs` | Schedule execution history (includes environment snapshot for profile/target) |
 | `runs` | dbt run records |
 | `models` | Model metadata snapshots |
 | `lineage` | Model-level relationships |
