@@ -58,11 +58,11 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="flex h-screen bg-surface overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <TopBar />
-        <main className="p-6 space-y-6" key={activeWorkspace?.id ?? 'none'}>
+        <main className="flex-1 overflow-y-auto p-6 space-y-6" key={activeWorkspace?.id ?? 'none'}>
           <Routes key={activeWorkspace?.id ?? 'routes-none'}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/models" element={<ModelsPage />} />

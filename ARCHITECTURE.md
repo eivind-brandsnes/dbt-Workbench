@@ -48,6 +48,7 @@ dbt-Workbench is a fully containerized, modular UI and API stack designed to pro
 | API Client | Axios with interceptors |
 
 The frontend uses a consistent purple-tinted panel background (`bg-purple-100`) to visually group cards and tables.
+The main layout fixes the navigation sidebar while the primary content area scrolls independently for long pages.
 
 **Page Structure:**
 ```
