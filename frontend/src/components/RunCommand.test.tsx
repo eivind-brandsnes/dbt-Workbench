@@ -121,4 +121,12 @@ describe('RunCommand', () => {
     expect(mockedExecutionService.startRun).not.toHaveBeenCalled()
     expect(await screen.findByText('Select a Target before running a dbt command.')).toBeInTheDocument()
   })
+
+  it('uses the purple background styling on the command panel', () => {
+    const { container } = render(<RunCommand />)
+
+    const panel = container.firstElementChild as HTMLElement | null
+    expect(panel).not.toBeNull()
+    expect(panel).toHaveClass('bg-purple-100')
+  })
 })

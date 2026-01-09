@@ -227,13 +227,13 @@ function EnvironmentsPage() {
           <div className="flex space-x-3">
             <button
               onClick={() => openProfileEditor()}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-purple-100 hover:bg-gray-50"
             >
               New Profile
             </button>
             <button
               onClick={handleManageProfiles}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-purple-100 hover:bg-gray-50"
             >
               Manage Profiles
             </button>
@@ -253,7 +253,7 @@ function EnvironmentsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-purple-100 rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold">Profiles</h2>
@@ -306,7 +306,7 @@ function EnvironmentsPage() {
       {/* Editor Modal */}
       {isProfileModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col p-6">
+          <div className="bg-purple-100 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col p-6">
             <h2 className="text-xl font-bold mb-4">Manage Profiles (profiles.yml)</h2>
             <div className="flex-1 mb-4">
               <textarea
@@ -336,7 +336,7 @@ function EnvironmentsPage() {
 
       {isProfileEditorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl h-[70vh] flex flex-col p-6">
+          <div className="bg-purple-100 rounded-lg shadow-xl w-full max-w-3xl h-[70vh] flex flex-col p-6">
             <h2 className="text-xl font-bold mb-2">{editingProfileName ? `Edit ${editingProfileName}` : 'Add Profile'}</h2>
             <p className="text-sm text-gray-600 mb-4">Provide a YAML snippet for a single profile. It will be merged into profiles.yml.</p>
             {profileEditorError && (
@@ -369,7 +369,7 @@ function EnvironmentsPage() {
       )}
 
       {(mode === 'create' || mode === 'edit') && form && (
-        <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <div className="bg-purple-100 rounded-lg shadow p-6 space-y-4">
           <h2 className="text-lg font-semibold">
             {mode === 'create' ? 'Create Environment' : 'Edit Environment'}
           </h2>
@@ -439,7 +439,7 @@ function EnvironmentsPage() {
             <button
               type="button"
               onClick={() => setMode('list')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-purple-100 hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -455,7 +455,7 @@ function EnvironmentsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-purple-100 rounded-lg shadow">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -467,7 +467,7 @@ function EnvironmentsPage() {
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-purple-100 divide-y divide-gray-200">
               {environments.map(env => (
                 <tr key={env.id}>
                   <td className="px-4 py-2 text-sm text-gray-900">{env.name}</td>

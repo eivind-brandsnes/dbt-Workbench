@@ -140,4 +140,14 @@ describe('EnvironmentsPage profile management', () => {
     expect(await screen.findByText('Profile definition must be a YAML object')).toBeInTheDocument()
     expect(mockedProfileService.update).not.toHaveBeenCalled()
   })
+
+  it('renders the profiles panel with the purple background', async () => {
+    render(<EnvironmentsPage />)
+
+    const heading = await screen.findByText('Profiles')
+    const panel = heading.closest('div')?.parentElement?.parentElement as HTMLElement | null
+
+    expect(panel).not.toBeNull()
+    expect(panel).toHaveClass('bg-purple-100')
+  })
 })

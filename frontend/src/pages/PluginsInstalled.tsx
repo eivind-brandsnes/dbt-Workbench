@@ -77,7 +77,7 @@ export default function PluginsInstalled() {
       )}
 
       {/* Adapter Suggestions Section */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-purple-100 rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">dbt Adapters</h2>
           <p className="text-sm text-gray-500">Adapters required by your profiles or installed on the system.</p>
@@ -93,7 +93,7 @@ export default function PluginsInstalled() {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-purple-100 divide-y divide-gray-200">
               {adapters.map((adapter) => (
                 <tr key={adapter.package}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{adapter.type}</td>
@@ -148,7 +148,7 @@ export default function PluginsInstalled() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-purple-100 rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">System Plugins</h2>
         </div>
@@ -162,7 +162,7 @@ export default function PluginsInstalled() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-purple-100 divide-y divide-gray-200">
               {plugins.map((plugin) => (
                 <tr key={plugin.name}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{plugin.name}</td>

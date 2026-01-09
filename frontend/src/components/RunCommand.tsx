@@ -113,7 +113,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow text-gray-700 p-6">
+    <div className="bg-purple-100 rounded-lg shadow text-gray-700 p-6">
       <h2 className="text-xl font-semibold mb-4">Run dbt Command</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
