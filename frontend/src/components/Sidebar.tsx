@@ -148,7 +148,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`bg-panel border-r border-gray-800 min-h-screen sticky top-0 flex flex-col transition-all duration-200 ${
+      className={`bg-panel border-r border-gray-800 h-screen sticky top-0 flex shrink-0 flex-col overflow-y-auto transition-all duration-200 ${
         collapsed ? 'w-20 px-3 py-4' : 'w-64 px-4 py-6'
       }`}
     >
