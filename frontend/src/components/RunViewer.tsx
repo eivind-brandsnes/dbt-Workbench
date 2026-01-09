@@ -119,7 +119,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-purple-100 rounded-lg shadow p-6">
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
@@ -131,7 +131,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
 
   if (error || !runDetail) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-purple-100 rounded-lg shadow p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <p className="text-red-600">{error || 'Run not found'}</p>
         </div>
@@ -140,7 +140,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-purple-100 rounded-lg shadow">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">

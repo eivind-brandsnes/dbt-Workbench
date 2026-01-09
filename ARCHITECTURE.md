@@ -47,6 +47,8 @@ dbt-Workbench is a fully containerized, modular UI and API stack designed to pro
 | Routing | React Router v6 |
 | API Client | Axios with interceptors |
 
+The frontend uses a consistent purple-tinted panel background (`bg-purple-100`) to visually group cards and tables.
+
 **Page Structure:**
 ```
 frontend/src/
