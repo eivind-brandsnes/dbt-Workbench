@@ -401,6 +401,7 @@ Additional behaviors:
 - Quick-launch Run/Test/Seed/Docs actions directly from the dbt Execution page via dedicated execution buttons (no separate command selector)
 - Real-time log streaming
 - Persist artifacts per run
+- Dashboard surfaces the latest run status from execution history for consistency with the Run History page
 
 ### **Phase 4 — Metadata Persistence Layer (Complete)**
 - PostgreSQL backend

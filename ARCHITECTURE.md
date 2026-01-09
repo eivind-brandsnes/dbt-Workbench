@@ -53,7 +53,7 @@ The frontend uses a consistent purple-tinted panel background (`bg-purple-100`) 
 ```
 frontend/src/
 ├── pages/
-│   ├── Dashboard.tsx          # Overview metrics and health
+│   ├── Dashboard.tsx          # Overview metrics, health, and latest execution status
 │   ├── Models.tsx             # Model browser
 │   ├── ModelDetail.tsx        # Individual model details
 │   ├── Lineage.tsx            # DAG visualization
