@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import { ArtifactSummary, HealthResponse, ModelSummary, RunSummary, GitRepository } from '../types'
 import { Card } from '../components/Card'
 import { useAuth } from '../context/AuthContext'
+import { ExecutionService } from '../services/executionService'
 
 function DashboardPage() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
@@ -20,7 +21,9 @@ function DashboardPage() {
     api.get<HealthResponse>('/health').then((res) => setHealth(res.data)).catch(() => setHealth(null))
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
     api.get<ModelSummary[]>('/models').then((res) => setModels(res.data)).catch(() => setModels([]))
-    api.get<RunSummary[]>('/runs').then((res) => setRuns(res.data)).catch(() => setRuns([]))
+    ExecutionService.getRunHistory(1, 20)
+      .then((res) => setRuns(res.runs))
+      .catch(() => setRuns([]))
     api.get<GitRepository>('/git/repository').then((res) => setRepo(res.data)).catch(() => setRepo(null))
   }, [activeWorkspace?.id])
 

@@ -106,7 +106,7 @@ async def get_run_history(
 ):
     """Get paginated run history."""
     runs = executor.get_run_history(page=page, page_size=page_size)
-    total_count = len(executor.run_history)
+    total_count = executor.get_run_history_total()
 
     return RunHistoryResponse(
         runs=runs,

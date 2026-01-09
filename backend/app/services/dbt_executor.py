@@ -439,6 +439,18 @@ class DbtExecutor:
         finally:
             if 'db' in locals():
                 db.close()
+
+    def get_run_history_total(self) -> int:
+        """Get total run count from database."""
+        try:
+            db = SessionLocal()
+            return db.query(db_models.Run).count()
+        except Exception as e:
+            print(f"Error fetching run history total: {e}")
+            return len(self.run_history)
+        finally:
+            if 'db' in locals():
+                db.close()
     
     def get_run_artifacts(self, run_id: str) -> List[ArtifactInfo]:
         """Get artifacts for a specific run."""
