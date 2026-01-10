@@ -24,9 +24,6 @@ Designed for local, on‑prem, and air‑gapped deployments.
 - **Workspace-aware** multi-project setup with strict path scoping
 - **Secure by design** with optional JWT authentication + RBAC
 - **Extensible** plugin system and Git-integrated workspace
-- **Polished UI theming** with purple-accented panel backgrounds for clear visual grouping
-- **Fixed navigation sidebar** with an independently scrollable main content area for long pages
-- **Ready out-of-the-box** with a local demo project and git repo that persists your last active workspace
 
 ---
 
