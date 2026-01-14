@@ -33,7 +33,15 @@ def test_ensure_default_project_bootstraps_local_repo(tmp_path, monkeypatch):
         repo_path = Path(settings.git_repos_base_path) / workspace.key
         assert repo_path.exists()
         assert (repo_path / ".git").exists()
-        assert (repo_path / "models" / "welcome.sql").exists()
+        assert (repo_path / "models" / "raw" / "raw_customers.sql").exists()
+        assert (repo_path / "models" / "raw" / "raw_orders.sql").exists()
+        assert (repo_path / "models" / "raw" / "raw_payments.sql").exists()
+        assert (repo_path / "models" / "staging" / "stg_customers.sql").exists()
+        assert (repo_path / "models" / "staging" / "stg_orders.sql").exists()
+        assert (repo_path / "models" / "staging" / "stg_payments.sql").exists()
+        assert (repo_path / "models" / "marts" / "customers.sql").exists()
+        assert (repo_path / "models" / "marts" / "orders.sql").exists()
+        assert (repo_path / "models" / "schema.yml").exists()
 
         history = git_service.history(session, workspace.id)
         assert history
