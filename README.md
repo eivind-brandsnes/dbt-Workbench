@@ -72,6 +72,13 @@ docker-compose up --build
 docker compose up --build
 ```
 
+### Demo dbt Project
+
+The repository includes a ready-to-run demo project in `./dbt_project` with raw, staging, and mart
+models so `dbt run` succeeds immediately against DuckDB. The default workspace that the backend
+bootstraps uses the same model layout, giving you consistent sample data for lineage, runs, and
+catalog exploration.
+
 ### **Services**
 - **UI:** http://localhost:3000
 - **API:** http://localhost:8000

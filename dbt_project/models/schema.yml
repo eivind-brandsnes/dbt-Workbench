@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: raw_customers
+    description: "Raw customer records for the demo project."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+  - name: raw_orders
+    description: "Raw order records for the demo project."
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+  - name: raw_payments
+    description: "Raw payment records for the demo project."
+    columns:
+      - name: payment_id
+        tests:
+          - not_null
+          - unique
+  - name: stg_customers
+    description: "Staged customer records."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+  - name: stg_orders
+    description: "Staged order records."
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+  - name: stg_payments
+    description: "Staged payment records."
+    columns:
+      - name: payment_id
+        tests:
+          - not_null
+          - unique
+  - name: customers
+    description: "Customer dimension with order and payment metrics."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+  - name: orders
+    description: "Order fact table with payment rollups."
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique

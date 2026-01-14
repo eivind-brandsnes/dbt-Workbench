@@ -72,16 +72,79 @@ def _write_default_project_files(base_path: Path) -> None:
     dbt_project = base_path / "dbt_project.yml"
     if not dbt_project.exists():
         dbt_project.write_text(
-            """name: demo_project\nversion: '1.0'\nprofile: user\nmodel-paths: ['models']\n\nmodels:\n  demo_project:\n    +materialized: view\n""",
+            """name: demo_project\nversion: '1.0'\nprofile: user\nmodel-paths: ['models']\n\ntarget-path: "target"\nclean-targets:\n  - "target"\n  - "dbt_packages"\n\nmodels:\n  demo_project:\n    raw:\n      +materialized: table\n    staging:\n      +materialized: view\n    marts:\n      +materialized: table\n""",
             encoding="utf-8",
         )
 
     models_dir = base_path / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
-    starter_model = models_dir / "welcome.sql"
-    if not starter_model.exists():
-        starter_model.write_text(
-            "-- Example model\nselect 1 as id, 'hello' as greeting\n",
+    raw_dir = models_dir / "raw"
+    staging_dir = models_dir / "staging"
+    marts_dir = models_dir / "marts"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    marts_dir.mkdir(parents=True, exist_ok=True)
+
+    raw_customers = raw_dir / "raw_customers.sql"
+    if not raw_customers.exists():
+        raw_customers.write_text(
+            """{{ config(materialized='table') }}\n\nselect *\nfrom (\n    values\n        (1, 'Alice Johnson', 'alice@example.com'),\n        (2, 'Bob Smith', 'bob@example.com'),\n        (3, 'Carol Diaz', 'carol@example.com')\n) as raw_customers(customer_id, customer_name, customer_email)\n""",
+            encoding="utf-8",
+        )
+
+    raw_orders = raw_dir / "raw_orders.sql"
+    if not raw_orders.exists():
+        raw_orders.write_text(
+            """{{ config(materialized='table') }}\n\nselect *\nfrom (\n    values\n        (1001, 1, date '2026-01-10', 'placed', 120.00),\n        (1002, 2, date '2026-01-11', 'shipped', 89.50),\n        (1003, 1, date '2026-01-12', 'delivered', 42.25),\n        (1004, 3, date '2026-01-12', 'placed', 15.00)\n) as raw_orders(order_id, customer_id, order_date, status, order_amount)\n""",
+            encoding="utf-8",
+        )
+
+    raw_payments = raw_dir / "raw_payments.sql"
+    if not raw_payments.exists():
+        raw_payments.write_text(
+            """{{ config(materialized='table') }}\n\nselect *\nfrom (\n    values\n        (5001, 1001, date '2026-01-11', 'credit_card', 120.00),\n        (5002, 1002, date '2026-01-12', 'bank_transfer', 89.50),\n        (5003, 1003, date '2026-01-13', 'credit_card', 42.25)\n) as raw_payments(payment_id, order_id, payment_date, payment_method, amount)\n""",
+            encoding="utf-8",
+        )
+
+    stg_customers = staging_dir / "stg_customers.sql"
+    if not stg_customers.exists():
+        stg_customers.write_text(
+            "select\n    customer_id,\n    customer_name as name,\n    customer_email as email\nfrom {{ ref('raw_customers') }}\n",
+            encoding="utf-8",
+        )
+
+    stg_orders = staging_dir / "stg_orders.sql"
+    if not stg_orders.exists():
+        stg_orders.write_text(
+            "select\n    order_id,\n    customer_id,\n    order_date,\n    status,\n    order_amount\nfrom {{ ref('raw_orders') }}\n",
+            encoding="utf-8",
+        )
+
+    stg_payments = staging_dir / "stg_payments.sql"
+    if not stg_payments.exists():
+        stg_payments.write_text(
+            "select\n    payment_id,\n    order_id,\n    payment_date,\n    payment_method,\n    amount\nfrom {{ ref('raw_payments') }}\n",
+            encoding="utf-8",
+        )
+
+    customers = marts_dir / "customers.sql"
+    if not customers.exists():
+        customers.write_text(
+            """with customers as (\n    select *\n    from {{ ref('stg_customers') }}\n),\norders as (\n    select *\n    from {{ ref('stg_orders') }}\n),\npayments as (\n    select *\n    from {{ ref('stg_payments') }}\n)\n\nselect\n    customers.customer_id,\n    customers.name,\n    customers.email,\n    count(distinct orders.order_id) as total_orders,\n    coalesce(sum(payments.amount), 0) as total_payments\nfrom customers\nleft join orders\n    on customers.customer_id = orders.customer_id\nleft join payments\n    on orders.order_id = payments.order_id\ngroup by\n    customers.customer_id,\n    customers.name,\n    customers.email\n""",
+            encoding="utf-8",
+        )
+
+    orders = marts_dir / "orders.sql"
+    if not orders.exists():
+        orders.write_text(
+            """with orders as (\n    select *\n    from {{ ref('stg_orders') }}\n),\npayments as (\n    select *\n    from {{ ref('stg_payments') }}\n)\n\nselect\n    orders.order_id,\n    orders.customer_id,\n    orders.order_date,\n    orders.status,\n    orders.order_amount,\n    coalesce(sum(payments.amount), 0) as payments_total,\n    max(payments.payment_date) as last_payment_date\nfrom orders\nleft join payments\n    on orders.order_id = payments.order_id\ngroup by\n    orders.order_id,\n    orders.customer_id,\n    orders.order_date,\n    orders.status,\n    orders.order_amount\n""",
+            encoding="utf-8",
+        )
+
+    schema_file = models_dir / "schema.yml"
+    if not schema_file.exists():
+        schema_file.write_text(
+            """version: 2\n\nmodels:\n  - name: raw_customers\n    description: \"Raw customer records for the demo project.\"\n    columns:\n      - name: customer_id\n        tests:\n          - not_null\n          - unique\n  - name: raw_orders\n    description: \"Raw order records for the demo project.\"\n    columns:\n      - name: order_id\n        tests:\n          - not_null\n          - unique\n  - name: raw_payments\n    description: \"Raw payment records for the demo project.\"\n    columns:\n      - name: payment_id\n        tests:\n          - not_null\n          - unique\n  - name: stg_customers\n    description: \"Staged customer records.\"\n    columns:\n      - name: customer_id\n        tests:\n          - not_null\n          - unique\n  - name: stg_orders\n    description: \"Staged order records.\"\n    columns:\n      - name: order_id\n        tests:\n          - not_null\n          - unique\n  - name: stg_payments\n    description: \"Staged payment records.\"\n    columns:\n      - name: payment_id\n        tests:\n          - not_null\n          - unique\n  - name: customers\n    description: \"Customer dimension with order and payment metrics.\"\n    columns:\n      - name: customer_id\n        tests:\n          - not_null\n          - unique\n  - name: orders\n    description: \"Order fact table with payment rollups.\"\n    columns:\n      - name: order_id\n        tests:\n          - not_null\n          - unique\n""",
             encoding="utf-8",
         )
 

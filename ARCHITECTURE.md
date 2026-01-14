@@ -173,6 +173,14 @@ The backend reads dbt-generated JSON artifacts from a mounted directory.
 
 ---
 
+### **2.5 Demo Project Bootstrapping**
+
+On first launch the backend initializes a local Git repository that mirrors the demo dbt project
+layout. The seeded project includes raw, staging, and mart models with inline sample data so
+`dbt run` works immediately for workspace execution, lineage previews, and run history.
+
+---
+
 ## 3. Docker Architecture
 
 ```yaml
