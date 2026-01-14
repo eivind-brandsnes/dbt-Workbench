@@ -70,7 +70,8 @@ frontend/src/
 ├── components/                 # Reusable UI components
 ├── context/                    # Auth, Workspace contexts
 ├── services/                   # API service clients
-└── types/                      # TypeScript type definitions
+├── types/                      # TypeScript type definitions
+└── utils/                      # Shared helpers (e.g., file tree building)
 ```
 
 ---

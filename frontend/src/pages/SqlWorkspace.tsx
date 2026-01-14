@@ -5,6 +5,7 @@ import { sql as sqlLang } from '@codemirror/lang-sql';
 import { autocompletion, Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { vscodeDark, vscodeLight } from '@uiw/codemirror-theme-vscode';
 
+import { FileTree } from '../components/FileTree';
 import { Table } from '../components/Table';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
@@ -969,22 +970,14 @@ function SqlWorkspacePage() {
             ) : (
               <div className="space-y-2 text-xs text-gray-300">
                 <div className="text-gray-400">Select a dbt model to load into the SQL editor.</div>
-                <div className="max-h-52 overflow-y-auto space-y-1">
-                  {modelFiles.map((file) => (
-                    <button
-                      key={file.path}
-                      type="button"
-                      className={`w-full text-left px-2 py-1 rounded border border-gray-800 hover:border-gray-600 ${
-                        selectedFilePath === file.path ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-200'
-                      }`}
-                      onClick={() => handleSelectFile(file.path)}
-                    >
-                      <span className="font-mono">{file.path}</span>
-                    </button>
-                  ))}
-                  {modelFiles.length === 0 && (
-                    <div className="text-gray-500">No model files found.</div>
-                  )}
+                <div className="max-h-52 overflow-y-auto">
+                  <FileTree
+                    nodes={modelFiles}
+                    onSelect={handleSelectFile}
+                    selectedPath={selectedFilePath}
+                    emptyMessage="No model files found."
+                    storageKey="sql-workspace"
+                  />
                 </div>
               </div>
             )}
