@@ -145,7 +145,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-gray-500">
               dbt {runDetail.command}
             </h2>
             <StatusBadge status={runDetail.status} />
@@ -174,19 +174,19 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <span className="text-gray-500">Run ID:</span>
-            <p className="font-mono text-xs">{runDetail.run_id}</p>
+            <p className="font-mono text-xs text-gray-500">{runDetail.run_id}</p>
           </div>
           <div>
             <span className="text-gray-500">Started:</span>
-            <p>{new Date(runDetail.start_time).toLocaleString()}</p>
+            <p className="text-gray-500">{new Date(runDetail.start_time).toLocaleString()}</p>
           </div>
           <div>
             <span className="text-gray-500">Duration:</span>
-            <p>{formatDuration(runDetail.duration_seconds)}</p>
+            <p className="text-gray-500">{formatDuration(runDetail.duration_seconds)}</p>
           </div>
           <div>
             <span className="text-gray-500">Artifacts:</span>
-            <p>{runDetail.artifacts_available ? 'Available' : 'None'}</p>
+            <p className="text-gray-500">{runDetail.artifacts_available ? 'Available' : 'None'}</p>
           </div>
         </div>
 
@@ -207,7 +207,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
       {/* Logs */}
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">Logs</h3>
+          <h3 className="text-lg font-medium text-gray-500">Logs</h3>
           <div className="flex items-center space-x-2">
             <label className="flex items-center text-sm">
               <input
