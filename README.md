@@ -440,6 +440,7 @@ Additional behaviors:
 ### Projects & Version Control enhancements (New)
 - Edit tracked files inline with save/commit controls and inline validation messaging
 - Create new project files directly from the UI alongside the repository browser
+- Browse project files in a hierarchical tree with folder expand/collapse and name filtering in Version Control and SQL Workspace
 
 ### **Phase 8 — Data Catalog Layer (Complete)**
 - Global fuzzy/prefix search across models, sources, exposures, macros, tests, tags, and columns

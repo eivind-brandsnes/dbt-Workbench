@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { vi, describe, it, beforeEach } from 'vitest'
 
@@ -169,8 +170,25 @@ describe('SqlWorkspacePage editor controls', () => {
 
     renderPage()
 
-    const fileButton = await screen.findByText('models/example.sql')
-    fireEvent.click(fileButton)
+    const filterInput = await screen.findByLabelText('Filter files')
+    const treeRoot = filterInput.closest('div')?.parentElement
+    expect(treeRoot).toBeTruthy()
+    const treeScope = within(treeRoot as HTMLElement)
+
+    await userEvent.click(treeScope.getByText('Expand all'))
+
+    await waitFor(() => {
+      const fileButton = treeScope.getAllByRole('button').find((button) =>
+        button.textContent?.includes('example.sql'),
+      )
+      expect(fileButton).toBeTruthy()
+    })
+
+    const fileButton = treeScope.getAllByRole('button').find((button) =>
+      button.textContent?.includes('example.sql'),
+    )
+    expect(fileButton).toBeTruthy()
+    await userEvent.click(fileButton as HTMLElement)
 
     const runButton = await screen.findByRole('button', { name: /Run \(Ctrl\/Cmd\+Enter\)/ })
     fireEvent.click(runButton)
@@ -193,8 +211,25 @@ describe('SqlWorkspacePage editor controls', () => {
 
     renderPage()
 
-    const fileButton = await screen.findByText('models/example.sql')
-    fireEvent.click(fileButton)
+    const filterInput = await screen.findByLabelText('Filter files')
+    const treeRoot = filterInput.closest('div')?.parentElement
+    expect(treeRoot).toBeTruthy()
+    const treeScope = within(treeRoot as HTMLElement)
+
+    await userEvent.click(treeScope.getByText('Expand all'))
+
+    await waitFor(() => {
+      const fileButton = treeScope.getAllByRole('button').find((button) =>
+        button.textContent?.includes('example.sql'),
+      )
+      expect(fileButton).toBeTruthy()
+    })
+
+    const fileButton = treeScope.getAllByRole('button').find((button) =>
+      button.textContent?.includes('example.sql'),
+    )
+    expect(fileButton).toBeTruthy()
+    await userEvent.click(fileButton as HTMLElement)
 
     const runButton = await screen.findByRole('button', { name: /Run \(Ctrl\/Cmd\+Enter\)/ })
     fireEvent.click(runButton)

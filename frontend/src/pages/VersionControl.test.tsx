@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 
@@ -85,7 +85,19 @@ describe('VersionControlPage', () => {
     })
 
     expect(screen.getByText('Project files')).toBeInTheDocument()
-    expect(await screen.findByText(/models\/model.sql/)).toBeInTheDocument()
+    const filterInput = await screen.findByLabelText('Filter files')
+    const treeRoot = filterInput.closest('div')?.parentElement
+    expect(treeRoot).toBeTruthy()
+
+    const treeScope = within(treeRoot as HTMLElement)
+    await userEvent.click(treeScope.getByText('Expand all'))
+
+    await waitFor(() => {
+      const fileButton = treeScope.getAllByRole('button').find((button) =>
+        button.textContent?.includes('model.sql'),
+      )
+      expect(fileButton).toBeTruthy()
+    })
   })
 
   it('shows branch metadata and recent history when repository is connected', async () => {
@@ -119,8 +131,25 @@ describe('VersionControlPage', () => {
   it('allows editing and saving a selected file', async () => {
     render(<VersionControlPage />)
 
-    const fileButton = await screen.findByText(/models\/model.sql/)
-    await userEvent.click(fileButton)
+    const filterInput = await screen.findByLabelText('Filter files')
+    const treeRoot = filterInput.closest('div')?.parentElement
+    expect(treeRoot).toBeTruthy()
+
+    const treeScope = within(treeRoot as HTMLElement)
+    await userEvent.click(treeScope.getByText('Expand all'))
+
+    await waitFor(() => {
+      const fileButton = treeScope.getAllByRole('button').find((button) =>
+        button.textContent?.includes('model.sql'),
+      )
+      expect(fileButton).toBeTruthy()
+    })
+
+    const fileButton = treeScope.getAllByRole('button').find((button) =>
+      button.textContent?.includes('model.sql'),
+    )
+    expect(fileButton).toBeTruthy()
+    await userEvent.click(fileButton as HTMLElement)
 
     const editor = await screen.findByDisplayValue('select 1')
     await userEvent.type(editor, ' from source')

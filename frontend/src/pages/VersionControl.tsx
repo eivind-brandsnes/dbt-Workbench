@@ -1,5 +1,6 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react'
 
+import { FileTree } from '../components/FileTree'
 import { useAuth } from '../context/AuthContext'
 import { GitService } from '../services/gitService'
 import {
@@ -16,24 +17,6 @@ import {
 } from '../types'
 import { WorkspaceService } from '../services/workspaceService'
 import { storeWorkspaceId } from '../storage/workspaceStorage'
-
-function FileTree({ nodes, onSelect }: { nodes: GitFileNode[]; onSelect: (path: string) => void }) {
-  const sorted = useMemo(() => nodes.slice().sort((a, b) => a.path.localeCompare(b.path)), [nodes])
-  return (
-    <div className="space-y-1">
-      {sorted.map((node) => (
-        <button
-          key={node.path}
-          onClick={() => onSelect(node.path)}
-          className="w-full text-left px-2 py-1 rounded hover:bg-gray-800 text-gray-200 border border-gray-800"
-        >
-          <span className="font-mono text-xs text-gray-400">{node.category ? `[${node.category}] ` : ''}</span>
-          {node.path}
-        </button>
-      ))}
-    </div>
-  )
-}
 
 function ChangeList({ status }: { status: GitStatus | null }) {
   if (!status) return null
@@ -625,7 +608,13 @@ export default function VersionControlPage() {
           {repoMissing ? (
             <div className="text-sm text-gray-500">Connect a repository to browse files.</div>
           ) : (
-            <FileTree nodes={files} onSelect={loadFile} />
+            <FileTree
+              nodes={files}
+              onSelect={loadFile}
+              selectedPath={selectedPath}
+              storageKey={`version-control-${workspaceId ?? 'none'}`}
+              emptyMessage="No project files found."
+            />
           )}
           {!repoMissing && (
             <form className="mt-4 space-y-2" onSubmit={handleCreateFile}>
