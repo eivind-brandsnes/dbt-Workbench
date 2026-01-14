@@ -32,6 +32,7 @@ from app.core.scheduler_manager import start_scheduler, stop_scheduler
 from app.core.watcher_manager import start_watcher, stop_watcher
 from app.database.connection import Base, SessionLocal, engine
 import app.database.models.models  # noqa: F401
+from app.database.schema_management import ensure_runs_logs_column
 from app.services.plugin_service import PluginService
 from app.services.project_service import ensure_default_project
 
@@ -65,6 +66,7 @@ async def lifespan(app: FastAPI):
     # Startup
     await wait_for_db_connection()
     Base.metadata.create_all(bind=engine)
+    ensure_runs_logs_column(engine)
     with SessionLocal() as db:
         ensure_default_project(db)
     start_watcher()

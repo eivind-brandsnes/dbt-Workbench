@@ -145,6 +145,11 @@ backend/app/
 | `plugin_workspace_configs` | Per-workspace plugin settings |
 | `audit_logs` | Audit trail |
 
+**Schema Compatibility:**
+On startup, the backend performs lightweight checks to add missing columns in
+legacy tables (for example, adding `runs.logs`) so older databases can continue
+to serve run history without manual migrations.
+
 ---
 
 ### **2.4 Artifact Ingestion**
