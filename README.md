@@ -140,6 +140,13 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+### **Database Schema Compatibility**
+
+On startup, the backend runs lightweight schema checks to keep legacy databases
+compatible with new features. For example, it will add the `runs.logs` column if
+it is missing so existing installations can keep serving run history without a
+manual migration step.
+
 ### **Frontend (React + TypeScript + Vite)**
 
 ```bash
