@@ -290,6 +290,7 @@ plugins/
 5. Artifacts captured on completion
 6. Watcher detects new artifacts
 7. Metadata refreshed automatically
+8. Frontend checks seed status to warn before running downstream commands
 ```
 
 ---

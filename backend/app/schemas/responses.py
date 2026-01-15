@@ -20,6 +20,13 @@ class ArtifactSummary(BaseModel):
     docs: bool = False
 
 
+class SeedWarningStatus(BaseModel):
+    seed_present: bool = False
+    seed_dependency_detected: bool = False
+    seed_run_executed: bool = False
+    warning: bool = False
+
+
 class ModelSummary(BaseModel):
     model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     unique_id: str

@@ -6,14 +6,17 @@ import { RunCommand } from './RunCommand'
 import { api } from '../api/client'
 import { ExecutionService } from '../services/executionService'
 import { EnvironmentService } from '../services/environmentService'
+import { ArtifactService } from '../services/artifactService'
 
 vi.mock('../api/client', () => ({ api: { get: vi.fn() } }))
 vi.mock('../services/executionService', () => ({ ExecutionService: { startRun: vi.fn() } }))
 vi.mock('../services/environmentService', () => ({ EnvironmentService: { list: vi.fn() } }))
+vi.mock('../services/artifactService', () => ({ ArtifactService: { getSeedStatus: vi.fn() } }))
 
 const mockedApi = api as { get: ReturnType<typeof vi.fn> }
 const mockedExecutionService = ExecutionService as { startRun: ReturnType<typeof vi.fn> }
 const mockedEnvironmentService = EnvironmentService as { list: ReturnType<typeof vi.fn> }
+const mockedArtifactService = ArtifactService as { getSeedStatus: ReturnType<typeof vi.fn> }
 
 const authValue = {
   isLoading: false,
@@ -56,6 +59,12 @@ describe('RunCommand', () => {
       },
     ])
     mockedExecutionService.startRun.mockResolvedValue({ run_id: '123' })
+    mockedArtifactService.getSeedStatus.mockResolvedValue({
+      seed_present: false,
+      seed_dependency_detected: false,
+      seed_run_executed: false,
+      warning: false,
+    })
   })
 
   it('starts the selected command when an action button is clicked', async () => {
@@ -111,6 +120,27 @@ describe('RunCommand', () => {
     const runRequest = mockedExecutionService.startRun.mock.calls[0][0]
     expect(runRequest.command).toBe('docs generate')
     expect(runRequest.parameters.no_compile).toBe(true)
+  })
+
+  it('warns when seeds are required before running other commands', async () => {
+    mockedArtifactService.getSeedStatus.mockResolvedValueOnce({
+      seed_present: true,
+      seed_dependency_detected: true,
+      seed_run_executed: false,
+      warning: true,
+    })
+
+    render(<RunCommand />)
+
+    await selectTarget()
+    await userEvent.click(screen.getByTestId('run-execute'))
+
+    expect(mockedExecutionService.startRun).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText(
+        'Seeds are required for downstream models. Run dbt seed before running other commands.'
+      )
+    ).toBeInTheDocument()
   })
 
   it('requires a target before executing any command', async () => {

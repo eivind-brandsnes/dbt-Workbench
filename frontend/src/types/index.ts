@@ -89,6 +89,13 @@ export interface ArtifactSummary {
   docs: boolean
 }
 
+export interface SeedWarningStatus {
+  seed_present: boolean
+  seed_dependency_detected: boolean
+  seed_run_executed: boolean
+  warning: boolean
+}
+
 export interface ModelSummary {
   unique_id: string
   name: string

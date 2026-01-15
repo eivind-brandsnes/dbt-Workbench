@@ -162,3 +162,38 @@ class ArtifactService:
                 }
             )
         return output
+
+    def get_seed_warning_status(self) -> Dict[str, bool]:
+        manifest = self.get_manifest() or {}
+        nodes = manifest.get("nodes", {}) or {}
+        seeds = {
+            unique_id
+            for unique_id, node in nodes.items()
+            if node.get("resource_type") == "seed"
+        }
+        seed_present = bool(seeds)
+        if not seed_present:
+            return {
+                "seed_present": False,
+                "seed_dependency_detected": False,
+                "seed_run_executed": False,
+                "warning": False,
+            }
+
+        seed_dependency_detected = any(
+            node.get("resource_type") == "model"
+            and seeds.intersection(node.get("depends_on", {}).get("nodes", []))
+            for node in nodes.values()
+        )
+
+        run_results = self.get_run_results() or {}
+        results = run_results.get("results", []) or []
+        seed_run_executed = any(result.get("unique_id") in seeds for result in results)
+
+        warning = seed_present and seed_dependency_detected and not seed_run_executed
+        return {
+            "seed_present": seed_present,
+            "seed_dependency_detected": seed_dependency_detected,
+            "seed_run_executed": seed_run_executed,
+            "warning": warning,
+        }

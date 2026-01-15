@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DbtCommand, RunRequest, ModelSummary, Environment } from '../types';
 import { ExecutionService } from '../services/executionService';
+import { ArtifactService } from '../services/artifactService';
 import { api } from '../api/client';
 import { EnvironmentService } from '../services/environmentService';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +12,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [pendingCommand, setPendingCommand] = useState<DbtCommand | null>(null);
 
   // Suggestion data
@@ -57,8 +59,19 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
     setIsLoading(true);
     setPendingCommand(activeCommand);
     setError(null);
+    setWarning(null);
 
     try {
+      if (activeCommand !== 'seed') {
+        const seedStatus = await ArtifactService.getSeedStatus();
+        if (seedStatus.warning) {
+          setWarning(
+            'Seeds are required for downstream models. Run dbt seed before running other commands.'
+          );
+          return;
+        }
+      }
+
       // Build parameters object
       const params: Record<string, any> = {};
       if (selectModels) params.select = selectModels;
@@ -226,6 +239,12 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-md p-3">
             <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {warning && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+            <p className="text-sm text-yellow-700">{warning}</p>
           </div>
         )}
 
