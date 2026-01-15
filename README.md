@@ -14,9 +14,7 @@ Designed for local, on‑prem, and air‑gapped deployments.
 - **Extensible** plugin system and Git-integrated workspace
 
 ---
-
 ## 🧭 Table of Contents
-
 - [Screenshots](#-screenshots)
 - [Quickstart](#-quickstart)
 - [Run with Docker Compose](#-run-with-docker-compose)
@@ -29,9 +27,6 @@ Designed for local, on‑prem, and air‑gapped deployments.
 - [API Reference](#-api-reference)
 - [Testing](#-testing)
 - [Documentation](#-documentation)
-- [Contributing](#-contributing)
-- [License](#-license)
-
 ---
 
 ## 📸 Screenshots
