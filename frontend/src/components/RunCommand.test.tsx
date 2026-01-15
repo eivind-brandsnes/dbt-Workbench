@@ -9,12 +9,17 @@ import { EnvironmentService } from '../services/environmentService'
 import { ArtifactService } from '../services/artifactService'
 
 vi.mock('../api/client', () => ({ api: { get: vi.fn() } }))
-vi.mock('../services/executionService', () => ({ ExecutionService: { startRun: vi.fn() } }))
+vi.mock('../services/executionService', () => ({
+  ExecutionService: { startRun: vi.fn(), getRunStatus: vi.fn() },
+}))
 vi.mock('../services/environmentService', () => ({ EnvironmentService: { list: vi.fn() } }))
 vi.mock('../services/artifactService', () => ({ ArtifactService: { getSeedStatus: vi.fn() } }))
 
 const mockedApi = api as { get: ReturnType<typeof vi.fn> }
-const mockedExecutionService = ExecutionService as { startRun: ReturnType<typeof vi.fn> }
+const mockedExecutionService = ExecutionService as {
+  startRun: ReturnType<typeof vi.fn>
+  getRunStatus: ReturnType<typeof vi.fn>
+}
 const mockedEnvironmentService = EnvironmentService as { list: ReturnType<typeof vi.fn> }
 const mockedArtifactService = ArtifactService as { getSeedStatus: ReturnType<typeof vi.fn> }
 
@@ -58,7 +63,8 @@ describe('RunCommand', () => {
         default_retention_policy: null,
       },
     ])
-    mockedExecutionService.startRun.mockResolvedValue({ run_id: '123' })
+    mockedExecutionService.startRun.mockResolvedValue({ run_id: '123', status: 'succeeded' })
+    mockedExecutionService.getRunStatus.mockResolvedValue({ run_id: '123', status: 'succeeded' })
     mockedArtifactService.getSeedStatus.mockResolvedValue({
       seed_present: false,
       seed_dependency_detected: false,

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { DbtCommand, RunRequest, ModelSummary, Environment } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { DbtCommand, RunRequest, ModelSummary, Environment, RunStatus } from '../types';
 import { ExecutionService } from '../services/executionService';
 import { ArtifactService } from '../services/artifactService';
 import { api } from '../api/client';
@@ -14,6 +14,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [pendingCommand, setPendingCommand] = useState<DbtCommand | null>(null);
+  const isMountedRef = useRef(true);
 
   // Suggestion data
   const [availableModels, setAvailableModels] = useState<string[]>([]);
@@ -50,6 +51,41 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       .catch(err => console.error('Failed to fetch environments for autocomplete', err));
   }, []);
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const waitForRunCompletion = async (runId: string, initialStatus?: RunStatus) => {
+    let status: RunStatus | undefined = initialStatus;
+    const isTerminal = (state?: RunStatus) =>
+      state === 'succeeded' || state === 'failed' || state === 'cancelled';
+
+    while (!isTerminal(status)) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!isMountedRef.current) {
+        return;
+      }
+      try {
+        const updated = await ExecutionService.getRunStatus(runId);
+        status = updated.status;
+      } catch (err) {
+        if (isMountedRef.current) {
+          setError('Failed to monitor run status');
+          setIsLoading(false);
+          setPendingCommand(null);
+        }
+        return;
+      }
+    }
+
+    if (isMountedRef.current) {
+      setIsLoading(false);
+      setPendingCommand(null);
+    }
+  };
+
   const handleSubmit = async (e?: React.FormEvent, activeCommand: DbtCommand = 'run') => {
     e?.preventDefault();
     if (!target) {
@@ -68,6 +104,8 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
           setWarning(
             'Seeds are required for downstream models. Run dbt seed before running other commands.'
           );
+          setIsLoading(false);
+          setPendingCommand(null);
           return;
         }
       }
@@ -110,9 +148,9 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       setFailFast(false);
       setStoreFailures(false);
       setNoCompile(false);
+      void waitForRunCompletion(result.run_id, result.status);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start run');
-    } finally {
       setIsLoading(false);
       setPendingCommand(null);
     }
@@ -260,9 +298,31 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               data-testid={`${cmd.id}-execute`}
               onClick={() => void handleSubmit(undefined, cmd.id)}
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-busy={isLoading && pendingCommand === cmd.id}
             >
-              {isLoading && pendingCommand === cmd.id ? 'Starting...' : cmd.label}
+              {isLoading && pendingCommand === cmd.id ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle
+                      className="opacity-20"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    />
+                    <path
+                      className="opacity-80"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V2.5C6.2 2.5 2.5 6.2 2.5 12H4z"
+                    />
+                  </svg>
+                  <span>Executing...</span>
+                </span>
+              ) : (
+                cmd.label
+              )}
             </button>
           ))}
         </div>
