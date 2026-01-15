@@ -254,7 +254,7 @@ function EnvironmentsPage() {
       )}
 
       <div className="bg-purple-100 rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="bg-purple-50 flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900" >Profiles</h2>
             <p className="text-sm text-gray-500">View existing dbt profiles and targets.</p>
@@ -262,7 +262,7 @@ function EnvironmentsPage() {
           {isDeveloperOrAdmin && (
             <button
               onClick={handleManageProfiles}
-              className="text-sm text-accent hover:underline"
+              className="text-sm text-gray-900 hover:underline"
             >
               Edit full profiles.yml
             </button>
@@ -282,7 +282,7 @@ function EnvironmentsPage() {
                   {isDeveloperOrAdmin && (
                     <button
                       onClick={() => openProfileEditor(profile.name)}
-                      className="text-sm text-accent hover:underline"
+                      className="text-sm text-gray-900 hover:underline"
                     >
                       Edit
                     </button>
@@ -307,7 +307,7 @@ function EnvironmentsPage() {
       {isProfileModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-purple-100 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col p-6">
-            <h2 className="text-xl font-bold mb-4">Manage Profiles (profiles.yml)</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Manage Profiles (profiles.yml)</h2>
             <div className="flex-1 mb-4">
               <textarea
                 className="w-full h-full p-4 border border-gray-300 rounded font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
