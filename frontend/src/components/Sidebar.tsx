@@ -134,6 +134,25 @@ const baseNavItems: NavItem[] = [
   { label: 'Settings', to: '/settings', minRole: 'admin', icon: <SettingsIcon /> },
 ]
 
+const BrandMark = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 64 64"
+    fill="none"
+    aria-hidden
+  >
+    <rect width="64" height="64" rx="14" fill="#0F172A" />
+
+    <rect x="14" y="20" width="10" height="28" rx="4" fill="#7DD3FC" />
+    <rect x="27" y="14" width="10" height="36" rx="4" fill="#38BDF8" />
+    <rect x="40" y="22" width="10" height="22" rx="4" fill="#0EA5E9" />
+
+    <circle cx="46" cy="16" r="4" fill="#22D3EE" />
+  </svg>
+);
+
+
 export function Sidebar() {
   const { user, isAuthEnabled } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
@@ -157,20 +176,22 @@ export function Sidebar() {
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
           className="flex items-center gap-3 focus:outline-none"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
+          {/* Logo box (always visible) */}
           <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-accent/40 bg-accent/10">
-            <span className="text-xs font-semibold tracking-tight text-accent">
-              {collapsed ? 'DW' : 'dbt'}
-            </span>
+            <BrandMark size={22} />
           </div>
+
           {!collapsed && (
             <div className="text-left">
-              <div className="text-xs uppercase tracking-wide text-gray-400">Workbench</div>
-              <div className="text-lg font-semibold text-accent leading-tight">dbt-Workbench</div>
+              <div className="text-lg font-semibold text-accent leading-tight">
+                dbt-Workbench
+              </div>
             </div>
           )}
         </button>
+
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
