@@ -295,6 +295,16 @@ function SchedulesPage() {
     return run.status;
   };
 
+  const labelClass = 'text-sm font-medium text-slate-700 dark:text-slate-200';
+  const helperTextClass = 'mt-1 text-xs text-slate-500 dark:text-slate-400';
+  const inputClass =
+    'mt-1 block w-full h-10 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500';
+  const textareaClass =
+    'mt-1 block w-full min-h-[96px] rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500';
+  const sectionCardClass =
+    'rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white/60 dark:bg-slate-950/60 p-5 shadow-sm space-y-4';
+  const envError = error === 'Environment is required';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -393,217 +403,296 @@ function SchedulesPage() {
           )}
 
           {(mode === 'create' || mode === 'edit') && (
-            <div className="bg-purple-100 rounded-lg shadow p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {mode === 'create' ? 'Create Schedule' : 'Edit Schedule'}
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={e => handleFormChange('name', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Command
-                  </label>
-                  <select
-                    value={form.dbt_command}
-                    onChange={e =>
-                      handleFormChange('dbt_command', e.target.value as ScheduleFormState['dbt_command'])
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  >
-                    <option value="run">dbt run</option>
-                    <option value="test">dbt test</option>
-                    <option value="seed">dbt seed</option>
-                    <option value="docs generate">dbt docs generate</option>
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    value={form.description}
-                    onChange={e => handleFormChange('description', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Cron Expression
-                  </label>
-                  <input
-                    type="text"
-                    value={form.cron_expression}
-                    onChange={e => handleFormChange('cron_expression', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Standard cron format, e.g. <code>0 * * * *</code> for hourly.
+            <div className="mx-auto max-w-5xl">
+              <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="space-y-1 border-b border-slate-200/70 px-6 py-5 dark:border-slate-800">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    {mode === 'create' ? 'Create schedule' : 'Edit schedule'}
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Configure a dbt command to run automatically.
                   </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Timezone</label>
-                  <input
-                    type="text"
-                    value={form.timezone}
-                    onChange={e => handleFormChange('timezone', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Environment
-                  </label>
-                  <select
-                    value={form.environment_id}
-                    onChange={e =>
-                      handleFormChange(
-                        'environment_id',
-                        e.target.value ? Number(e.target.value) : '',
-                      )
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  >
-                    <option value="">Select environment</option>
-                    {environments.map(env => (
-                      <option key={env.id} value={env.id}>
-                        {env.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Max Retries
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.retry_policy.max_retries}
-                    onChange={e =>
-                      setForm(prev => ({
-                        ...prev,
-                        retry_policy: {
-                          ...prev.retry_policy,
-                          max_retries: Number(e.target.value),
-                        },
-                      }))
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Retry Delay (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.retry_policy.delay_seconds}
-                    onChange={e =>
-                      setForm(prev => ({
-                        ...prev,
-                        retry_policy: {
-                          ...prev.retry_policy,
-                          delay_seconds: Number(e.target.value),
-                        },
-                      }))
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Backoff Strategy
-                  </label>
-                  <select
-                    value={form.retry_policy.backoff_strategy}
-                    onChange={e =>
-                      setForm(prev => ({
-                        ...prev,
-                        retry_policy: {
-                          ...prev.retry_policy,
-                          backoff_strategy: e.target.value as 'fixed' | 'exponential',
-                        },
-                      }))
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  >
-                    <option value="fixed">Fixed</option>
-                    <option value="exponential">Exponential</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Catch-up Policy
-                  </label>
-                  <select
-                    value={form.catch_up_policy}
-                    onChange={e =>
-                      handleFormChange('catch_up_policy', e.target.value as CatchUpPolicy)
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  >
-                    <option value="skip">Skip missed</option>
-                    <option value="catch_up">Catch up</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Overlap Policy
-                  </label>
-                  <select
-                    value={form.overlap_policy}
-                    onChange={e =>
-                      handleFormChange('overlap_policy', e.target.value as OverlapPolicy)
-                    }
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
-                  >
-                    <option value="no_overlap">No overlap</option>
-                    <option value="allow_overlap">Allow overlap</option>
-                  </select>
-                </div>
-                <div className="flex items-center space-x-2 mt-4">
-                  <input
-                    id="enabled"
-                    type="checkbox"
-                    checked={form.enabled}
-                    onChange={e => handleFormChange('enabled', e.target.checked)}
-                    className="h-4 w-4 text-gray-900 border-gray-300 rounded"
-                  />
-                  <label htmlFor="enabled" className="text-sm text-gray-700">
-                    Enabled
-                  </label>
-                </div>
-              </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode(selectedSchedule ? 'detail' : 'list');
-                  }}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-purple-100 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent hover:bg-accent/90 disabled:opacity-50"
-                >
-                  {isSaving ? 'Saving...' : 'Save'}
-                </button>
+                <div className="space-y-6 px-6 py-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-6">
+                      <div className={sectionCardClass}>
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            Basics
+                          </h3>
+                          <p className={helperTextClass}>
+                            Core details for your schedule.
+                          </p>
+                        </div>
+                        <div className="space-y-4 border-t border-slate-200/70 pt-4 dark:border-slate-800">
+                          <div>
+                            <label className={labelClass}>Name</label>
+                            <input
+                              type="text"
+                              value={form.name}
+                              onChange={e => handleFormChange('name', e.target.value)}
+                              className={inputClass}
+                              placeholder="Nightly warehouse refresh"
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass}>Description</label>
+                            <textarea
+                              value={form.description}
+                              onChange={e => handleFormChange('description', e.target.value)}
+                              className={textareaClass}
+                              rows={3}
+                              placeholder="Optional context for teammates."
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass}>Command</label>
+                            <select
+                              value={form.dbt_command}
+                              onChange={e =>
+                                handleFormChange(
+                                  'dbt_command',
+                                  e.target.value as ScheduleFormState['dbt_command'],
+                                )
+                              }
+                              className={inputClass}
+                            >
+                              <option value="run">dbt run</option>
+                              <option value="test">dbt test</option>
+                              <option value="seed">dbt seed</option>
+                              <option value="docs generate">dbt docs generate</option>
+                            </select>
+                            <p className={helperTextClass}>
+                              Choose the dbt command to execute.
+                            </p>
+                          </div>
+                          <div>
+                            <label className={labelClass}>
+                              Environment
+                              <span className="ml-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                Required
+                              </span>
+                            </label>
+                            <select
+                              value={form.environment_id}
+                              onChange={e =>
+                                handleFormChange(
+                                  'environment_id',
+                                  e.target.value ? Number(e.target.value) : '',
+                                )
+                              }
+                              className={`${inputClass} ${
+                                envError
+                                  ? 'border-red-300 focus:border-red-400 focus:ring-red-500/40'
+                                  : ''
+                              }`}
+                              aria-invalid={envError}
+                              aria-describedby={envError ? 'environment-error' : undefined}
+                            >
+                              <option value="">Select environment</option>
+                              {environments.map(env => (
+                                <option key={env.id} value={env.id}>
+                                  {env.name}
+                                </option>
+                              ))}
+                            </select>
+                            {envError ? (
+                              <p id="environment-error" className="mt-1 text-xs text-red-600">
+                                Environment is required.
+                              </p>
+                            ) : (
+                              <p className={helperTextClass}>Pick where this schedule will run.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className={sectionCardClass}>
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            Schedule
+                          </h3>
+                          <p className={helperTextClass}>
+                            Define when and where the job runs.
+                          </p>
+                        </div>
+                        <div className="space-y-4 border-t border-slate-200/70 pt-4 dark:border-slate-800">
+                          <div>
+                            <label className={labelClass}>Cron expression</label>
+                            <input
+                              type="text"
+                              value={form.cron_expression}
+                              onChange={e => handleFormChange('cron_expression', e.target.value)}
+                              className={`${inputClass} font-mono`}
+                              placeholder="0 * * * *"
+                            />
+                            <p className={helperTextClass}>
+                              Standard cron format. Example: <code>0 * * * *</code> for hourly.
+                            </p>
+                          </div>
+                          <div>
+                            <label className={labelClass}>Timezone</label>
+                            <input
+                              type="text"
+                              value={form.timezone}
+                              onChange={e => handleFormChange('timezone', e.target.value)}
+                              className={inputClass}
+                              placeholder="UTC"
+                            />
+                            <p className={helperTextClass}>Defaults to UTC.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={sectionCardClass}>
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            Retries &amp; behavior
+                          </h3>
+                          <p className={helperTextClass}>
+                            Controls for reliability and concurrency.
+                          </p>
+                        </div>
+                        <div className="space-y-4 border-t border-slate-200/70 pt-4 dark:border-slate-800">
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className={labelClass}>Max retries</label>
+                              <input
+                                type="number"
+                                min={0}
+                                value={form.retry_policy.max_retries}
+                                onChange={e =>
+                                  setForm(prev => ({
+                                    ...prev,
+                                    retry_policy: {
+                                      ...prev.retry_policy,
+                                      max_retries: Number(e.target.value),
+                                    },
+                                  }))
+                                }
+                                className={inputClass}
+                              />
+                              <p className={helperTextClass}>Use 0 to disable retries.</p>
+                            </div>
+                            <div>
+                              <label className={labelClass}>Retry delay (seconds)</label>
+                              <input
+                                type="number"
+                                min={0}
+                                value={form.retry_policy.delay_seconds}
+                                onChange={e =>
+                                  setForm(prev => ({
+                                    ...prev,
+                                    retry_policy: {
+                                      ...prev.retry_policy,
+                                      delay_seconds: Number(e.target.value),
+                                    },
+                                  }))
+                                }
+                                className={inputClass}
+                              />
+                              <p className={helperTextClass}>Waiting period between attempts.</p>
+                            </div>
+                          </div>
+                          <div>
+                            <label className={labelClass}>Backoff strategy</label>
+                            <select
+                              value={form.retry_policy.backoff_strategy}
+                              onChange={e =>
+                                setForm(prev => ({
+                                  ...prev,
+                                  retry_policy: {
+                                    ...prev.retry_policy,
+                                    backoff_strategy: e.target.value as 'fixed' | 'exponential',
+                                  },
+                                }))
+                              }
+                              className={inputClass}
+                            >
+                              <option value="fixed">Fixed</option>
+                              <option value="exponential">Exponential</option>
+                            </select>
+                          </div>
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className={labelClass}>Catch-up policy</label>
+                              <select
+                                value={form.catch_up_policy}
+                                onChange={e =>
+                                  handleFormChange(
+                                    'catch_up_policy',
+                                    e.target.value as CatchUpPolicy,
+                                  )
+                                }
+                                className={inputClass}
+                              >
+                                <option value="skip">Skip missed</option>
+                                <option value="catch_up">Catch up</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={labelClass}>Overlap policy</label>
+                              <select
+                                value={form.overlap_policy}
+                                onChange={e =>
+                                  handleFormChange(
+                                    'overlap_policy',
+                                    e.target.value as OverlapPolicy,
+                                  )
+                                }
+                                className={inputClass}
+                              >
+                                <option value="no_overlap">No overlap</option>
+                                <option value="allow_overlap">Allow overlap</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-950/70">
+                            <label className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-200">
+                              <input
+                                id="enabled"
+                                type="checkbox"
+                                checked={form.enabled}
+                                onChange={e => handleFormChange('enabled', e.target.checked)}
+                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-2 focus:ring-sky-500/50 dark:border-slate-600"
+                              />
+                              <span>
+                                <span className="font-medium">Enabled</span>
+                                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                                  Run this schedule automatically when active.
+                                </span>
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200/70 bg-white/80 px-6 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode(selectedSchedule ? 'detail' : 'list');
+                    }}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800/60 dark:focus:ring-slate-700/60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
