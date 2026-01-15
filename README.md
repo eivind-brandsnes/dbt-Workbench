@@ -1,18 +1,4 @@
-```
-██████╗ ██████╗ ████████╗      ██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗██████╗ ███████╗███╗   ██╗ ██████╗██╗  ██╗
-██╔══██╗██╔══██╗╚══██╔══╝      ██║    ██║██╔═══██╗██╔══██╗██║ ██╔╝██╔══██╗██╔════╝████╗  ██║██╔════╝██║  ██║
-██║  ██║██████╔╝   ██║         ██║ █╗ ██║██║   ██║██████╔╝█████╔╝ ██████╔╝█████╗  ██╔██╗ ██║██║     ███████║
-██║  ██║██╔══██╗   ██║         ██║███╗██║██║   ██║██╔══██╗██╔═██╗ ██╔══██╗██╔══╝  ██║╚██╗██║██║     ██╔══██║
-██████╔╝██████╔╝   ██║         ╚███╔███╔╝╚██████╔╝██║  ██║██║  ██╗██████╔╝███████╗██║ ╚████║╚██████╗██║  ██║
-╚═════╝ ╚═════╝    ╚═╝          ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚═╝  ╚═╝
-```
-
-<img src="assets/favicon.svg" width="64" height="64" alt="dbt-Workbench logo">
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](frontend)
+<img src="assets/brand.svg" width="340" height="90" alt="dbt-Workbench logo">
 
 A lightweight, open-source UI for dbt that provides model browsing, lineage visualization,
 run orchestration, documentation previews, and environment management — without vendor lock-in.
@@ -638,3 +624,8 @@ MIT License — fully permissive for commercial and open-source use.
 ## ⭐ Support
 
 If dbt-Workbench helps you, please star the repository to support the project.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](frontend)
