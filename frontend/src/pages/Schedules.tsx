@@ -332,19 +332,19 @@ function SchedulesPage() {
 
       {overview && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-purple-100 rounded-lg shadow p-4">
+          <div className="bg-blue-50 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500">Active Schedules</div>
             <div className="mt-1 text-2xl font-semibold text-gray-900">
               {overview.active_schedules}
             </div>
           </div>
-          <div className="bg-purple-100 rounded-lg shadow p-4">
+          <div className="bg-blue-50 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500">Total Scheduled Runs</div>
             <div className="mt-1 text-2xl font-semibold text-gray-900">
               {overview.total_scheduled_runs}
             </div>
           </div>
-          <div className="bg-purple-100 rounded-lg shadow p-4">
+          <div className="bg-blue-50 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500">Success / Failure</div>
             <div className="mt-1 text-2xl font-semibold text-gray-900">
               {overview.total_successful_runs} / {overview.total_failed_runs}
@@ -356,7 +356,7 @@ function SchedulesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Schedule list */}
         <div className="lg:col-span-1">
-          <div className="bg-purple-100 rounded-lg shadow">
+          <div className="bg-blue-50 rounded-lg shadow">
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">All Schedules</h2>
             </div>
@@ -397,7 +397,7 @@ function SchedulesPage() {
         {/* Detail / form */}
         <div className="lg:col-span-2">
           {mode === 'list' && (
-            <div className="bg-purple-100 rounded-lg shadow p-6 text-sm text-gray-500">
+            <div className="bg-blue-50 rounded-lg shadow p-6 text-sm text-gray-500">
               Select a schedule to view details, or create a new schedule.
             </div>
           )}
@@ -699,7 +699,7 @@ function SchedulesPage() {
 
           {mode === 'detail' && selectedSchedule && (
             <div className="space-y-4">
-              <div className="bg-purple-100 rounded-lg shadow p-6">
+              <div className="bg-blue-50 rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">{selectedSchedule.name}</h2>
@@ -718,19 +718,19 @@ function SchedulesPage() {
                       </button>
                       <button
                         onClick={handleTestNotifications}
-                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-purple-100 text-gray-700 hover:bg-gray-50"
+                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-blue-50 text-gray-700 hover:bg-gray-50"
                       >
                         Test notifications
                       </button>
                       <button
                         onClick={handleEditClick}
-                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-purple-100 text-gray-700 hover:bg-gray-50"
+                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-blue-50 text-gray-700 hover:bg-gray-50"
                       >
                         Edit
                       </button>
                       <button
                         onClick={handlePauseResume}
-                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-purple-100 text-gray-700 hover:bg-gray-50"
+                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-blue-50 text-gray-700 hover:bg-gray-50"
                       >
                         {selectedSchedule.status === 'active' ? 'Pause' : 'Resume'}
                       </button>
@@ -775,7 +775,7 @@ function SchedulesPage() {
               </div>
 
               {notificationResult && (
-                <div className="bg-purple-100 rounded-lg shadow p-4">
+                <div className="bg-blue-50 rounded-lg shadow p-4">
                   <h3 className="text-md font-semibold mb-2">Notification test results</h3>
                   <ul className="text-sm text-gray-700 space-y-1">
                     {notificationResult.results.map(result => (
@@ -794,7 +794,7 @@ function SchedulesPage() {
                 </div>
               )}
 
-              <div className="bg-purple-100 rounded-lg shadow">
+              <div className="bg-blue-50 rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="text-md font-semibold text-gray-900">Historical Runs</h3>
                 </div>
@@ -831,7 +831,7 @@ function SchedulesPage() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-purple-100 divide-y divide-gray-200">
+                    <tbody className="bg-blue-50 divide-y divide-gray-200">
                       {runs.map(run => (
                         <tr key={run.id}>
                           <td className="px-4 py-2 text-sm text-gray-900">

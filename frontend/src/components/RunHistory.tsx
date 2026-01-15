@@ -47,7 +47,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
 
   if (isLoading && !history) {
     return (
-      <div className="bg-purple-100 rounded-lg shadow p-6">
+      <div className="bg-blue-50 rounded-lg shadow p-6">
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="space-y-3">
@@ -62,7 +62,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
 
   if (error) {
     return (
-      <div className="bg-purple-100 rounded-lg shadow p-6">
+      <div className="bg-blue-50 rounded-lg shadow p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <p className="text-red-600">{error}</p>
           <button
@@ -77,7 +77,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
   }
 
   return (
-    <div className="bg-purple-100 rounded-lg shadow">
+    <div className="bg-blue-50 rounded-lg shadow">
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-700">Run History</h2>
@@ -119,7 +119,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
               </th>
             </tr>
           </thead>
-          <tbody className="bg-purple-100 divide-y divide-gray-200">
+          <tbody className="bg-blue-50 divide-y divide-gray-200">
             {history?.runs.map((run) => (
               <tr key={run.run_id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">

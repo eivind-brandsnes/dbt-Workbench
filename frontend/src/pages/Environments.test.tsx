@@ -148,6 +148,6 @@ describe('EnvironmentsPage profile management', () => {
     const panel = heading.closest('div')?.parentElement?.parentElement as HTMLElement | null
 
     expect(panel).not.toBeNull()
-    expect(panel).toHaveClass('bg-purple-100')
+    expect(panel).toHaveClass('bg-blue-50')
   })
 })

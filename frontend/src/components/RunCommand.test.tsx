@@ -157,6 +157,6 @@ describe('RunCommand', () => {
 
     const panel = container.firstElementChild as HTMLElement | null
     expect(panel).not.toBeNull()
-    expect(panel).toHaveClass('bg-purple-100')
+    expect(panel).toHaveClass('bg-blue-50')
   })
 })

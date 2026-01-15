@@ -38,7 +38,7 @@ function SettingsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Project Configuration */}
-        <div className="bg-purple-100 shadow rounded-lg p-6 space-y-4">
+        <div className="bg-blue-50 shadow rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Project Configuration</h3>
           <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -64,7 +64,7 @@ function SettingsPage() {
         </div>
 
         {/* Artifact Status */}
-        <div className="bg-purple-100 shadow rounded-lg p-6 space-y-4">
+        <div className="bg-blue-50 shadow rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Artifact Status</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -103,7 +103,7 @@ function SettingsPage() {
         </div>
 
         {/* User Info */}
-        <div className="bg-purple-100 shadow rounded-lg p-6 space-y-4">
+        <div className="bg-blue-50 shadow rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-gray-900 border-b pb-2">User Information</h3>
           <dl className="grid grid-cols-1 gap-x-4 gap-y-4">
             <div>
@@ -124,7 +124,7 @@ function SettingsPage() {
         </div>
 
         {/* About */}
-        <div className="bg-purple-100 shadow rounded-lg p-6 space-y-4">
+        <div className="bg-blue-50 shadow rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-gray-900 border-b pb-2">About</h3>
           <p className="text-sm text-gray-600">
             dbt-Workbench is a developer tool for inspecting and managing dbt projects.
