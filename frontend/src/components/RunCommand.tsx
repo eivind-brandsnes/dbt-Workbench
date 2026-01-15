@@ -140,7 +140,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description of this run"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -156,6 +156,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={setSelectModels}
               placeholder="e.g., my_model"
               strict={true}
+              className="text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="mt-1 text-xs text-gray-500">Only configured models allowed.</p>
           </div>
@@ -170,6 +171,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={setExcludeModels}
               placeholder="e.g., my_model"
               strict={true}
+              className="text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="mt-1 text-xs text-gray-500">Only configured models allowed.</p>
           </div>
@@ -187,6 +189,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               }}
               placeholder="e.g., dev"
               strict={true}
+              className="text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="mt-1 text-xs text-gray-500">Must match a scheduled environment target.</p>
           </div>

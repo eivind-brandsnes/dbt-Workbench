@@ -348,7 +348,7 @@ function SchedulesPage() {
         <div className="lg:col-span-1">
           <div className="bg-purple-100 rounded-lg shadow">
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-accent">All Schedules</h2>
+              <h2 className="text-lg font-semibold text-gray-900">All Schedules</h2>
             </div>
             <div className="divide-y divide-gray-200">
               {schedules.map(schedule => (
@@ -394,7 +394,7 @@ function SchedulesPage() {
 
           {(mode === 'create' || mode === 'edit') && (
             <div className="bg-purple-100 rounded-lg shadow p-6 space-y-4">
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {mode === 'create' ? 'Create Schedule' : 'Edit Schedule'}
               </h2>
 
@@ -578,7 +578,7 @@ function SchedulesPage() {
                     type="checkbox"
                     checked={form.enabled}
                     onChange={e => handleFormChange('enabled', e.target.checked)}
-                    className="h-4 w-4 text-accent border-gray-300 rounded"
+                    className="h-4 w-4 text-gray-900 border-gray-300 rounded"
                   />
                   <label htmlFor="enabled" className="text-sm text-gray-700">
                     Enabled
@@ -613,7 +613,7 @@ function SchedulesPage() {
               <div className="bg-purple-100 rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-accent">{selectedSchedule.name}</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">{selectedSchedule.name}</h2>
                     <p className="text-sm text-gray-500">
                       dbt {selectedSchedule.dbt_command} ·{' '}
                       {renderStatusBadge(selectedSchedule.status)}
@@ -623,7 +623,7 @@ function SchedulesPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={handleRunNow}
-                        className="px-3 py-1 text-sm rounded-md border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
+                        className="px-3 py-1 text-sm rounded-md border border-accent/30 bg-accent/10 text-gray-900 hover:bg-accent/20"
                       >
                         Run now
                       </button>
@@ -707,7 +707,7 @@ function SchedulesPage() {
 
               <div className="bg-purple-100 rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                  <h3 className="text-md font-semibold text-accent">Historical Runs</h3>
+                  <h3 className="text-md font-semibold text-gray-900">Historical Runs</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -774,7 +774,7 @@ function SchedulesPage() {
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-900">
                             <button
-                              className="text-accent hover:underline"
+                              className="text-gray-900 hover:underline"
                               onClick={() =>
                                 setExpandedRunId(prev => (prev === run.id ? null : run.id))
                               }
@@ -855,7 +855,7 @@ function SchedulesPage() {
                                 <a
                                   key={`log-${label}`}
                                   href={resolveDebugLink(link)}
-                                  className="text-accent hover:underline"
+                                  className="text-gray-900 hover:underline"
                                   target="_blank"
                                   rel="noreferrer"
                                 >
@@ -866,7 +866,7 @@ function SchedulesPage() {
                                 <a
                                   key={`artifact-${label}`}
                                   href={resolveDebugLink(link)}
-                                  className="text-accent hover:underline"
+                                  className="text-gray-900 hover:underline"
                                   target="_blank"
                                   rel="noreferrer"
                                 >

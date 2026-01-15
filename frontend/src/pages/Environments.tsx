@@ -256,7 +256,7 @@ function EnvironmentsPage() {
       <div className="bg-purple-100 rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold">Profiles</h2>
+            <h2 className="text-lg font-semibold text-gray-900" >Profiles</h2>
             <p className="text-sm text-gray-500">View existing dbt profiles and targets.</p>
           </div>
           {isDeveloperOrAdmin && (
@@ -337,7 +337,7 @@ function EnvironmentsPage() {
       {isProfileEditorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-purple-100 rounded-lg shadow-xl w-full max-w-3xl h-[70vh] flex flex-col p-6">
-            <h2 className="text-xl font-bold mb-2">{editingProfileName ? `Edit ${editingProfileName}` : 'Add Profile'}</h2>
+            <h2 className="text-xl font-bold mb-2 text-gray-900">{editingProfileName ? `Edit ${editingProfileName}` : 'Add Profile'}</h2>
             <p className="text-sm text-gray-600 mb-4">Provide a YAML snippet for a single profile. It will be merged into profiles.yml.</p>
             {profileEditorError && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded p-2 text-sm mb-3">{profileEditorError}</div>
