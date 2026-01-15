@@ -56,7 +56,28 @@ export default function PluginsInstalled() {
   };
 
   if (isLoading) {
-    return <div className="p-6">Loading plugins...</div>;
+    return (
+      <div className="p-6">
+        <div className="inline-flex items-center gap-3 rounded-full border border-gray-800 bg-gray-900/60 px-4 py-2">
+          <svg className="h-5 w-5 animate-spin text-accent" viewBox="0 0 24 24" fill="none">
+            <circle
+              className="opacity-20"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+            />
+            <path
+              className="opacity-80"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V2.5C6.2 2.5 2.5 6.2 2.5 12H4z"
+            />
+          </svg>
+          <span className="text-sm text-gray-300">loading plugins..</span>
+        </div>
+      </div>
+    );
   }
 
   return (
