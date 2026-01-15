@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from app.core.auth import WorkspaceContext, get_current_user, get_current_workspace
 from app.core.config import Settings, get_settings
 from app.core.watcher_manager import get_watcher
-from app.schemas.responses import ArtifactSummary
+from app.schemas.responses import ArtifactSummary, SeedWarningStatus
 from app.services.artifact_service import ArtifactService
 from app.services.artifact_watcher import ArtifactWatcher
 
@@ -32,6 +32,12 @@ def get_artifact_watcher(
 def artifact_summary(service: ArtifactService = Depends(get_service)) -> ArtifactSummary:
     summary = service.get_artifact_summary()
     return ArtifactSummary(**summary)
+
+
+@router.get("/artifacts/seed-status", response_model=SeedWarningStatus)
+def seed_status(service: ArtifactService = Depends(get_service)) -> SeedWarningStatus:
+    status = service.get_seed_warning_status()
+    return SeedWarningStatus(**status)
 
 
 @router.get("/artifacts/versions")

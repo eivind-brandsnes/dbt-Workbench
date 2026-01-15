@@ -414,6 +414,7 @@ Additional behaviors:
 - Real-time log streaming
 - Persist artifacts per run
 - Dashboard surfaces the latest run status from execution history for consistency with the Run History page
+- Seed-aware execution guardrails warn when seeds are required before running downstream models
 
 ### **Phase 4 — Metadata Persistence Layer (Complete)**
 - PostgreSQL backend
