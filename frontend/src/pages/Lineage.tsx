@@ -1,6 +1,7 @@
 import { graphlib, layout as dagreLayout } from '@dagrejs/dagre'
 import { select } from 'd3-selection'
-import { zoom, zoomIdentity, type ZoomTransform } from 'd3-zoom'
+import { line, curveCatmullRom } from 'd3-shape'
+import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -67,6 +68,11 @@ const getNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: s
 
 const normalizeColumnId = (columnId: string) => columnId.replace(/\s+/g, '')
 
+const curvedLine = line<{ x: number; y: number }>()
+  .x((d) => d.x)
+  .y((d) => d.y)
+  .curve(curveCatmullRom.alpha(0.6))
+
 const buildLayout = <T extends LineageNode | ColumnNode>(visibleGraph: VisibleGraph<T>): LayoutResult<T> => {
   if (visibleGraph.nodes.length === 0) return { nodes: [], edges: [], size: canvas }
 
@@ -109,11 +115,7 @@ const buildLayout = <T extends LineageNode | ColumnNode>(visibleGraph: VisibleGr
 }
 
 const buildPathFromPoints = (points: { x: number; y: number }[]): string => {
-  if (!points.length) return ''
-  const [first, ...rest] = points
-  if (!rest.length) return `M ${first.x} ${first.y}`
-  const segments = rest.map((p) => `L ${p.x} ${p.y}`).join(' ')
-  return `M ${first.x} ${first.y} ${segments}`
+  return curvedLine(points) || ''
 }
 
 const buildGroupedGraph = <T extends LineageNode | ColumnNode>(
@@ -283,23 +285,57 @@ function LineagePage() {
     )
   }, [activeGraph.edges, activeGraph.nodes, collapsedGroups, collapsedSubtrees, groupMode, groups])
 
+  const hasData = visibleGraph.nodes.length > 0
+
   const layout = useMemo(() => buildLayout(visibleGraph), [visibleGraph])
 
   const svgRef = useRef<SVGSVGElement | null>(null)
+  const graphContainerRef = useRef<HTMLDivElement | null>(null)
+  const zoomBehaviorRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null)
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
-    if (!svgRef.current) return
+    if (!svgRef.current || !hasData) return
     const svg = select(svgRef.current)
     const zoomBehavior = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 2])
+      .scaleExtent([0.3, 3])
       .on('zoom', (event) => setTransform(event.transform))
 
+    zoomBehaviorRef.current = zoomBehavior
     svg.call(zoomBehavior as any).on('dblclick.zoom', null)
     return () => {
       svg.on('.zoom', null)
     }
+  }, [hasData])
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === graphContainerRef.current)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
+
+  const adjustZoom = (scaleFactor: number) => {
+    if (!svgRef.current || !zoomBehaviorRef.current) return
+    select(svgRef.current).call(zoomBehaviorRef.current.scaleBy as any, scaleFactor)
+  }
+
+  const resetZoom = () => {
+    if (!svgRef.current || !zoomBehaviorRef.current) return
+    select(svgRef.current).call(zoomBehaviorRef.current.transform as any, zoomIdentity)
+  }
+
+  const toggleFullscreen = () => {
+    const target = graphContainerRef.current
+    if (!target) return
+    if (document.fullscreenElement === target) {
+      document.exitFullscreen?.().catch(() => undefined)
+      return
+    }
+    target.requestFullscreen?.().catch(() => undefined)
+  }
 
   const toggleGroup = (groupId: string) => {
     setCollapsedGroups((prev) => {
@@ -373,8 +409,6 @@ function LineagePage() {
     setImpact(emptyImpact)
   }
 
-  const hasData = visibleGraph.nodes.length > 0
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -427,13 +461,47 @@ function LineagePage() {
           {!hasData ? (
             <div className="text-gray-400">No lineage data available.</div>
           ) : (
-            <div className="relative rounded-lg overflow-hidden border border-gray-800/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900">
+            <div
+              ref={graphContainerRef}
+              className={`relative rounded-lg overflow-hidden border border-gray-800/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 ${
+                isFullscreen ? 'h-full w-full' : 'h-[720px]'
+              }`}
+            >
+              <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900/80 px-2 py-1 text-[11px] text-gray-200 backdrop-blur">
+                <button
+                  onClick={() => adjustZoom(1.2)}
+                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                  aria-label="Zoom in"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => adjustZoom(1 / 1.2)}
+                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                  aria-label="Zoom out"
+                >
+                  -
+                </button>
+                <button
+                  onClick={resetZoom}
+                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={toggleFullscreen}
+                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                >
+                  {isFullscreen ? 'Exit full screen' : 'Full screen'}
+                </button>
+              </div>
               <svg
                 ref={svgRef}
                 width="100%"
-                height={canvas.height}
+                height={isFullscreen ? '100%' : canvas.height}
                 viewBox={`0 0 ${layout.size.width} ${layout.size.height}`}
-                className="w-full h-[720px] text-gray-200"
+                className="w-full h-full text-gray-200 cursor-grab active:cursor-grabbing"
+                style={{ touchAction: 'none' }}
               >
                 <defs>
                   <marker
@@ -473,6 +541,8 @@ function LineagePage() {
                         fill="none"
                         stroke={sourceHighlighted ? '#38bdf8' : '#475569'}
                         strokeWidth={sourceHighlighted ? 3 : 1.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         markerEnd="url(#lineage-arrow)"
                         opacity={opacity}
                       />

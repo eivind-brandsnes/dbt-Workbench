@@ -90,7 +90,8 @@ describe('LineagePage', () => {
     const edgePaths = document.querySelectorAll('path')
     expect(edgePaths.length).toBeGreaterThan(0)
     edgePaths.forEach((edge) => {
-      expect(edge.getAttribute('d')).toMatch(/M .+ L .+/)
+      const pathData = edge.getAttribute('d') || ''
+      expect(pathData).toMatch(/^M/)
     })
   })
 
