@@ -71,9 +71,10 @@ class DbtExecutor:
         
         return cmd
     
-    def _create_artifacts_directory(self, run_id: str) -> str:
+    def _create_artifacts_directory(self, run_id: str, artifacts_base_path: Optional[str] = None) -> str:
         """Create a directory for storing run artifacts."""
-        artifacts_dir = Path(self.settings.dbt_artifacts_path) / "runs" / run_id
+        base_path = Path(artifacts_base_path or self.settings.dbt_artifacts_path)
+        artifacts_dir = base_path / "runs" / run_id
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         return str(artifacts_dir)
     
@@ -94,16 +95,30 @@ class DbtExecutor:
         artifacts_dir = self.run_artifacts.get(run_id)
         if not artifacts_dir:
             return artifacts
-        
-        project_path = Path(self.settings.dbt_project_path)
+
+        run_detail = self.run_history.get(run_id)
+        project_root = (
+            Path(run_detail.project_path).resolve()
+            if run_detail and run_detail.project_path
+            else Path(self.settings.dbt_project_path).resolve()
+        )
+        project_path = project_root
         target_dir = project_path / "target"
 
         if not target_dir.exists():
             return artifacts
 
+        artifacts_dir_path = Path(artifacts_dir)
+        # Derive the artifacts base path from the run directory when possible.
+        artifacts_base = (
+            artifacts_dir_path.parent.parent
+            if artifacts_dir_path.parent.name == "runs"
+            else Path(self.settings.dbt_artifacts_path)
+        )
+
         # Copy full target directory so the complete docs site (including assets)
         # is available for the current run and the latest snapshot.
-        destinations = [Path(artifacts_dir), Path(self.settings.dbt_artifacts_path)]
+        destinations = [artifacts_dir_path, artifacts_base]
         for destination in destinations:
             shutil.copytree(target_dir, destination, dirs_exist_ok=True)
 
@@ -121,7 +136,7 @@ class DbtExecutor:
             if copied_file.exists():
                 # Notify watcher to update cache immediately
                 try:
-                    watcher = get_watcher(self.settings.dbt_artifacts_path)
+                    watcher = get_watcher(str(artifacts_base))
                     watcher.on_file_changed(filename)
                 except Exception as e:
                     # Don't fail the run if watcher update fails
@@ -206,6 +221,111 @@ class DbtExecutor:
             "password": str(password) if password is not None else None,
             "adapter_type": str(adapter_type).lower() if adapter_type is not None else None,
         }
+
+    def _resolve_row_lineage_export_path(
+        self,
+        project_root: Path,
+        run_detail: RunDetail,
+    ) -> tuple[Path, str, Path]:
+        """Resolve the row-lineage export directory and the expected output file."""
+        export_path_value: Optional[str] = None
+        export_format = "jsonl"
+        project_file = project_root / "dbt_project.yml"
+        if project_file.exists():
+            try:
+                project_cfg = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
+                if isinstance(project_cfg, dict):
+                    vars_cfg = project_cfg.get("vars")
+                    if isinstance(vars_cfg, dict):
+                        candidate = vars_cfg.get("rowlineage_export_path")
+                        if isinstance(candidate, str) and candidate.strip():
+                            export_path_value = candidate.strip()
+                        fmt = vars_cfg.get("rowlineage_export_format")
+                        if isinstance(fmt, str) and fmt.strip():
+                            export_format = fmt.strip().lower()
+            except Exception as exc:  # pragma: no cover - defensive
+                run_detail.log_lines.append(
+                    f"[row-lineage] Failed to read dbt_project.yml for export config: {exc}"
+                )
+
+        if not export_path_value:
+            export_path_value = self.settings.row_lineage_mapping_relative_path.strip("/") or "lineage/lineage.jsonl"
+
+        export_path = Path(export_path_value)
+        project_root_resolved = project_root.resolve()
+
+        # If a file path was provided, use its parent directory.
+        if export_path.suffix in {".jsonl", ".parquet"}:
+            export_path = export_path.parent
+
+        if export_path.is_absolute():
+            try:
+                export_path.resolve().relative_to(project_root_resolved)
+                export_dir = export_path
+                export_arg = str(export_path)
+            except ValueError:
+                run_detail.log_lines.append(
+                    "[row-lineage] Export path is outside the project root; using target/lineage."
+                )
+                export_dir = project_root / "target" / "lineage"
+                export_arg = "target/lineage"
+        else:
+            export_dir = project_root / export_path
+            try:
+                export_dir.resolve().relative_to(project_root_resolved)
+                export_arg = str(export_path)
+            except ValueError:
+                run_detail.log_lines.append(
+                    "[row-lineage] Export path escapes the project root; using target/lineage."
+                )
+                export_dir = project_root / "target" / "lineage"
+                export_arg = "target/lineage"
+
+        export_filename = "lineage.parquet" if export_format == "parquet" else "lineage.jsonl"
+        export_file = export_dir / export_filename
+        return export_dir, export_arg, export_file
+
+    def _resolve_artifacts_base(self, run_detail: RunDetail) -> Path:
+        if run_detail.artifacts_path:
+            artifacts_dir = Path(run_detail.artifacts_path)
+            if artifacts_dir.parent.name == "runs":
+                return artifacts_dir.parent.parent
+            return artifacts_dir
+        return Path(self.settings.dbt_artifacts_path)
+
+    def _copy_row_lineage_output(self, export_file: Path, run_detail: RunDetail) -> None:
+        """Copy generated lineage mappings into workspace artifacts."""
+        if not export_file.exists() or export_file.is_dir():
+            run_detail.log_lines.append(
+                f"[row-lineage] Export file not found after run: {export_file}"
+            )
+            return
+
+        mapping_relative = self.settings.row_lineage_mapping_relative_path.strip("/") or "lineage/lineage.jsonl"
+        mapping_relative = mapping_relative.lstrip("/")
+
+        artifacts_base = self._resolve_artifacts_base(run_detail)
+        destinations = []
+        if run_detail.artifacts_path:
+            destinations.append(Path(run_detail.artifacts_path) / mapping_relative)
+        destinations.append(artifacts_base / mapping_relative)
+
+        for destination in destinations:
+            try:
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if destination.exists():
+                    if destination.is_dir():
+                        shutil.rmtree(destination)
+                    else:
+                        destination.unlink()
+                shutil.copy2(export_file, destination)
+                run_detail.log_lines.append(
+                    f"[row-lineage] Copied lineage mappings to {destination}."
+                )
+            except Exception as exc:  # pragma: no cover - defensive
+                run_detail.log_lines.append(
+                    f"[row-lineage] Failed to copy lineage mappings to {destination}: {exc}"
+                )
 
     def _run_row_lineage(self, cwd: str, parameters: Dict[str, Any], run_detail: RunDetail) -> None:
         """Optionally run dbt-rowlineage to export row lineage mappings."""
@@ -292,6 +412,33 @@ class DbtExecutor:
             env["PGPASSWORD"] = password
 
         cmd = ["dbt-rowlineage", "--project-root", cwd]
+
+        project_root = Path(cwd).resolve()
+        export_dir, export_arg, export_file = self._resolve_row_lineage_export_path(project_root, run_detail)
+        export_dir.mkdir(parents=True, exist_ok=True)
+        if export_file.exists() and export_file.is_dir():
+            try:
+                shutil.rmtree(export_file)
+                run_detail.log_lines.append(
+                    f"[row-lineage] Removed directory at export file path: {export_file}"
+                )
+            except Exception as exc:  # pragma: no cover - defensive
+                run_detail.log_lines.append(
+                    f"[row-lineage] Failed to remove directory at export file path: {exc}"
+                )
+        if export_file.exists() and export_file.is_file():
+            try:
+                export_file.unlink()
+                run_detail.log_lines.append(
+                    f"[row-lineage] Cleared existing lineage file: {export_file}"
+                )
+            except Exception as exc:  # pragma: no cover - defensive
+                run_detail.log_lines.append(
+                    f"[row-lineage] Failed to clear existing lineage file: {exc}"
+                )
+        cmd.extend(["--export-path", export_arg])
+        run_detail.log_lines.append(f"[row-lineage] Export path: {export_arg}")
+
         if host:
             cmd.extend(["--db-host", host])
         if port:
@@ -332,6 +479,9 @@ class DbtExecutor:
             run_detail.log_lines.append(
                 f"[row-lineage] dbt-rowlineage failed with exit code {return_code}"
             )
+            return
+
+        self._copy_row_lineage_output(export_file, run_detail)
     
     async def start_run(
         self, 
@@ -340,6 +490,7 @@ class DbtExecutor:
         description: Optional[str] = None,
         project_path: Optional[str] = None,
         run_row_lineage: bool = False,
+        artifacts_path: Optional[str] = None,
     ) -> str:
         """Start a new dbt run."""
         run_id = self.generate_run_id()
@@ -365,9 +516,9 @@ class DbtExecutor:
         self.run_history[run_id] = run_detail
         
         # Create artifacts directory
-        artifacts_path = self._create_artifacts_directory(run_id)
-        self.run_artifacts[run_id] = artifacts_path
-        run_detail.artifacts_path = artifacts_path
+        artifacts_dir = self._create_artifacts_directory(run_id, artifacts_base_path=artifacts_path)
+        self.run_artifacts[run_id] = artifacts_dir
+        run_detail.artifacts_path = artifacts_dir
         
         return run_id
     

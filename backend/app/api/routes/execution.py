@@ -2,7 +2,14 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, R
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
-from app.core.auth import Role, decode_token, get_current_user, require_role
+from app.core.auth import (
+    Role,
+    WorkspaceContext,
+    decode_token,
+    get_current_user,
+    get_current_workspace,
+    require_role,
+)
 from app.core.config import get_settings
 from app.database.connection import SessionLocal
 from app.schemas.execution import (
@@ -34,13 +41,18 @@ def get_db():
 async def start_run(
     run_request: RunRequest, 
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
 ):
     """Start a new dbt run."""
     try:
+        workspace_id = run_request.workspace_id or workspace.id
+        if run_request.workspace_id and workspace.id and run_request.workspace_id != workspace.id:
+            raise HTTPException(status_code=400, detail="workspace_id does not match the active workspace")
+
         project_path = None
-        if run_request.workspace_id:
-            repo = git_service.get_repository(db, run_request.workspace_id)
+        if workspace_id:
+            repo = git_service.get_repository(db, workspace_id)
             if repo and repo.directory:
                 project_path = repo.directory
 
@@ -51,6 +63,7 @@ async def start_run(
             description=run_request.description,
             project_path=project_path,
             run_row_lineage=run_request.run_row_lineage,
+            artifacts_path=workspace.artifacts_path,
         )
         
         # Execute in background

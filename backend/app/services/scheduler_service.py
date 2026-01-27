@@ -704,6 +704,7 @@ class SchedulerService:
         dbt_command = DbtCommand(schedule.dbt_command)
 
         project_path = self._resolve_project_path(db, schedule)
+        artifacts_path = self._resolve_artifacts_path(db, schedule)
 
         try:
             run_id = await executor.start_run(
@@ -711,6 +712,7 @@ class SchedulerService:
                 parameters=parameters,
                 description=f"Scheduled run (schedule {schedule.id}, attempt {attempt_number})",
                 project_path=project_path,
+                artifacts_path=artifacts_path,
             )
         except RuntimeError as exc:
             logger.warning("Max concurrent runs reached; cannot start scheduled run: %s", exc)
@@ -915,6 +917,37 @@ class SchedulerService:
             )
 
         return project_path or self.settings.dbt_project_path
+
+    def _resolve_artifacts_path(
+        self, db: Session, schedule: db_models.Schedule
+    ) -> str:
+        """Resolve the artifacts path for the schedule's workspace."""
+        artifacts_path = None
+        try:
+            environment = schedule.environment
+            if environment is None:
+                environment = (
+                    db.query(db_models.Environment)
+                    .filter(db_models.Environment.id == schedule.environment_id)
+                    .first()
+                )
+
+            workspace_id = environment.workspace_id if environment else None
+            if workspace_id:
+                workspace = (
+                    db.query(db_models.Workspace)
+                    .filter(db_models.Workspace.id == workspace_id)
+                    .first()
+                )
+                if workspace and workspace.artifacts_path:
+                    artifacts_path = workspace.artifacts_path
+
+        except Exception as exc:  # pragma: no cover - defensive logging only
+            logger.warning(
+                "Failed to resolve artifacts path for schedule %s: %s", schedule.id, exc
+            )
+
+        return artifacts_path or self.settings.dbt_artifacts_path
 
     # --- Retry utilities ---
 

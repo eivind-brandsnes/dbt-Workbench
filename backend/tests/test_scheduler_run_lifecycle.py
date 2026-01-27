@@ -128,7 +128,14 @@ def test_scheduled_run_uses_environment_profile_and_target(monkeypatch):
 
     captured: dict = {}
 
-    async def fake_start_run(command, parameters, description=None, project_path=None):
+    async def fake_start_run(
+        command,
+        parameters,
+        description=None,
+        project_path=None,
+        run_row_lineage=False,
+        artifacts_path=None,
+    ):
         captured.update(parameters)
         return "run-123"
 

@@ -16,6 +16,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.auth import WorkspaceContext
 from app.core.config import Settings
+from app.database.connection import SessionLocal
 from app.schemas.execution import DbtCommand, RunDetail, RunStatus
 from app.schemas.row_lineage import (
     RowLineageEdge,
@@ -30,11 +31,13 @@ from app.schemas.row_lineage import (
     RowLineageTarget,
     RowLineageTraceResponse,
 )
+from app.services import git_service
 from app.services.artifact_service import ArtifactService
 from app.services.dbt_executor import executor
 from app.services.sql_engine import connection_url_for_environment, get_engine, resolve_environment
 from dbt_rowlineage.utils.sql import TRACE_COLUMN
 from dbt_rowlineage.utils.uuid import new_trace_id
+import yaml
 
 
 RESOURCE_TYPE_PRIORITY = {
@@ -121,17 +124,34 @@ class RowLineageService:
         warnings: List[str] = []
 
         relative = self.settings.row_lineage_mapping_relative_path.strip("/") or "lineage/lineage.jsonl"
+        project_root = self._project_root()
+        project_relative, export_format = self._project_rowlineage_export_info(project_root, warnings)
 
-        relative_candidates: List[str] = [relative]
-        if not relative.startswith("target/"):
-            relative_candidates.append(f"target/{relative}")
+        base_relatives: List[str] = [relative]
+        if project_relative:
+            base_relatives.insert(0, f"{project_relative}/lineage.{export_format}")
+
+        relative_candidates: List[str] = []
+        for rel in base_relatives:
+            relative_candidates.append(rel)
+            if not rel.startswith("target/"):
+                relative_candidates.append(f"target/{rel}")
+            if not rel.startswith("output/"):
+                relative_candidates.append(f"output/{rel}")
         # Preserve order while removing duplicates.
         relative_candidates = list(dict.fromkeys(relative_candidates))
 
         bases: List[Tuple[str, Path]] = [("artifacts", Path(self.workspace.artifacts_path))]
-        project_base = Path(self.settings.dbt_project_path)
-        if project_base.resolve() != bases[0][1].resolve():
-            bases.append(("dbt_project", project_base))
+        workspace_project_base = project_root
+        if workspace_project_base.resolve() != bases[0][1].resolve():
+            bases.append(("workspace_project", workspace_project_base))
+
+        settings_project_base = Path(self.settings.dbt_project_path)
+        if (
+            settings_project_base.resolve() != bases[0][1].resolve()
+            and settings_project_base.resolve() != workspace_project_base.resolve()
+        ):
+            bases.append(("dbt_project", settings_project_base))
 
         first_valid_path: Optional[Path] = None
         first_valid_path_str: Optional[str] = None
@@ -167,7 +187,69 @@ class RowLineageService:
             _mapping_cache_by_path.clear()
             _mapping_signature_by_path.clear()
 
+    def _workspace_repo_path(self) -> Optional[Path]:
+        if not self.workspace.id:
+            return None
+        db = SessionLocal()
+        try:
+            repo = git_service.get_repository(db, self.workspace.id)
+            if repo and repo.directory:
+                return Path(repo.directory)
+            return None
+        finally:
+            db.close()
+
+    def _project_rowlineage_export_info(
+        self,
+        project_root: Path,
+        warnings: List[str],
+    ) -> Tuple[Optional[str], str]:
+        project_file = project_root / "dbt_project.yml"
+        if not project_file.exists():
+            return None, "jsonl"
+        try:
+            project_cfg = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
+            if not isinstance(project_cfg, dict):
+                return None, "jsonl"
+            vars_cfg = project_cfg.get("vars")
+            if not isinstance(vars_cfg, dict):
+                return None, "jsonl"
+            candidate = vars_cfg.get("rowlineage_export_path")
+            if not isinstance(candidate, str) or not candidate.strip():
+                return None, "jsonl"
+            candidate = candidate.strip()
+            fmt = vars_cfg.get("rowlineage_export_format")
+            export_format = fmt.strip().lower() if isinstance(fmt, str) and fmt.strip() else "jsonl"
+        except Exception as exc:  # pragma: no cover - defensive
+            warnings.append(f"Failed to parse dbt_project.yml for row lineage export path: {exc}")
+            return None, "jsonl"
+
+        candidate_path = Path(candidate)
+        project_root_resolved = project_root.resolve()
+        export_format = export_format if export_format in {"jsonl", "parquet"} else "jsonl"
+        if candidate_path.suffix in {".jsonl", ".parquet"}:
+            candidate_path = candidate_path.parent
+
+        if candidate_path.is_absolute():
+            try:
+                relative = candidate_path.resolve().relative_to(project_root_resolved)
+                return str(relative), export_format
+            except ValueError:
+                warnings.append("Row lineage export path is outside the project root; ignoring.")
+                return None, export_format
+
+        normalized = str(candidate_path).lstrip("/")
+        try:
+            (project_root / normalized).resolve().relative_to(project_root_resolved)
+        except ValueError:
+            warnings.append("Row lineage export path escapes the project root; ignoring.")
+            return None, export_format
+        return normalized, export_format
+
     def _project_root(self) -> Path:
+        repo_path = self._workspace_repo_path()
+        if repo_path and repo_path.exists():
+            return repo_path.expanduser().resolve(strict=False)
         return Path(self.settings.dbt_project_path).expanduser().resolve(strict=False)
 
     def _hydrate_project_target_from_artifacts(self, project_root: Path) -> List[str]:
