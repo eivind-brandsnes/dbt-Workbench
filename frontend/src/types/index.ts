@@ -197,6 +197,17 @@ export interface RowLineageModelsResponse {
   warnings: string[]
 }
 
+export interface RowLineageExportRequest {
+  environment_id?: number
+}
+
+export interface RowLineageExportResponse {
+  ran: boolean
+  skipped_reason?: string | null
+  logs: string[]
+  status: RowLineageStatus
+}
+
 export interface RowLineagePreviewRequest {
   model_unique_id: string
   environment_id?: number
@@ -303,6 +314,7 @@ export interface RunRequest {
   parameters?: Record<string, any>;
   description?: string;
   workspace_id?: number;
+  run_row_lineage?: boolean;
 }
 
 export interface RunSummary {

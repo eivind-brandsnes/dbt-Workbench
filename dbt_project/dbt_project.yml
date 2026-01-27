@@ -16,6 +16,11 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+vars:
+  rowlineage_enabled: true
+  rowlineage_export_format: jsonl
+  rowlineage_export_path: target/lineage/lineage.jsonl
+
 models:
   test_project:
     raw:

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import shutil
 import threading
+import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
@@ -14,8 +16,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.auth import WorkspaceContext
 from app.core.config import Settings
+from app.schemas.execution import DbtCommand, RunDetail, RunStatus
 from app.schemas.row_lineage import (
     RowLineageEdge,
+    RowLineageExportResponse,
     RowLineageGraph,
     RowLineageHop,
     RowLineageModelInfo,
@@ -27,6 +31,7 @@ from app.schemas.row_lineage import (
     RowLineageTraceResponse,
 )
 from app.services.artifact_service import ArtifactService
+from app.services.dbt_executor import executor
 from app.services.sql_engine import connection_url_for_environment, get_engine, resolve_environment
 from dbt_rowlineage.utils.sql import TRACE_COLUMN
 from dbt_rowlineage.utils.uuid import new_trace_id
@@ -113,20 +118,100 @@ class RowLineageService:
     # ---- Mapping file helpers ----
 
     def _resolve_mapping_path(self) -> Tuple[Optional[Path], str, List[str]]:
-        base_path = Path(self.workspace.artifacts_path)
-        base_resolved = base_path.resolve()
-        relative = self.settings.row_lineage_mapping_relative_path.strip("/") or "lineage/lineage.jsonl"
-        raw_path = base_path / relative
-
         warnings: List[str] = []
-        try:
-            resolved = raw_path.resolve()
-            resolved.relative_to(base_resolved)
-        except ValueError:
-            warnings.append("Row lineage mapping path escapes the artifacts directory.")
-            return None, str(raw_path), warnings
 
-        return resolved, str(resolved), warnings
+        relative = self.settings.row_lineage_mapping_relative_path.strip("/") or "lineage/lineage.jsonl"
+
+        relative_candidates: List[str] = [relative]
+        if not relative.startswith("target/"):
+            relative_candidates.append(f"target/{relative}")
+        # Preserve order while removing duplicates.
+        relative_candidates = list(dict.fromkeys(relative_candidates))
+
+        bases: List[Tuple[str, Path]] = [("artifacts", Path(self.workspace.artifacts_path))]
+        project_base = Path(self.settings.dbt_project_path)
+        if project_base.resolve() != bases[0][1].resolve():
+            bases.append(("dbt_project", project_base))
+
+        first_valid_path: Optional[Path] = None
+        first_valid_path_str: Optional[str] = None
+
+        for base_label, base_path in bases:
+            base_resolved = base_path.resolve()
+            for rel in relative_candidates:
+                raw_path = base_path / rel
+                try:
+                    resolved = raw_path.resolve()
+                    resolved.relative_to(base_resolved)
+                except ValueError:
+                    warnings.append(f"Row lineage mapping path escapes the {base_label} directory: {raw_path}")
+                    continue
+
+                if first_valid_path is None:
+                    first_valid_path = resolved
+                    first_valid_path_str = str(resolved)
+
+                if resolved.exists() and resolved.is_file():
+                    if base_label != "artifacts":
+                        warnings.append(f"Using row lineage mappings from {base_label} path: {resolved}")
+                    return resolved, str(resolved), warnings
+
+        if first_valid_path is not None and first_valid_path_str is not None:
+            return first_valid_path, first_valid_path_str, warnings
+
+        fallback = bases[0][1] / relative
+        return None, str(fallback), warnings
+
+    def _invalidate_mapping_cache(self) -> None:
+        with _mapping_cache_lock:
+            _mapping_cache_by_path.clear()
+            _mapping_signature_by_path.clear()
+
+    def _project_root(self) -> Path:
+        return Path(self.settings.dbt_project_path).expanduser().resolve(strict=False)
+
+    def _hydrate_project_target_from_artifacts(self, project_root: Path) -> List[str]:
+        logs: List[str] = []
+        artifacts_root = Path(self.workspace.artifacts_path).expanduser().resolve(strict=False)
+        target_dir = project_root / "target"
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        artifact_files = [
+            "manifest.json",
+            "run_results.json",
+            "catalog.json",
+            "sources.json",
+            "graph.gpickle",
+        ]
+
+        for filename in artifact_files:
+            source = artifacts_root / filename
+            destination = target_dir / filename
+            if destination.exists() or not source.exists():
+                continue
+            try:
+                shutil.copy2(source, destination)
+                logs.append(f"[row-lineage] Hydrated target/{filename} from artifacts.")
+            except Exception as exc:  # pragma: no cover - defensive
+                logs.append(f"[row-lineage] Failed to hydrate target/{filename}: {exc}")
+
+        return logs
+
+    def _sync_target_to_artifacts(self, project_root: Path) -> List[str]:
+        logs: List[str] = []
+        target_dir = project_root / "target"
+        artifacts_root = Path(self.workspace.artifacts_path).expanduser().resolve(strict=False)
+        if not target_dir.exists():
+            logs.append("[row-lineage] Project target directory not found; skipping artifact sync.")
+            return logs
+
+        artifacts_root.mkdir(parents=True, exist_ok=True)
+        try:
+            shutil.copytree(target_dir, artifacts_root, dirs_exist_ok=True)
+            logs.append("[row-lineage] Synced project target/ into artifacts.")
+        except Exception as exc:  # pragma: no cover - defensive
+            logs.append(f"[row-lineage] Failed to sync target to artifacts: {exc}")
+        return logs
 
     def _empty_mapping_index(self, mapping_path: Optional[Path], mapping_path_str: str, warnings: List[str]) -> MappingIndex:
         return MappingIndex(
@@ -406,6 +491,68 @@ class RowLineageService:
         return None, False
 
     # ---- Public API ----
+
+    def export_mappings(self, environment_id: Optional[int]) -> RowLineageExportResponse:
+        logs: List[str] = []
+
+        if not self.settings.row_lineage_enabled:
+            return RowLineageExportResponse(
+                ran=False,
+                skipped_reason="Row lineage is disabled in settings.",
+                logs=logs,
+                status=self.get_status(),
+            )
+
+        project_root = self._project_root()
+        if not project_root.exists():
+            return RowLineageExportResponse(
+                ran=False,
+                skipped_reason=f"dbt project path not found: {project_root}",
+                logs=logs,
+                status=self.get_status(),
+            )
+
+        logs.extend(self._hydrate_project_target_from_artifacts(project_root))
+
+        environment = resolve_environment(self.workspace.id, environment_id)
+        parameters: Dict[str, Any] = {}
+        if environment and environment.dbt_target_name:
+            parameters["target"] = environment.dbt_target_name
+        if environment and environment.connection_profile_reference:
+            parameters["profile"] = environment.connection_profile_reference
+
+        run_detail = RunDetail(
+            run_id=str(uuid.uuid4()),
+            command=DbtCommand.RUN,
+            status=RunStatus.RUNNING,
+            start_time=datetime.utcnow(),
+            parameters=parameters,
+            description="Row lineage export",
+            log_lines=[],
+            project_path=str(project_root),
+            run_row_lineage=True,
+        )
+
+        try:
+            executor._run_row_lineage(cwd=str(project_root), parameters=parameters, run_detail=run_detail)
+        except Exception as exc:  # pragma: no cover - defensive
+            run_detail.log_lines.append(f"[row-lineage] Failed to run dbt-rowlineage: {exc}")
+
+        logs.extend(run_detail.log_lines)
+        logs.extend(self._sync_target_to_artifacts(project_root))
+        self._invalidate_mapping_cache()
+        status = self.get_status()
+
+        skip_line = next((line for line in logs if "skipping" in line.lower()), None)
+        if not status.available and skip_line is None:
+            skip_line = "Row lineage mappings were not generated. Run dbt with row lineage enabled first."
+
+        return RowLineageExportResponse(
+            ran=skip_line is None,
+            skipped_reason=skip_line,
+            logs=logs,
+            status=status,
+        )
 
     def get_status(self) -> RowLineageStatus:
         mapping_index = self._load_mapping_index()

@@ -77,13 +77,31 @@ class SchedulerService:
         query = query.order_by(db_models.Environment.id)
         envs = query.all()
 
+        if envs:
+            has_postgres_target = any(e.dbt_target_name == "postgres" for e in envs)
+            default_env = next((e for e in envs if e.name == "default"), None)
+            # Lightweight upgrade: if the default environment is still on the legacy
+            # duckdb target and no postgres target exists yet, point it at postgres.
+            if (
+                not has_postgres_target
+                and default_env
+                and default_env.dbt_target_name == "dev"
+                and default_env.connection_profile_reference == "test_project"
+            ):
+                default_env.dbt_target_name = "postgres"
+                default_env.updated_at = datetime.now(timezone.utc)
+                db.add(default_env)
+                db.commit()
+                db.refresh(default_env)
+                envs = query.all()
+
         if not envs:
             # Ensure at least one default environment exists for convenience
             now = datetime.now(timezone.utc)
             default_env = db_models.Environment(
                 name="default",
                 description="Default environment",
-                dbt_target_name="dev",
+                dbt_target_name="postgres",
                 connection_profile_reference="test_project",
                 variables={},
                 default_retention_policy=None,

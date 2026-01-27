@@ -1,7 +1,16 @@
 test_project:
-  target: dev
+  target: postgres
   outputs:
     dev:
       type: duckdb
       path: '/app/data/test_project.duckdb'
+      threads: 1
+    postgres:
+      type: postgres
+      host: db
+      port: 5432
+      user: user
+      password: password
+      dbname: dbt_workbench
+      schema: public
       threads: 1

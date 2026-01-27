@@ -741,10 +741,23 @@ function LineagePage() {
           <button
             onClick={() => {
               if (viewMode === 'row') {
-                loadRowStatus()
-                if (rowStatus?.enabled) {
-                  loadRowModels()
-                }
+                const environmentId =
+                  typeof rowEnvironmentId === 'number' && Number.isFinite(rowEnvironmentId)
+                    ? rowEnvironmentId
+                    : undefined
+                RowLineageService.exportMappings({ environment_id: environmentId })
+                  .then((payload) => {
+                    setRowStatus(payload.status)
+                    if (payload.status.enabled) {
+                      loadRowModels()
+                    }
+                  })
+                  .catch(() => {
+                    loadRowStatus()
+                    if (rowStatus?.enabled) {
+                      loadRowModels()
+                    }
+                  })
                 return
               }
               fetchGraph(maxDepth)

@@ -24,6 +24,7 @@ class RunRequest(BaseModel):
     parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
     description: Optional[str] = None
     workspace_id: Optional[int] = None
+    run_row_lineage: bool = Field(default=False)
 
 
 class RunSummary(BaseModel):
@@ -44,6 +45,7 @@ class RunDetail(RunSummary):
     artifacts_path: Optional[str] = None
     project_path: Optional[str] = None
     dbt_output: Optional[Dict[str, Any]] = None
+    run_row_lineage: bool = Field(default=False)
 
 
 class LogMessage(BaseModel):

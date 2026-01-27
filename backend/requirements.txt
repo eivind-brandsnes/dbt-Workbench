@@ -20,4 +20,4 @@ PyYAML==6.0.1
 dbt-core==1.8.0
 dbt-postgres==1.8.0
 dbt-duckdb==1.10.0
-dbt-rowlineage==0.1.2
+dbt-rowlineage==0.1.7

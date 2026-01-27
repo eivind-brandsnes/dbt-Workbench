@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, AsyncGenerator
 import hashlib
 
+import yaml
+
 from app.core.config import get_settings
 from app.core.watcher_manager import get_watcher
 from app.database.connection import SessionLocal
@@ -135,13 +137,209 @@ class DbtExecutor:
                 ))
         
         return artifacts
+
+    def _get_profiles_file(self, parameters: Dict[str, Any]) -> Path:
+        """Resolve the profiles.yml path from parameters or settings."""
+        profiles_dir_param = parameters.get("profiles_dir")
+        profiles_base = Path(profiles_dir_param) if profiles_dir_param else Path(self.settings.dbt_profiles_path)
+        return profiles_base / "profiles.yml" if profiles_base.is_dir() else profiles_base
+
+    def _load_profile_target_config(
+        self,
+        cwd: str,
+        parameters: Dict[str, Any],
+        profiles_file: Path,
+    ) -> tuple[Dict[str, Any], Optional[str], Optional[str]]:
+        """Best-effort load of the active dbt profile target configuration."""
+        if not profiles_file.exists():
+            return {}, None, None
+
+        profile_name = parameters.get("profile")
+        if not profile_name:
+            project_file = Path(cwd) / "dbt_project.yml"
+            try:
+                if project_file.exists():
+                    project_cfg = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
+                    if isinstance(project_cfg, dict):
+                        profile_name = project_cfg.get("profile")
+            except Exception:
+                profile_name = None
+
+        if not profile_name:
+            return {}, None, None
+
+        try:
+            profiles_cfg = yaml.safe_load(profiles_file.read_text(encoding="utf-8")) or {}
+            if not isinstance(profiles_cfg, dict):
+                return {}, profile_name, None
+
+            profile_block = profiles_cfg.get(profile_name)
+            if not isinstance(profile_block, dict):
+                return {}, profile_name, None
+
+            outputs = profile_block.get("outputs") or {}
+            if not isinstance(outputs, dict) or not outputs:
+                return {}, profile_name, None
+
+            target_name = parameters.get("target") or profile_block.get("target") or next(iter(outputs.keys()))
+            target_cfg = outputs.get(target_name) if isinstance(outputs, dict) else None
+
+            return (target_cfg if isinstance(target_cfg, dict) else {}), profile_name, target_name
+        except Exception:
+            # Swallow YAML/IO errors; we will fall back to env/CLI flags.
+            return {}, profile_name, None
+
+    def _extract_connection_values(self, target_cfg: Dict[str, Any]) -> Dict[str, Optional[str]]:
+        """Extract common connection values from a dbt profile target config."""
+        host = target_cfg.get("host")
+        port = target_cfg.get("port")
+        database = target_cfg.get("dbname") or target_cfg.get("database") or target_cfg.get("schema")
+        user = target_cfg.get("user")
+        password = target_cfg.get("password") or target_cfg.get("pass") or target_cfg.get("passphrase")
+        adapter_type = target_cfg.get("type")
+
+        return {
+            "host": str(host) if host is not None else None,
+            "port": str(port) if port is not None else None,
+            "database": str(database) if database is not None else None,
+            "user": str(user) if user is not None else None,
+            "password": str(password) if password is not None else None,
+            "adapter_type": str(adapter_type).lower() if adapter_type is not None else None,
+        }
+
+    def _run_row_lineage(self, cwd: str, parameters: Dict[str, Any], run_detail: RunDetail) -> None:
+        """Optionally run dbt-rowlineage to export row lineage mappings."""
+        if not self.settings.row_lineage_enabled:
+            run_detail.log_lines.append(
+                "[row-lineage] Row lineage is disabled via settings; skipping dbt-rowlineage."
+            )
+            return
+
+        env = os.environ.copy()
+
+        profiles_file = self._get_profiles_file(parameters)
+        profiles_dir = str(profiles_file.parent) if profiles_file.exists() else os.path.abspath(self.settings.dbt_profiles_path)
+        if os.path.exists(profiles_dir):
+            env["DBT_PROFILES_DIR"] = profiles_dir
+
+        target = parameters.get("target")
+        if isinstance(target, str) and target:
+            env["DBT_TARGET"] = target
+
+        profile = parameters.get("profile")
+        if isinstance(profile, str) and profile:
+            env["DBT_PROFILE"] = profile
+
+        # Resolve connection details from profiles.yml so the CLI has explicit DB params.
+        target_cfg, resolved_profile, resolved_target = self._load_profile_target_config(
+            cwd=cwd,
+            parameters=parameters,
+            profiles_file=profiles_file,
+        )
+        conn = self._extract_connection_values(target_cfg) if target_cfg else {}
+
+        adapter_type = conn.get("adapter_type")
+        if adapter_type == "duckdb":
+            run_detail.log_lines.append(
+                "[row-lineage] DuckDB profile detected; dbt-rowlineage CLI requires a networked DB. Skipping."
+            )
+            return
+
+        if resolved_profile and "DBT_PROFILE" not in env:
+            env["DBT_PROFILE"] = resolved_profile
+        if resolved_target and "DBT_TARGET" not in env:
+            env["DBT_TARGET"] = resolved_target
+
+        # Populate both DBT_* and PG* env vars for compatibility with the CLI.
+        if adapter_type:
+            env["DBT_ADAPTER"] = adapter_type
+
+        host = conn.get("host")
+        port = conn.get("port")
+        database = conn.get("database")
+        user = conn.get("user")
+        password = conn.get("password")
+
+        requires_password = not (adapter_type and adapter_type.startswith("clickhouse"))
+        missing: List[str] = []
+        if not database:
+            missing.append("database")
+        if not user:
+            missing.append("user")
+        if requires_password and not password:
+            missing.append("password")
+        if missing:
+            run_detail.log_lines.append(
+                "[row-lineage] Missing DB credentials in profiles.yml/env "
+                f"({', '.join(missing)}); skipping dbt-rowlineage."
+            )
+            return
+
+        if host:
+            env["DBT_HOST"] = host
+            env["PGHOST"] = host
+        if port:
+            env["DBT_PORT"] = port
+            env["PGPORT"] = port
+        if database:
+            env["DBT_DATABASE"] = database
+            env["PGDATABASE"] = database
+        if user:
+            env["DBT_USER"] = user
+            env["PGUSER"] = user
+        if password:
+            env["DBT_PASSWORD"] = password
+            env["PGPASSWORD"] = password
+
+        cmd = ["dbt-rowlineage", "--project-root", cwd]
+        if host:
+            cmd.extend(["--db-host", host])
+        if port:
+            cmd.extend(["--db-port", port])
+        if database:
+            cmd.extend(["--db-name", database])
+        if user:
+            cmd.extend(["--db-user", user])
+        if password:
+            cmd.extend(["--db-password", password])
+
+        run_detail.log_lines.append("[row-lineage] Running dbt-rowlineage export...")
+
+        process = subprocess.Popen(
+            cmd,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True,
+            env=env,
+        )
+
+        while True:
+            line = process.stdout.readline()
+            if not line and process.poll() is not None:
+                break
+
+            if line:
+                line = line.rstrip()
+                run_detail.log_lines.append(f"[row-lineage] {line}")
+                if len(run_detail.log_lines) > self.settings.log_buffer_size:
+                    run_detail.log_lines = run_detail.log_lines[-self.settings.log_buffer_size:]
+
+        return_code = process.wait()
+        if return_code != 0:
+            run_detail.log_lines.append(
+                f"[row-lineage] dbt-rowlineage failed with exit code {return_code}"
+            )
     
     async def start_run(
         self, 
         command: DbtCommand, 
         parameters: Dict[str, Any],
         description: Optional[str] = None,
-        project_path: Optional[str] = None
+        project_path: Optional[str] = None,
+        run_row_lineage: bool = False,
     ) -> str:
         """Start a new dbt run."""
         run_id = self.generate_run_id()
@@ -160,7 +358,8 @@ class DbtExecutor:
             parameters=parameters,
             description=description,
             log_lines=[],
-            project_path=project_path
+            project_path=project_path,
+            run_row_lineage=run_row_lineage,
         )
         
         self.run_history[run_id] = run_detail
@@ -229,6 +428,17 @@ class DbtExecutor:
             
             if return_code == 0:
                 run_detail.status = RunStatus.SUCCEEDED
+                # Optionally run row-lineage export before capturing artifacts
+                if run_detail.run_row_lineage:
+                    try:
+                        self._run_row_lineage(cwd=cwd, parameters=run_detail.parameters, run_detail=run_detail)
+                    except Exception as exc:
+                        run_detail.log_lines.append(
+                            f"[row-lineage] Failed to run dbt-rowlineage: {exc}"
+                        )
+                        if len(run_detail.log_lines) > self.settings.log_buffer_size:
+                            run_detail.log_lines = run_detail.log_lines[-self.settings.log_buffer_size:]
+
                 # Capture artifacts on success
                 artifacts = self._capture_artifacts(run_id)
                 run_detail.artifacts_available = len(artifacts) > 0
@@ -266,6 +476,7 @@ class DbtExecutor:
                             "error_message": run_detail.error_message,
                             "duration_seconds": run_detail.duration_seconds,
                             "artifacts_available": run_detail.artifacts_available,
+                            "run_row_lineage": run_detail.run_row_lineage,
                         },
                     )
                 else:
@@ -276,6 +487,7 @@ class DbtExecutor:
                         "error_message": run_detail.error_message,
                         "duration_seconds": run_detail.duration_seconds,
                         "artifacts_available": run_detail.artifacts_available,
+                        "run_row_lineage": run_detail.run_row_lineage,
                     }
                     db_run.logs = run_detail.log_lines
                 db.add(db_run)
@@ -397,7 +609,8 @@ class DbtExecutor:
                     artifacts_available=summary.get("artifacts_available", False),
                     parameters={},
                     log_lines=run.logs or [],
-                    artifacts_path=None
+                    artifacts_path=None,
+                    run_row_lineage=summary.get("run_row_lineage", False),
                 )
             return None
         except Exception as e:

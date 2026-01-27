@@ -32,6 +32,17 @@ class RowLineageModelsResponse(BaseModel):
     warnings: List[str] = Field(default_factory=list)
 
 
+class RowLineageExportRequest(BaseModel):
+    environment_id: Optional[int] = None
+
+
+class RowLineageExportResponse(BaseModel):
+    ran: bool
+    skipped_reason: Optional[str] = None
+    logs: List[str] = Field(default_factory=list)
+    status: RowLineageStatus
+
+
 class RowLineagePreviewRequest(BaseModel):
     model_unique_id: str
     environment_id: Optional[int] = None
@@ -101,4 +112,3 @@ class RowLineageTraceResponse(BaseModel):
     hops: List[RowLineageHop]
     truncated: bool
     warnings: List[str] = Field(default_factory=list)
-

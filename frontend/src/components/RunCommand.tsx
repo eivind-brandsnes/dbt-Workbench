@@ -29,6 +29,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const [failFast, setFailFast] = useState(false);
   const [storeFailures, setStoreFailures] = useState(false);
   const [noCompile, setNoCompile] = useState(false);
+  const [runRowLineage, setRunRowLineage] = useState(false);
 
   useEffect(() => {
     // Fetch models for autocomplete
@@ -134,6 +135,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
         parameters: params,
         description: description || undefined,
         workspace_id: activeWorkspace?.id,
+        run_row_lineage: runRowLineage,
       };
 
       const result = await ExecutionService.startRun(request);
@@ -148,6 +150,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
       setFailFast(false);
       setStoreFailures(false);
       setNoCompile(false);
+      setRunRowLineage(false);
       void waitForRunCompletion(result.run_id, result.status);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start run');
@@ -273,6 +276,17 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               className="mr-2"
             />
             <span className="text-sm text-gray-700">No Compile (dbt docs generate only)</span>
+          </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={runRowLineage}
+              onChange={(e) => setRunRowLineage(e.target.checked)}
+              className="mr-2"
+              data-testid="run-row-lineage"
+            />
+            <span className="text-sm text-gray-700">Run Row Lineage (dbt-rowlineage)</span>
           </label>
         </div>
 

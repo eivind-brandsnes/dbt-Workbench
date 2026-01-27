@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.auth import Role, WorkspaceContext, get_current_user, get_current_workspace, require_role
 from app.core.config import Settings, get_settings
 from app.schemas.row_lineage import (
+    RowLineageExportRequest,
+    RowLineageExportResponse,
     RowLineageModelsResponse,
     RowLineagePreviewRequest,
     RowLineagePreviewResponse,
@@ -41,6 +43,18 @@ def get_status(service: RowLineageService = Depends(get_service)) -> RowLineageS
 )
 def list_models(service: RowLineageService = Depends(get_service)) -> RowLineageModelsResponse:
     return service.list_models()
+
+
+@router.post(
+    "/export",
+    response_model=RowLineageExportResponse,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
+def export_mappings(
+    request: RowLineageExportRequest,
+    service: RowLineageService = Depends(get_service),
+) -> RowLineageExportResponse:
+    return service.export_mappings(environment_id=request.environment_id)
 
 
 @router.post(
@@ -87,4 +101,3 @@ def get_trace(
         raise HTTPException(status_code=404, detail={"message": str(exc), "code": "not_found"}) from exc
     except Exception as exc:  # pragma: no cover - defensive
         raise HTTPException(status_code=400, detail={"message": str(exc), "code": "trace_error"}) from exc
-

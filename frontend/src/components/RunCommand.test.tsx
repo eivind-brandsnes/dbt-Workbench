@@ -158,6 +158,18 @@ describe('RunCommand', () => {
     expect(await screen.findByText('Select a Target before running a dbt command.')).toBeInTheDocument()
   })
 
+  it('passes run_row_lineage when the checkbox is selected', async () => {
+    render(<RunCommand />)
+
+    await userEvent.click(screen.getByLabelText('Run Row Lineage (dbt-rowlineage)'))
+    await selectTarget()
+    await userEvent.click(screen.getByTestId('run-execute'))
+
+    await waitFor(() => expect(mockedExecutionService.startRun).toHaveBeenCalled())
+    const runRequest = mockedExecutionService.startRun.mock.calls[0][0]
+    expect(runRequest.run_row_lineage).toBe(true)
+  })
+
   it('uses the purple background styling on the command panel', () => {
     const { container } = render(<RunCommand />)
 

@@ -1,5 +1,7 @@
 import { api } from '../api/client'
 import {
+  RowLineageExportRequest,
+  RowLineageExportResponse,
   RowLineageModelsResponse,
   RowLineagePreviewRequest,
   RowLineagePreviewResponse,
@@ -15,6 +17,11 @@ export class RowLineageService {
 
   static async listModels(): Promise<RowLineageModelsResponse> {
     const response = await api.get<RowLineageModelsResponse>('/row-lineage/models')
+    return response.data
+  }
+
+  static async exportMappings(payload: RowLineageExportRequest): Promise<RowLineageExportResponse> {
+    const response = await api.post<RowLineageExportResponse>('/row-lineage/export', payload)
     return response.data
   }
 
@@ -35,4 +42,3 @@ export class RowLineageService {
     return response.data
   }
 }
-

@@ -49,7 +49,8 @@ async def start_run(
             command=run_request.command,
             parameters=run_request.parameters or {},
             description=run_request.description,
-            project_path=project_path
+            project_path=project_path,
+            run_row_lineage=run_request.run_row_lineage,
         )
         
         # Execute in background
