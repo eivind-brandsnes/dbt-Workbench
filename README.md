@@ -30,7 +30,7 @@ Designed for local, on‑prem, and air‑gapped deployments.
 ---
 
 ## 📸 Screenshots
-<img width="1507" height="706" alt="image" src="https://github.com/user-attachments/assets/2496b665-831b-4c45-96b1-dcc8c00e3534" />
+<img width="2990" height="1468" alt="image" src="https://github.com/user-attachments/assets/b08476fa-ffe8-4271-a0aa-1acb6a5dba1c" />
 
 <img width="1512" height="708" alt="image" src="https://github.com/user-attachments/assets/76a23b14-0182-442e-b9fc-9bcf1f775cec" />
 
