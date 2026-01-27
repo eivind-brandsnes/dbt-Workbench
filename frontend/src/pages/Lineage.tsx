@@ -427,8 +427,35 @@ function LineagePage() {
     return { nodes, edges, groups: [] }
   }, [rowTrace])
 
-  const activeGraph = viewMode === 'model' ? graph : viewMode === 'column' ? columnGraph : rowGraph
-  const groups = viewMode === 'row' ? [] : graph.groups || []
+  const columnGraphFiltered = useMemo<ColumnLineageGraph>(() => {
+    if (columnGraph.nodes.length === 0) return columnGraph
+
+    const normalize = (id: string) => normalizeColumnId(id)
+    const connected = new Set<string>()
+    columnGraph.edges.forEach((edge) => {
+      connected.add(normalize(edge.source))
+      connected.add(normalize(edge.target))
+    })
+
+    if (!selectedColumn) {
+      const nodes = columnGraph.nodes.filter((node) => connected.has(normalize(node.id)))
+      return { nodes, edges: columnGraph.edges }
+    }
+
+    const focus = new Set<string>([
+      normalize(selectedColumn),
+      ...impact.upstream.map((n) => normalize(n)),
+      ...impact.downstream.map((n) => normalize(n)),
+    ])
+    const nodes = columnGraph.nodes.filter((node) => focus.has(normalize(node.id)))
+    const edges = columnGraph.edges.filter(
+      (edge) => focus.has(normalize(edge.source)) && focus.has(normalize(edge.target)),
+    )
+    return { nodes, edges }
+  }, [columnGraph.edges, columnGraph.nodes, impact.downstream, impact.upstream, selectedColumn])
+
+  const activeGraph = viewMode === 'model' ? graph : viewMode === 'column' ? columnGraphFiltered : rowGraph
+  const groups = viewMode === 'model' ? graph.groups || [] : []
 
   const visibleGraph = useMemo(() => {
     return buildGroupedGraph(
@@ -449,7 +476,11 @@ function LineagePage() {
         : rowPreview
           ? 'Select a row to view lineage.'
           : 'Load rows to start.'
-      : 'No lineage data available.'
+      : viewMode === 'column'
+        ? selectedColumn
+          ? 'No column lineage available for this selection.'
+          : 'Select a column to view lineage.'
+        : 'No lineage data available.'
 
   const layout = useMemo(() => buildLayout(visibleGraph), [visibleGraph])
 
@@ -684,13 +715,13 @@ function LineagePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Lineage</h1>
           <p className="text-sm text-gray-400">Navigate model, column, and row lineage with grouping, collapse, and impact analysis.</p>
         </div>
-        <div className="flex gap-3 items-center">
-          <div className="flex rounded-md border border-gray-700 overflow-hidden">
+        <div className="flex flex-wrap gap-3 items-center justify-end">
+          <div className="flex rounded-md border border-gray-700 overflow-hidden shrink-0">
             {([
               { id: 'model', label: 'Model' },
               { id: 'column', label: 'Column' },
