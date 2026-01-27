@@ -169,6 +169,103 @@ export interface ImpactResponse {
   downstream: string[]
 }
 
+// Row lineage types
+export interface RowLineageStatus {
+  enabled: boolean
+  available: boolean
+  mapping_path: string
+  mapping_mtime: string | null
+  mapping_count: number
+  roots: string[]
+  models: string[]
+  warnings: string[]
+}
+
+export interface RowLineageModelInfo {
+  model_name: string
+  model_unique_id?: string | null
+  schema?: string | null
+  database?: string | null
+  relation_name?: string | null
+  is_root?: boolean | null
+  mappings_as_target?: number | null
+}
+
+export interface RowLineageModelsResponse {
+  roots: RowLineageModelInfo[]
+  models: RowLineageModelInfo[]
+  warnings: string[]
+}
+
+export interface RowLineagePreviewRequest {
+  model_unique_id: string
+  environment_id?: number
+  limit?: number
+}
+
+export interface RowLineagePreviewResponse {
+  model_unique_id: string
+  model_name: string
+  relation_name: string
+  schema?: string | null
+  database?: string | null
+  trace_column: string
+  trace_column_present: boolean
+  columns: string[]
+  rows: Array<Record<string, any>>
+  warnings?: string[]
+}
+
+export interface RowLineageNode {
+  id: string
+  label: string
+  type: string
+  model_name: string
+  trace_id: string
+  model_unique_id?: string | null
+  schema?: string | null
+  database?: string | null
+  relation_name?: string | null
+  row?: Record<string, any> | null
+}
+
+export interface RowLineageEdge {
+  source: string
+  target: string
+}
+
+export interface RowLineageGraph {
+  nodes: RowLineageNode[]
+  edges: RowLineageEdge[]
+}
+
+export interface RowLineageHop {
+  source_model: string
+  target_model: string
+  source_trace_id: string
+  target_trace_id: string
+  compiled_sql: string
+  executed_at: string
+  source_row?: Record<string, any> | null
+  target_row?: Record<string, any> | null
+}
+
+export interface RowLineageTraceResponse {
+  target: {
+    model_unique_id?: string | null
+    model_name: string
+    trace_id: string
+    relation_name?: string | null
+    schema?: string | null
+    database?: string | null
+    row?: Record<string, any> | null
+  }
+  graph: RowLineageGraph
+  hops: RowLineageHop[]
+  truncated: boolean
+  warnings?: string[]
+}
+
 export interface RunRecord {
   status?: string
   start_time?: string

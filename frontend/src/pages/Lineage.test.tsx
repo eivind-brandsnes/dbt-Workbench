@@ -9,11 +9,13 @@ vi.mock('../api/client', () => {
   return {
     api: {
       get: vi.fn(),
+      post: vi.fn(),
     },
   }
 })
 
 const mockedGet = api.get as unknown as ReturnType<typeof vi.fn>
+const mockedPost = api.post as unknown as ReturnType<typeof vi.fn>
 
 const sampleGraph = {
   nodes: [
@@ -43,15 +45,146 @@ const sampleModelDetail = {
   database: 'db',
 }
 
+const sampleRowStatus = {
+  enabled: true,
+  available: true,
+  mapping_path: '/tmp/lineage/lineage.jsonl',
+  mapping_mtime: null,
+  mapping_count: 2,
+  roots: ['mart_model'],
+  models: ['example_source', 'staging_model', 'mart_model'],
+  warnings: [],
+}
+
+const sampleRowModels = {
+  roots: [
+    {
+      model_name: 'mart_model',
+      model_unique_id: 'model.rowlineage_demo.mart_model',
+      schema: 'marts',
+      database: 'db',
+      relation_name: 'db.marts.mart_model',
+      is_root: true,
+      mappings_as_target: 1,
+    },
+  ],
+  models: [
+    {
+      model_name: 'mart_model',
+      model_unique_id: 'model.rowlineage_demo.mart_model',
+      schema: 'marts',
+      database: 'db',
+      relation_name: 'db.marts.mart_model',
+      is_root: true,
+      mappings_as_target: 1,
+    },
+    {
+      model_name: 'staging_model',
+      model_unique_id: 'model.rowlineage_demo.staging_model',
+      schema: 'staging',
+      database: 'db',
+      relation_name: 'db.staging.staging_model',
+      is_root: false,
+      mappings_as_target: 1,
+    },
+  ],
+  warnings: [],
+}
+
+const sampleEnvironments = [
+  {
+    id: 1,
+    name: 'dev',
+    description: 'Development',
+    dbt_target_name: 'dev',
+    connection_profile_reference: null,
+    variables: {},
+    default_retention_policy: null,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+  },
+]
+
+const sampleRowPreview = {
+  model_unique_id: 'model.rowlineage_demo.mart_model',
+  model_name: 'mart_model',
+  relation_name: 'db.marts.mart_model',
+  schema: 'marts',
+  database: 'db',
+  trace_column: '_row_trace_id',
+  trace_column_present: true,
+  columns: ['id', 'customer_name_upper', '_row_trace_id'],
+  rows: [
+    { id: 1, customer_name_upper: 'ALICE', _row_trace_id: 'mart-1' },
+  ],
+  warnings: [],
+}
+
+const sampleRowTrace = {
+  target: {
+    model_unique_id: 'model.rowlineage_demo.mart_model',
+    model_name: 'mart_model',
+    trace_id: 'mart-1',
+    relation_name: 'db.marts.mart_model',
+    row: { id: 1, customer_name_upper: 'ALICE', _row_trace_id: 'mart-1' },
+  },
+  graph: {
+    nodes: [
+      {
+        id: 'row:mart_model:mart-1',
+        label: 'mart_model\nmart-1',
+        type: 'row',
+        model_name: 'mart_model',
+        trace_id: 'mart-1',
+        row: { id: 1, customer_name_upper: 'ALICE', _row_trace_id: 'mart-1' },
+      },
+      {
+        id: 'row:staging_model:stg-1',
+        label: 'staging_model\nstg-1',
+        type: 'row',
+        model_name: 'staging_model',
+        trace_id: 'stg-1',
+        row: { id: 1, customer_name_upper: 'ALICE', _row_trace_id: 'stg-1' },
+      },
+    ],
+    edges: [
+      { source: 'row:staging_model:stg-1', target: 'row:mart_model:mart-1' },
+    ],
+  },
+  hops: [
+    {
+      source_model: 'staging_model',
+      target_model: 'mart_model',
+      source_trace_id: 'stg-1',
+      target_trace_id: 'mart-1',
+      compiled_sql: 'select * from staging_model',
+      executed_at: '2024-01-01T00:00:00Z',
+      source_row: { id: 1, customer_name_upper: 'ALICE', _row_trace_id: 'stg-1' },
+      target_row: { id: 1, customer_name_upper: 'ALICE', _row_trace_id: 'mart-1' },
+    },
+  ],
+  truncated: false,
+  warnings: [],
+}
+
 describe('LineagePage', () => {
   beforeEach(() => {
     mockedGet.mockReset()
+    mockedPost.mockReset()
     mockedGet.mockImplementation((url: string) => {
-      if (url.startsWith('/config')) return Promise.resolve({ data: { lineage: {} } })
+      if (url.startsWith('/config')) return Promise.resolve({ data: { lineage: {}, row_lineage: { enabled: true } } })
       if (url.startsWith('/lineage/graph')) return Promise.resolve({ data: sampleGraph })
       if (url.startsWith('/lineage/columns')) return Promise.resolve({ data: sampleColumnGraph })
       if (url.startsWith('/lineage/upstream/model.two')) return Promise.resolve({ data: sampleImpact })
       if (url.startsWith('/lineage/model/model.two')) return Promise.resolve({ data: sampleModelDetail })
+      if (url.startsWith('/row-lineage/status')) return Promise.resolve({ data: sampleRowStatus })
+      if (url.startsWith('/row-lineage/models')) return Promise.resolve({ data: sampleRowModels })
+      if (url.startsWith('/schedules/environments')) return Promise.resolve({ data: sampleEnvironments })
+      if (url.startsWith('/row-lineage/trace/')) return Promise.resolve({ data: sampleRowTrace })
+      return Promise.resolve({ data: {} })
+    })
+    mockedPost.mockImplementation((url: string) => {
+      if (url.startsWith('/row-lineage/preview')) return Promise.resolve({ data: sampleRowPreview })
       return Promise.resolve({ data: {} })
     })
   })
@@ -112,5 +245,43 @@ describe('LineagePage', () => {
     const columnButton = await screen.findByText('id')
     fireEvent.click(columnButton)
     await waitFor(() => expect(mockedGet).toHaveBeenCalledWith(expect.stringContaining('/lineage/upstream/model.two')))
+  })
+
+  it('supports row lineage mode with row preview and hop history', async () => {
+    render(
+      <MemoryRouter>
+        <LineagePage />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => expect(mockedGet).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Row' }))
+
+    const modelSelect = await screen.findByTestId('row-lineage-model-select')
+    fireEvent.change(modelSelect, { target: { value: 'model.rowlineage_demo.mart_model' } })
+
+    const loadRowsButton = screen.getByTestId('row-lineage-load-rows')
+    fireEvent.click(loadRowsButton)
+
+    await waitFor(() =>
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/row-lineage/preview',
+        expect.objectContaining({ model_unique_id: 'model.rowlineage_demo.mart_model' }),
+      ),
+    )
+
+    const traceCell = await screen.findByText('mart-1')
+    fireEvent.click(traceCell)
+
+    await waitFor(() =>
+      expect(mockedGet).toHaveBeenCalledWith(
+        expect.stringContaining('/row-lineage/trace/model.rowlineage_demo.mart_model/mart-1'),
+      ),
+    )
+
+    expect(await screen.findByText('Row Details')).toBeInTheDocument()
+    expect(await screen.findByText('Hop History')).toBeInTheDocument()
+    expect(screen.getByText('staging_model -> mart_model')).toBeInTheDocument()
   })
 })

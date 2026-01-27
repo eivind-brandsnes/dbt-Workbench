@@ -6,19 +6,27 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { api } from '../api/client'
+import { Table } from '../components/Table'
+import { RowLineageService } from '../services/rowLineageService'
+import { SchedulerService } from '../services/schedulerService'
 import {
   ColumnLineageGraph,
   ColumnNode,
+  EnvironmentConfig,
   ImpactResponse,
   LineageEdge,
   LineageGraph,
   LineageGroup,
   LineageNode,
   ModelDetail,
+  RowLineageModelsResponse,
+  RowLineagePreviewResponse,
+  RowLineageStatus,
+  RowLineageTraceResponse,
 } from '../types'
 
 type GroupingMode = 'none' | 'schema' | 'resource_type' | 'tag'
-type ViewMode = 'model' | 'column'
+type ViewMode = 'model' | 'column' | 'row'
 
 type GraphNode<T extends LineageNode | ColumnNode> = T & { isGroup?: boolean; isSubtree?: boolean }
 type PositionedNode<T extends LineageNode | ColumnNode> = GraphNode<T> & { x: number; y: number }
@@ -56,6 +64,7 @@ const groupColor: Record<string, { fill: string; stroke: string }> = {
   snapshot: { fill: '#1f2937', stroke: '#a855f7' },
   source: { fill: '#1f2937', stroke: '#fb923c' },
   test: { fill: '#1f2937', stroke: '#f59e0b' },
+  row: { fill: '#1f2937', stroke: '#f472b6' },
   group: { fill: '#111827', stroke: '#9ca3af' },
   subtree: { fill: '#0f172a', stroke: '#e5e7eb' },
 }
@@ -67,6 +76,43 @@ const getNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: s
 }
 
 const normalizeColumnId = (columnId: string) => columnId.replace(/\s+/g, '')
+const rowTableColumnLimit = 6
+
+const formatValueForCell = (value: unknown): string => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+const formatValueForDetails = (value: unknown): { text: string; complex: boolean } => {
+  if (value === null) return { text: 'null', complex: false }
+  if (value === undefined) return { text: '', complex: false }
+  if (typeof value === 'object') {
+    try {
+      return { text: JSON.stringify(value, null, 2), complex: true }
+    } catch {
+      return { text: String(value), complex: false }
+    }
+  }
+  return { text: String(value), complex: false }
+}
+
+const dedupeWarnings = (warnings: Array<string | undefined> | undefined): string[] => {
+  if (!warnings) return []
+  const seen = new Set<string>()
+  const output: string[] = []
+  warnings.forEach((warning) => {
+    if (!warning || seen.has(warning)) return
+    seen.add(warning)
+    output.push(warning)
+  })
+  return output
+}
 
 const curvedLine = line<{ x: number; y: number }>()
   .x((d) => d.x)
@@ -221,6 +267,21 @@ function LineagePage() {
   const [config, setConfig] = useState<LineageConfig>({})
   const [maxDepth, setMaxDepth] = useState<number | undefined>(undefined)
 
+  // Row lineage state
+  const [rowStatus, setRowStatus] = useState<RowLineageStatus | null>(null)
+  const [rowStatusLoading, setRowStatusLoading] = useState(false)
+  const [rowModels, setRowModels] = useState<RowLineageModelsResponse | null>(null)
+  const [rowModelsLoading, setRowModelsLoading] = useState(false)
+  const [rowEnvironmentId, setRowEnvironmentId] = useState<number | ''>('')
+  const [environments, setEnvironments] = useState<EnvironmentConfig[]>([])
+  const [rowSelectedModelUniqueId, setRowSelectedModelUniqueId] = useState<string>('')
+  const [rowPreview, setRowPreview] = useState<RowLineagePreviewResponse | null>(null)
+  const [rowPreviewLoading, setRowPreviewLoading] = useState(false)
+  const [rowTrace, setRowTrace] = useState<RowLineageTraceResponse | null>(null)
+  const [rowTraceLoading, setRowTraceLoading] = useState(false)
+  const [rowError, setRowError] = useState<string | null>(null)
+  const [rowSelectedNodeId, setRowSelectedNodeId] = useState<string | null>(null)
+
   useEffect(() => {
     api
       .get<{ lineage?: LineageConfig }>('/config')
@@ -251,9 +312,84 @@ function LineagePage() {
       .catch(() => setColumnGraph({ nodes: [], edges: [] }))
   }
 
+  const loadRowStatus = () => {
+    setRowStatusLoading(true)
+    RowLineageService.getStatus()
+      .then((status) => setRowStatus(status))
+      .catch(() =>
+        setRowStatus({
+          enabled: false,
+          available: false,
+          mapping_path: 'lineage/lineage.jsonl',
+          mapping_mtime: null,
+          mapping_count: 0,
+          roots: [],
+          models: [],
+          warnings: ['Failed to load row lineage status.'],
+        }),
+      )
+      .finally(() => setRowStatusLoading(false))
+  }
+
+  const loadRowModels = () => {
+    setRowModelsLoading(true)
+    RowLineageService.listModels()
+      .then((payload) => setRowModels(payload))
+      .catch(() => setRowModels({ roots: [], models: [], warnings: ['Failed to load row lineage models.'] }))
+      .finally(() => setRowModelsLoading(false))
+  }
+
+  const loadEnvironments = () => {
+    SchedulerService.listEnvironments()
+      .then((envs) => {
+        setEnvironments(envs)
+        if (!rowEnvironmentId && envs.length > 0) {
+          setRowEnvironmentId(envs[0].id)
+        }
+      })
+      .catch(() => {
+        const now = new Date().toISOString()
+        const fallback = [
+          {
+            id: 0,
+            name: 'default',
+            description: 'Auto-created fallback environment',
+            variables: {},
+            created_at: now,
+            updated_at: now,
+          },
+        ] as EnvironmentConfig[]
+        setEnvironments(fallback)
+        setRowEnvironmentId(0)
+      })
+  }
+
   useEffect(() => {
     fetchGraph(config.max_initial_depth)
   }, [config.max_initial_depth])
+
+  useEffect(() => {
+    loadRowStatus()
+    loadEnvironments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!rowStatus?.enabled) return
+    loadRowModels()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowStatus?.enabled, rowStatus?.available])
+
+  useEffect(() => {
+    if (rowSelectedModelUniqueId || !rowModels) return
+    const preferred =
+      rowModels.roots.find((root) => root.model_unique_id)?.model_unique_id ||
+      rowModels.models.find((model) => model.model_unique_id)?.model_unique_id ||
+      ''
+    if (preferred) {
+      setRowSelectedModelUniqueId(preferred)
+    }
+  }, [rowModels, rowSelectedModelUniqueId])
 
   const highlightNodes = useMemo(() => {
     const activeImpact = impact || emptyImpact
@@ -268,11 +404,31 @@ function LineagePage() {
       activeImpact.upstream.forEach((n) => set.add(n))
       activeImpact.downstream.forEach((n) => set.add(n))
     }
+    if (viewMode === 'row' && rowSelectedNodeId) {
+      set.add(rowSelectedNodeId)
+    }
     return set
-  }, [impact, selectedColumn, selectedNode, viewMode])
+  }, [impact, rowSelectedNodeId, selectedColumn, selectedNode, viewMode])
 
-  const activeGraph = viewMode === 'model' ? graph : columnGraph
-  const groups = graph.groups || []
+  const rowGraph = useMemo<LineageGraph>(() => {
+    if (!rowTrace) return { nodes: [], edges: [], groups: [] }
+    const nodes: LineageNode[] = rowTrace.graph.nodes.map((node) => ({
+      id: node.id,
+      label: node.label,
+      type: 'row',
+      database: node.database ?? undefined,
+      schema: node.schema ?? undefined,
+      tags: [],
+    }))
+    const edges: LineageEdge[] = rowTrace.graph.edges.map((edge) => ({
+      source: edge.source,
+      target: edge.target,
+    }))
+    return { nodes, edges, groups: [] }
+  }, [rowTrace])
+
+  const activeGraph = viewMode === 'model' ? graph : viewMode === 'column' ? columnGraph : rowGraph
+  const groups = viewMode === 'row' ? [] : graph.groups || []
 
   const visibleGraph = useMemo(() => {
     return buildGroupedGraph(
@@ -286,6 +442,14 @@ function LineagePage() {
   }, [activeGraph.edges, activeGraph.nodes, collapsedGroups, collapsedSubtrees, groupMode, groups])
 
   const hasData = visibleGraph.nodes.length > 0
+  const emptyGraphMessage =
+    viewMode === 'row'
+      ? rowTraceLoading
+        ? 'Loading row lineage...'
+        : rowPreview
+          ? 'Select a row to view lineage.'
+          : 'Load rows to start.'
+      : 'No lineage data available.'
 
   const layout = useMemo(() => buildLayout(visibleGraph), [visibleGraph])
 
@@ -393,8 +557,10 @@ function LineagePage() {
     }
     if (viewMode === 'model') {
       selectModelNode(node.id)
-    } else {
+    } else if (viewMode === 'column') {
       selectColumnNode(node.id)
+    } else {
+      setRowSelectedNodeId(node.id)
     }
   }
 
@@ -409,44 +575,184 @@ function LineagePage() {
     setImpact(emptyImpact)
   }
 
+  const rowMappingPath = rowStatus?.mapping_path || 'lineage/lineage.jsonl'
+  const rowAvailable = Boolean(rowStatus?.enabled && rowStatus?.available)
+  const rowTraceColumn = rowPreview?.trace_column || '_row_trace_id'
+  const rowModelOptions = rowModels?.models || []
+  const rowWarnings = useMemo(
+    () =>
+      dedupeWarnings([
+        ...(rowStatus?.warnings || []),
+        ...(rowModels?.warnings || []),
+        ...(rowPreview?.warnings || []),
+        ...(rowTrace?.warnings || []),
+      ]),
+    [rowModels?.warnings, rowPreview?.warnings, rowStatus?.warnings, rowTrace?.warnings],
+  )
+
+  const rowTableColumns = useMemo(() => {
+    if (!rowPreview) return []
+    const sourceColumns =
+      rowPreview.columns && rowPreview.columns.length > 0
+        ? rowPreview.columns
+        : Object.keys(rowPreview.rows?.[0] || {})
+    const nonTraceColumns = sourceColumns.filter((col) => col !== rowTraceColumn)
+    const limited = nonTraceColumns.slice(0, rowTableColumnLimit)
+    const finalColumns = [...limited]
+    if (!finalColumns.includes(rowTraceColumn)) {
+      finalColumns.push(rowTraceColumn)
+    }
+    return finalColumns.map((key) => ({
+      key,
+      header: key,
+      render: (row: Record<string, any>) => formatValueForCell(row[key]),
+    }))
+  }, [rowPreview, rowTraceColumn])
+
+  const selectedRowNode = useMemo(() => {
+    if (!rowTrace) return null
+    if (rowSelectedNodeId) {
+      return rowTrace.graph.nodes.find((node) => node.id === rowSelectedNodeId) || null
+    }
+    const fallbackId = `row:${rowTrace.target.model_name}:${rowTrace.target.trace_id}`
+    return rowTrace.graph.nodes.find((node) => node.id === fallbackId) || null
+  }, [rowSelectedNodeId, rowTrace])
+
+  const selectedRowEntries = selectedRowNode?.row ? Object.entries(selectedRowNode.row) : []
+  const selectedRowModelName = selectedRowNode?.model_name || rowTrace?.target.model_name || ''
+  const selectedRowTraceId = selectedRowNode?.trace_id || rowTrace?.target.trace_id || ''
+  const selectedRowRelationName = selectedRowNode?.relation_name || rowTrace?.target.relation_name || ''
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    if (mode === 'column' && columnGraph.nodes.length === 0) {
+      fetchColumnGraph()
+    }
+    if (mode === 'row' && !rowStatusLoading && !rowStatus) {
+      loadRowStatus()
+    }
+  }
+
+  const handleLoadRows = () => {
+    if (!rowSelectedModelUniqueId) return
+    setRowError(null)
+    setRowPreviewLoading(true)
+    setRowTrace(null)
+    setRowSelectedNodeId(null)
+    RowLineageService.previewModel({
+      model_unique_id: rowSelectedModelUniqueId,
+      environment_id: typeof rowEnvironmentId === 'number' ? rowEnvironmentId : undefined,
+      limit: 100,
+    })
+      .then((payload) => setRowPreview(payload))
+      .catch((err) => {
+        const message = err?.response?.data?.message || err?.message || 'Failed to load rows.'
+        setRowError(message)
+      })
+      .finally(() => setRowPreviewLoading(false))
+  }
+
+  const handleRowClick = (row: Record<string, any>) => {
+    if (!rowSelectedModelUniqueId) return
+    const traceId = row?.[rowTraceColumn]
+    if (!traceId) {
+      setRowError(`Row is missing ${rowTraceColumn}.`)
+      return
+    }
+    setRowError(null)
+    setRowTraceLoading(true)
+    setRowTrace(null)
+    const traceIdStr = String(traceId)
+    const targetNodeId = rowPreview ? `row:${rowPreview.model_name}:${traceIdStr}` : null
+    if (targetNodeId) {
+      setRowSelectedNodeId(targetNodeId)
+    }
+    RowLineageService.getTrace(rowSelectedModelUniqueId, traceIdStr, {
+      environment_id: typeof rowEnvironmentId === 'number' ? rowEnvironmentId : undefined,
+    })
+      .then((payload) => {
+        setRowTrace(payload)
+        const nextSelectedId = `row:${payload.target.model_name}:${payload.target.trace_id}`
+        setRowSelectedNodeId(nextSelectedId)
+      })
+      .catch((err) => {
+        const message = err?.response?.data?.message || err?.message || 'Failed to load row lineage.'
+        setRowError(message)
+      })
+      .finally(() => setRowTraceLoading(false))
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Lineage</h1>
-          <p className="text-sm text-gray-400">Navigate model and column lineage with grouping, collapse, and impact analysis.</p>
+          <p className="text-sm text-gray-400">Navigate model, column, and row lineage with grouping, collapse, and impact analysis.</p>
         </div>
-        <div className="flex gap-3">
-          <select
-            value={groupMode}
-            onChange={(e) => setGroupMode(e.target.value as GroupingMode)}
-            className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
-          >
-            <option value="none">No grouping</option>
-            <option value="schema">Schema</option>
-            <option value="resource_type">Resource type</option>
-            <option value="tag">Tags</option>
-          </select>
-          <input
-            type="number"
-            min={1}
-            value={maxDepth ?? ''}
-            onChange={(e) => {
-              const value = e.target.value ? Number(e.target.value) : undefined
-              setMaxDepth(value)
-              fetchGraph(value)
-            }}
-            placeholder="Max depth"
-            className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm w-28"
-          />
+        <div className="flex gap-3 items-center">
+          <div className="flex rounded-md border border-gray-700 overflow-hidden">
+            {([
+              { id: 'model', label: 'Model' },
+              { id: 'column', label: 'Column' },
+              { id: 'row', label: 'Row' },
+            ] as Array<{ id: ViewMode; label: string }>).map((mode, idx) => {
+              const active = viewMode === mode.id
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => handleViewModeChange(mode.id)}
+                  className={`px-3 py-2 text-sm ${
+                    idx > 0 ? 'border-l border-gray-700' : ''
+                  } ${active ? 'bg-accent text-white' : 'bg-panel text-gray-200 hover:bg-gray-800'}`}
+                >
+                  {mode.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {viewMode !== 'row' && (
+            <>
+              <select
+                value={groupMode}
+                onChange={(e) => setGroupMode(e.target.value as GroupingMode)}
+                className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+              >
+                <option value="none">No grouping</option>
+                <option value="schema">Schema</option>
+                <option value="resource_type">Resource type</option>
+                <option value="tag">Tags</option>
+              </select>
+              <input
+                type="number"
+                min={1}
+                value={maxDepth ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value ? Number(e.target.value) : undefined
+                  setMaxDepth(value)
+                  fetchGraph(value)
+                }}
+                placeholder="Max depth"
+                className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm w-28"
+              />
+            </>
+          )}
+
           <button
             onClick={() => {
+              if (viewMode === 'row') {
+                loadRowStatus()
+                if (rowStatus?.enabled) {
+                  loadRowModels()
+                }
+                return
+              }
               fetchGraph(maxDepth)
               if (config.load_column_lineage_by_default) fetchColumnGraph()
             }}
             className="bg-accent text-white px-4 py-2 rounded text-sm"
           >
-            Refresh
+            {viewMode === 'row' ? 'Refresh row lineage' : 'Refresh'}
           </button>
           {viewMode === 'column' && (
             <button onClick={deselectColumnView} className="bg-gray-700 text-white px-4 py-2 rounded text-sm border border-gray-500">
@@ -457,149 +763,285 @@ function LineagePage() {
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-9 bg-panel border border-gray-800 rounded-lg p-4">
-          {!hasData ? (
-            <div className="text-gray-400">No lineage data available.</div>
-          ) : (
-            <div
-              ref={graphContainerRef}
-              className={`relative rounded-lg overflow-hidden border border-gray-800/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 ${
-                isFullscreen ? 'h-full w-full' : 'h-[720px]'
-              }`}
-            >
-              <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900/80 px-2 py-1 text-[11px] text-gray-200 backdrop-blur">
+        <div className="col-span-9 bg-panel border border-gray-800 rounded-lg p-4 space-y-4">
+          {viewMode === 'row' && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-1 min-w-[180px]">
+                  <label className="text-xs text-gray-400">Environment</label>
+                  <select
+                    value={rowEnvironmentId}
+                    onChange={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : ''
+                      setRowEnvironmentId(value)
+                    }}
+                    className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+                    data-testid="row-lineage-environment-select"
+                  >
+                    <option value="">Default</option>
+                    {environments.map((env) => (
+                      <option key={env.id} value={env.id}>
+                        {env.name}
+                        {env.dbt_target_name ? ` (${env.dbt_target_name})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1 min-w-[260px]">
+                  <label className="text-xs text-gray-400">Model</label>
+                  <select
+                    value={rowSelectedModelUniqueId}
+                    onChange={(e) => {
+                      setRowSelectedModelUniqueId(e.target.value)
+                      setRowPreview(null)
+                      setRowTrace(null)
+                      setRowSelectedNodeId(null)
+                      setRowError(null)
+                    }}
+                    className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+                    disabled={rowStatusLoading || rowModelsLoading}
+                    data-testid="row-lineage-model-select"
+                  >
+                    <option value="">Select a model</option>
+                    {rowModelOptions
+                      .filter((model) => model.model_unique_id)
+                      .map((model) => {
+                        const schemaSuffix = model.schema ? ` - ${model.schema}` : ''
+                        const rootPrefix = model.is_root ? '[root] ' : ''
+                        return (
+                          <option key={model.model_unique_id || model.model_name} value={model.model_unique_id || ''}>
+                            {rootPrefix}
+                            {model.model_name}
+                            {schemaSuffix}
+                          </option>
+                        )
+                      })}
+                  </select>
+                </div>
+
                 <button
-                  onClick={() => adjustZoom(1.2)}
-                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
-                  aria-label="Zoom in"
+                  onClick={handleLoadRows}
+                  disabled={!rowAvailable || !rowSelectedModelUniqueId || rowPreviewLoading}
+                  className="bg-accent text-white px-4 py-2 rounded text-sm disabled:opacity-60"
+                  data-testid="row-lineage-load-rows"
                 >
-                  +
-                </button>
-                <button
-                  onClick={() => adjustZoom(1 / 1.2)}
-                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
-                  aria-label="Zoom out"
-                >
-                  -
-                </button>
-                <button
-                  onClick={resetZoom}
-                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={toggleFullscreen}
-                  className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
-                >
-                  {isFullscreen ? 'Exit full screen' : 'Full screen'}
+                  {rowPreviewLoading ? 'Loading rows...' : 'Load rows'}
                 </button>
               </div>
-              <svg
-                ref={svgRef}
-                width="100%"
-                height={isFullscreen ? '100%' : canvas.height}
-                viewBox={`0 0 ${layout.size.width} ${layout.size.height}`}
-                className="w-full h-full text-gray-200 cursor-grab active:cursor-grabbing"
-                style={{ touchAction: 'none' }}
-              >
-                <defs>
-                  <marker
-                    id="lineage-arrow"
-                    markerWidth="12"
-                    markerHeight="10"
-                    refX="12"
-                    refY="5"
-                    orient="auto"
-                    markerUnits="strokeWidth"
-                  >
-                    <polygon points="0 0, 12 5, 0 10" fill="#38bdf8" />
-                  </marker>
-                  <filter id="node-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0ea5e9" floodOpacity="0.12" />
-                  </filter>
-                  <pattern id="lineage-grid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-                    <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1f2937" strokeWidth="0.5" />
-                  </pattern>
-                </defs>
-                <rect
-                  width={layout.size.width}
-                  height={layout.size.height}
-                  fill="url(#lineage-grid)"
-                  rx={16}
-                  ry={16}
-                  className="text-gray-800"
-                />
-                <g transform={transform.toString()}>
-                  {layout.edges.map((edge) => {
-                    const sourceHighlighted = highlightNodes.has(edge.source) && highlightNodes.has(edge.target)
-                    const opacity = sourceHighlighted || highlightNodes.size === 0 ? 0.92 : 0.25
-                    return (
-                      <path
-                        key={`${edge.source}-${edge.target}`}
-                        d={buildPathFromPoints(edge.points)}
-                        fill="none"
-                        stroke={sourceHighlighted ? '#38bdf8' : '#475569'}
-                        strokeWidth={sourceHighlighted ? 3 : 1.5}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        markerEnd="url(#lineage-arrow)"
-                        opacity={opacity}
-                      />
-                    )
-                  })}
 
-                  {layout.nodes.map((node) => {
-                    const { fill, stroke } = getNodeColor(node)
-                    const emphasized = highlightNodes.size === 0 || highlightNodes.has(node.id)
-                    const faded = emphasized ? 1 : 0.35
-                    const isCollapsed = (node as PositionedNode<LineageNode>).isGroup || (node as PositionedNode<LineageNode>).isSubtree
-                    return (
-                      <g
-                        key={node.id}
-                        transform={`translate(${node.x - nodeSize.width / 2}, ${node.y - nodeSize.height / 2})`}
-                        onClick={() => handleNodeClick(node)}
-                        data-node-id={node.id}
-                        data-testid={`lineage-node-${node.id}`}
-                        role="button"
-                        className="cursor-pointer transition duration-150"
-                        opacity={faded}
-                      >
-                        <rect
-                          width={nodeSize.width}
-                          height={nodeSize.height}
-                          rx={12}
-                          ry={12}
-                          fill={fill}
-                          stroke={stroke}
-                          strokeWidth={isCollapsed ? 1 : 1.75}
-                          strokeDasharray={isCollapsed ? '6 4' : '0'}
-                          filter="url(#node-shadow)"
-                        />
-                        <text x={16} y={26} className="text-sm font-semibold" fill="#e5e7eb">
-                          {node.label}
-                        </text>
-                        {node.schema && (
-                          <text x={16} y={46} className="text-[11px]" fill="#cbd5e1">
-                            {node.schema}
-                          </text>
-                        )}
-                        {node.type && (
-                          <text x={16} y={62} className="text-[10px] uppercase" fill="#94a3b8">
-                            {node.type}
-                          </text>
-                        )}
-                        <title>{node.label}</title>
-                      </g>
+              {rowStatusLoading && <div className="text-xs text-gray-400">Loading row lineage status...</div>}
+
+              {rowStatus && !rowStatusLoading && !rowAvailable && (
+                <div className="rounded-lg border border-amber-700/60 bg-amber-950/40 p-4 text-sm text-amber-100 space-y-2">
+                  <div className="font-semibold">Row lineage mappings not found at {rowMappingPath}</div>
+                  <div className="text-amber-200">Enable dbt-rowlineage export:</div>
+                  <pre className="text-xs bg-black/30 border border-amber-800/60 rounded p-3 overflow-auto">
+{`vars:
+  rowlineage_enabled: true
+  rowlineage_export_format: jsonl
+  rowlineage_export_path: target/lineage/lineage.jsonl`}
+                  </pre>
+                </div>
+              )}
+
+              {rowError && (
+                <div className="rounded border border-red-800/70 bg-red-950/40 px-3 py-2 text-xs text-red-200">
+                  {rowError}
+                </div>
+              )}
+
+              {rowAvailable && rowWarnings.length > 0 && (
+                <div className="rounded border border-amber-800/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200 space-y-1">
+                  {rowWarnings.map((warning) => (
+                    <div key={warning}>{warning}</div>
+                  ))}
+                </div>
+              )}
+
+              {rowAvailable && rowPreview && !rowPreview.trace_column_present && (
+                <div className="rounded border border-amber-800/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
+                  Table does not contain _row_trace_id; trace ids are computed heuristically for browsing.
+                </div>
+              )}
+
+              {rowAvailable && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white">Sample Rows</h3>
+                    {rowPreview && (
+                      <div className="text-[11px] text-gray-400">
+                        {rowPreview.relation_name}
+                      </div>
+                    )}
+                  </div>
+                  {rowPreview ? (
+                    rowPreview.rows.length > 0 ? (
+                      <Table columns={rowTableColumns} data={rowPreview.rows} onRowClick={handleRowClick} />
+                    ) : (
+                      <div className="text-xs text-gray-400">No rows returned for this model.</div>
                     )
-                  })}
-                </g>
-              </svg>
+                  ) : (
+                    <div className="text-xs text-gray-400">Load rows to explore row-level lineage.</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
+
+          {(viewMode !== 'row' || rowAvailable) &&
+            (!hasData ? (
+              <div className="text-gray-400">{emptyGraphMessage}</div>
+            ) : (
+              <div
+                ref={graphContainerRef}
+                className={`relative rounded-lg overflow-hidden border border-gray-800/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 ${
+                  isFullscreen ? 'h-full w-full' : 'h-[720px]'
+                }`}
+              >
+                <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900/80 px-2 py-1 text-[11px] text-gray-200 backdrop-blur">
+                  <button
+                    onClick={() => adjustZoom(1.2)}
+                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                    aria-label="Zoom in"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => adjustZoom(1 / 1.2)}
+                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                    aria-label="Zoom out"
+                  >
+                    -
+                  </button>
+                  <button
+                    onClick={resetZoom}
+                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={toggleFullscreen}
+                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                  >
+                    {isFullscreen ? 'Exit full screen' : 'Full screen'}
+                  </button>
+                </div>
+                <svg
+                  ref={svgRef}
+                  width="100%"
+                  height={isFullscreen ? '100%' : canvas.height}
+                  viewBox={`0 0 ${layout.size.width} ${layout.size.height}`}
+                  className="w-full h-full text-gray-200 cursor-grab active:cursor-grabbing"
+                  style={{ touchAction: 'none' }}
+                >
+                  <defs>
+                    <marker
+                      id="lineage-arrow"
+                      markerWidth="12"
+                      markerHeight="10"
+                      refX="12"
+                      refY="5"
+                      orient="auto"
+                      markerUnits="strokeWidth"
+                    >
+                      <polygon points="0 0, 12 5, 0 10" fill="#38bdf8" />
+                    </marker>
+                    <filter id="node-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0ea5e9" floodOpacity="0.12" />
+                    </filter>
+                    <pattern id="lineage-grid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+                      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1f2937" strokeWidth="0.5" />
+                    </pattern>
+                  </defs>
+                  <rect
+                    width={layout.size.width}
+                    height={layout.size.height}
+                    fill="url(#lineage-grid)"
+                    rx={16}
+                    ry={16}
+                    className="text-gray-800"
+                  />
+                  <g transform={transform.toString()}>
+                    {layout.edges.map((edge) => {
+                      const sourceHighlighted = highlightNodes.has(edge.source) && highlightNodes.has(edge.target)
+                      const opacity = sourceHighlighted || highlightNodes.size === 0 ? 0.92 : 0.25
+                      return (
+                        <path
+                          key={`${edge.source}-${edge.target}`}
+                          d={buildPathFromPoints(edge.points)}
+                          fill="none"
+                          stroke={sourceHighlighted ? '#38bdf8' : '#475569'}
+                          strokeWidth={sourceHighlighted ? 3 : 1.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          markerEnd="url(#lineage-arrow)"
+                          opacity={opacity}
+                        />
+                      )
+                    })}
+
+                    {layout.nodes.map((node) => {
+                      const { fill, stroke } = getNodeColor(node)
+                      const emphasized = highlightNodes.size === 0 || highlightNodes.has(node.id)
+                      const faded = emphasized ? 1 : 0.35
+                      const isCollapsed = (node as PositionedNode<LineageNode>).isGroup || (node as PositionedNode<LineageNode>).isSubtree
+                      const labelLines = String(node.label || '').split('\n')
+                      const labelOffset = Math.max(0, labelLines.length - 1) * 16
+                      const schemaY = 46 + labelOffset
+                      const typeY = 62 + labelOffset
+                      return (
+                        <g
+                          key={node.id}
+                          transform={`translate(${node.x - nodeSize.width / 2}, ${node.y - nodeSize.height / 2})`}
+                          onClick={() => handleNodeClick(node)}
+                          data-node-id={node.id}
+                          data-testid={`lineage-node-${node.id}`}
+                          role="button"
+                          className="cursor-pointer transition duration-150"
+                          opacity={faded}
+                        >
+                          <rect
+                            width={nodeSize.width}
+                            height={nodeSize.height}
+                            rx={12}
+                            ry={12}
+                            fill={fill}
+                            stroke={stroke}
+                            strokeWidth={isCollapsed ? 1 : 1.75}
+                            strokeDasharray={isCollapsed ? '6 4' : '0'}
+                            filter="url(#node-shadow)"
+                          />
+                          <text x={16} y={26} className="text-sm font-semibold" fill="#e5e7eb">
+                            {labelLines.map((lineText, idx) => (
+                              <tspan key={`${node.id}-label-${idx}`} x={16} dy={idx === 0 ? 0 : 16}>
+                                {lineText}
+                              </tspan>
+                            ))}
+                          </text>
+                          {node.schema && (
+                            <text x={16} y={schemaY} className="text-[11px]" fill="#cbd5e1">
+                              {node.schema}
+                            </text>
+                          )}
+                          {node.type && (
+                            <text x={16} y={typeY} className="text-[10px] uppercase" fill="#94a3b8">
+                              {node.type}
+                            </text>
+                          )}
+                          <title>{node.label}</title>
+                        </g>
+                      )
+                    })}
+                  </g>
+                </svg>
+              </div>
+            ))}
         </div>
 
         <div className="col-span-3 space-y-4">
+          {viewMode !== 'row' ? (
+            <>
           <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-white">Grouping</h3>
@@ -710,6 +1152,90 @@ function LineagePage() {
               </div>
             )}
           </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white">Row Details</h3>
+                  {rowTrace?.truncated && <span className="text-[11px] text-amber-300">Truncated</span>}
+                </div>
+                {rowTraceLoading && <div className="text-xs text-gray-400">Loading row lineage...</div>}
+                {!rowTraceLoading && !rowTrace && (
+                  <div className="text-xs text-gray-400">Load rows and select one to inspect details.</div>
+                )}
+                {!rowTraceLoading && rowTrace && (
+                  <div className="space-y-2">
+                    <div className="text-gray-200 text-sm font-medium">{selectedRowModelName || rowTrace.target.model_name}</div>
+                    <div className="text-[11px] text-gray-400 break-all">{selectedRowTraceId || rowTrace.target.trace_id}</div>
+                    {selectedRowRelationName && <div className="text-[11px] text-gray-400">{selectedRowRelationName}</div>}
+                    {rowTrace.truncated && (
+                      <div className="text-[11px] text-amber-300">Traversal truncated at max hops.</div>
+                    )}
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-300 font-semibold">Row data</div>
+                      {selectedRowEntries.length > 0 ? (
+                        <div className="max-h-64 overflow-auto border border-gray-800 rounded">
+                          <table className="w-full text-xs">
+                            <tbody>
+                              {selectedRowEntries.map(([key, value]) => {
+                                const formatted = formatValueForDetails(value)
+                                return (
+                                  <tr key={key} className="border-b border-gray-800 last:border-b-0">
+                                    <td className="px-2 py-1 text-gray-300 align-top w-1/3 break-all">{key}</td>
+                                    <td className="px-2 py-1 text-gray-100 align-top">
+                                      {formatted.complex ? (
+                                        <pre className="whitespace-pre-wrap break-words">{formatted.text}</pre>
+                                      ) : (
+                                        formatted.text
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-gray-400">No row data available.</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white">Hop History</h3>
+                  {rowTrace && <span className="text-[11px] text-gray-400">{rowTrace.hops.length} hops</span>}
+                </div>
+                {!rowTrace && <div className="text-xs text-gray-400">Select a row to view upstream hops.</div>}
+                {rowTrace && rowTrace.hops.length === 0 && (
+                  <div className="text-xs text-gray-400">No upstream hops found for this row.</div>
+                )}
+                {rowTrace && rowTrace.hops.length > 0 && (
+                  <div className="space-y-2 max-h-[520px] overflow-auto pr-1">
+                    {rowTrace.hops.map((hop, idx) => (
+                      <div key={`${hop.source_model}-${hop.source_trace_id}-${idx}`} className="rounded border border-gray-800 bg-gray-900/40 p-3 space-y-1">
+                        <div className="text-sm text-gray-100 font-medium">
+                          {hop.source_model}
+                          {' -> '}
+                          {hop.target_model}
+                        </div>
+                        {hop.executed_at && <div className="text-[11px] text-gray-400">{hop.executed_at}</div>}
+                        <details className="text-xs text-gray-200">
+                          <summary className="cursor-pointer text-gray-300">Compiled SQL</summary>
+                          <pre className="mt-1 rounded border border-gray-800 bg-black/40 p-2 whitespace-pre-wrap break-words">
+                            {hop.compiled_sql || 'No compiled SQL available.'}
+                          </pre>
+                        </details>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

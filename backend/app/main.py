@@ -13,6 +13,7 @@ from app.api.routes import (
     catalog,
     health,
     lineage,
+    row_lineage,
     models,
     projects,
     runs,
@@ -110,6 +111,7 @@ app.include_router(projects.router)
 app.include_router(artifacts.router)
 app.include_router(models.router)
 app.include_router(lineage.router)
+app.include_router(row_lineage.router)
 app.include_router(runs.router)
 app.include_router(execution.router)
 app.include_router(diff.router)
@@ -136,6 +138,12 @@ async def get_config():
             "max_initial_depth": settings.max_initial_lineage_depth,
             "load_column_lineage_by_default": settings.load_column_lineage_by_default,
             "performance_mode": settings.lineage_performance_mode,
+        },
+        "row_lineage": {
+            "enabled": settings.row_lineage_enabled,
+            "mapping_relative_path": settings.row_lineage_mapping_relative_path,
+            "max_hops": settings.row_lineage_max_hops,
+            "scan_max_rows": settings.row_lineage_scan_max_rows,
         },
         "execution": {
             "dbt_project_path": settings.dbt_project_path,

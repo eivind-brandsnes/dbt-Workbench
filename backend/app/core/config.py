@@ -76,6 +76,15 @@ class Settings(BaseSettings):
     load_column_lineage_by_default: bool = Field(False, alias="LOAD_COLUMN_LINEAGE_BY_DEFAULT")
     lineage_performance_mode: str = Field("balanced", alias="LINEAGE_PERFORMANCE_MODE")
 
+    # Row lineage configuration
+    row_lineage_enabled: bool = Field(True, alias="ROW_LINEAGE_ENABLED")
+    row_lineage_mapping_relative_path: str = Field(
+        "lineage/lineage.jsonl",
+        alias="ROW_LINEAGE_MAPPING_RELATIVE_PATH",
+    )
+    row_lineage_max_hops: int = Field(6, alias="ROW_LINEAGE_MAX_HOPS")
+    row_lineage_scan_max_rows: int = Field(50000, alias="ROW_LINEAGE_SCAN_MAX_ROWS")
+
     # dbt execution settings
     dbt_project_path: str = Field("./data/repos/default", alias="DBT_PROJECT_PATH")
     git_repos_base_path: str = Field("./data/repos", alias="GIT_REPOS_BASE_PATH")
