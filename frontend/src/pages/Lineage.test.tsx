@@ -167,6 +167,25 @@ const sampleRowTrace = {
   warnings: [],
 }
 
+const sampleColumnEvolution = {
+  available: true,
+  current_version: { version: 2, timestamp: '2024-01-02T00:00:00Z' },
+  baseline_version: { version: 1, timestamp: '2024-01-01T00:00:00Z' },
+  summary: { added: 1, removed: 0, changed: 0, unchanged: 0 },
+  status_by_id: { 'model.two.id': 'added' },
+  added: [
+    {
+      column_id: 'model.two.id',
+      model_id: 'model.two',
+      model_name: 'two',
+      column: 'id',
+      meta: { name: 'id', description: 'identifier', data_type: 'int', tags: [] },
+    },
+  ],
+  removed: [],
+  changed: [],
+}
+
 describe('LineagePage', () => {
   beforeEach(() => {
     mockedGet.mockReset()
@@ -174,6 +193,7 @@ describe('LineagePage', () => {
     mockedGet.mockImplementation((url: string) => {
       if (url.startsWith('/config')) return Promise.resolve({ data: { lineage: {}, row_lineage: { enabled: true } } })
       if (url.startsWith('/lineage/graph')) return Promise.resolve({ data: sampleGraph })
+      if (url.startsWith('/lineage/columns/evolution')) return Promise.resolve({ data: sampleColumnEvolution })
       if (url.startsWith('/lineage/columns')) return Promise.resolve({ data: sampleColumnGraph })
       if (url.startsWith('/lineage/upstream/model.two')) return Promise.resolve({ data: sampleImpact })
       if (url.startsWith('/lineage/model/model.two')) return Promise.resolve({ data: sampleModelDetail })
@@ -245,6 +265,29 @@ describe('LineagePage', () => {
     const columnButton = await screen.findByText('id')
     fireEvent.click(columnButton)
     await waitFor(() => expect(mockedGet).toHaveBeenCalledWith(expect.stringContaining('/lineage/upstream/model.two')))
+  })
+
+  it('supports column evolution lens', async () => {
+    render(
+      <MemoryRouter>
+        <LineagePage />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => expect(mockedGet).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Column' }))
+
+    const lensSelect = await screen.findByDisplayValue('Column lineage')
+    fireEvent.change(lensSelect, { target: { value: 'evolution' } })
+
+    await waitFor(() =>
+      expect(mockedGet).toHaveBeenCalledWith('/lineage/columns/evolution'),
+    )
+
+    expect(await screen.findByText('Column Evolution')).toBeInTheDocument()
+    expect(screen.getByText('Added 1')).toBeInTheDocument()
+    expect(screen.getByText('two:id')).toBeInTheDocument()
   })
 
   it('supports row lineage mode with row preview and hop history', async () => {

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.auth import WorkspaceContext, get_current_user, get_current_workspace
 from app.core.config import Settings, get_settings
+from app.core.watcher_manager import get_watcher
 from app.schemas import dbt as dbt_schemas
 from app.services.artifact_service import ArtifactService
 from app.services.lineage_service import LineageService
@@ -42,6 +43,16 @@ def get_lineage_for_run(
 @router.get("/lineage/columns", response_model=dbt_schemas.ColumnLineageGraph)
 def get_column_lineage(service: LineageService = Depends(get_lineage_service)):
     return service.build_column_graph()
+
+
+@router.get("/lineage/columns/evolution", response_model=dbt_schemas.ColumnEvolutionResponse)
+def get_column_evolution(
+    baseline_version: Optional[int] = Query(None, description="Manifest version to compare against"),
+    service: LineageService = Depends(get_lineage_service),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+):
+    watcher = get_watcher(workspace.artifacts_path)
+    return service.build_column_evolution(watcher, baseline_version=baseline_version)
 
 
 @router.get("/lineage/groups", response_model=list[dbt_schemas.LineageGroup])

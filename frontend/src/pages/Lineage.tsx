@@ -2,7 +2,7 @@ import { graphlib, layout as dagreLayout } from '@dagrejs/dagre'
 import { select } from 'd3-selection'
 import { line, curveCatmullRom } from 'd3-shape'
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { api } from '../api/client'
@@ -10,6 +10,10 @@ import { Table } from '../components/Table'
 import { RowLineageService } from '../services/rowLineageService'
 import { SchedulerService } from '../services/schedulerService'
 import {
+  ColumnEvolutionChange,
+  ColumnEvolutionEntry,
+  ColumnEvolutionResponse,
+  ColumnEvolutionStatus,
   ColumnLineageGraph,
   ColumnNode,
   EnvironmentConfig,
@@ -27,6 +31,7 @@ import {
 
 type GroupingMode = 'none' | 'schema' | 'resource_type' | 'tag'
 type ViewMode = 'model' | 'column' | 'row'
+type ColumnLens = 'lineage' | 'evolution'
 
 type GraphNode<T extends LineageNode | ColumnNode> = T & { isGroup?: boolean; isSubtree?: boolean }
 type PositionedNode<T extends LineageNode | ColumnNode> = GraphNode<T> & { x: number; y: number }
@@ -258,6 +263,10 @@ function LineagePage() {
   const [columnGraph, setColumnGraph] = useState<ColumnLineageGraph>({ nodes: [], edges: [] })
   const [groupMode, setGroupMode] = useState<GroupingMode>('none')
   const [viewMode, setViewMode] = useState<ViewMode>('model')
+  const [columnLens, setColumnLens] = useState<ColumnLens>('lineage')
+  const [columnEvolution, setColumnEvolution] = useState<ColumnEvolutionResponse | null>(null)
+  const [columnEvolutionLoading, setColumnEvolutionLoading] = useState(false)
+  const [columnEvolutionError, setColumnEvolutionError] = useState<string | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [collapsedSubtrees, setCollapsedSubtrees] = useState<Record<string, Set<string>>>({})
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
@@ -311,6 +320,20 @@ function LineagePage() {
       .then((res) => setColumnGraph(res.data))
       .catch(() => setColumnGraph({ nodes: [], edges: [] }))
   }
+
+  const fetchColumnEvolution = useCallback(() => {
+    setColumnEvolutionLoading(true)
+    setColumnEvolutionError(null)
+    api
+      .get<ColumnEvolutionResponse>('/lineage/columns/evolution')
+      .then((res) => setColumnEvolution(res.data))
+      .catch((err) => {
+        const message = err?.response?.data?.message || err?.message || 'Failed to load column evolution.'
+        setColumnEvolutionError(message)
+        setColumnEvolution(null)
+      })
+      .finally(() => setColumnEvolutionLoading(false))
+  }, [])
 
   const loadRowStatus = () => {
     setRowStatusLoading(true)
@@ -367,6 +390,12 @@ function LineagePage() {
   useEffect(() => {
     fetchGraph(config.max_initial_depth)
   }, [config.max_initial_depth])
+
+  useEffect(() => {
+    if (viewMode !== 'column') return
+    if (columnLens !== 'evolution') return
+    fetchColumnEvolution()
+  }, [columnLens, fetchColumnEvolution, viewMode])
 
   useEffect(() => {
     loadRowStatus()
@@ -483,6 +512,24 @@ function LineagePage() {
         : 'No lineage data available.'
 
   const layout = useMemo(() => buildLayout(visibleGraph), [visibleGraph])
+
+  const resolveNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: string } => {
+    const base = getNodeColor(node)
+    if (viewMode !== 'column' || columnLens !== 'evolution') {
+      return base
+    }
+    if ((node as GraphNode<LineageNode>).isGroup || (node as GraphNode<LineageNode>).isSubtree) {
+      return base
+    }
+    const status = columnEvolutionStatus.get(normalizeColumnId(node.id))
+    if (status === 'added') {
+      return { fill: '#0f172a', stroke: '#22c55e' }
+    }
+    if (status === 'changed') {
+      return { fill: '#0f172a', stroke: '#f59e0b' }
+    }
+    return base
+  }
 
   const svgRef = useRef<SVGSVGElement | null>(null)
   const graphContainerRef = useRef<HTMLDivElement | null>(null)
@@ -621,6 +668,19 @@ function LineagePage() {
     [rowModels?.warnings, rowPreview?.warnings, rowStatus?.warnings, rowTrace?.warnings],
   )
 
+  const columnEvolutionStatus = useMemo(() => {
+    const map = new Map<string, ColumnEvolutionStatus>()
+    const statusMap = columnEvolution?.status_by_id || {}
+    Object.entries(statusMap).forEach(([columnId, status]) => {
+      map.set(normalizeColumnId(columnId), status)
+    })
+    return map
+  }, [columnEvolution])
+
+  const columnEvolutionAdded = columnEvolution?.added || []
+  const columnEvolutionRemoved = columnEvolution?.removed || []
+  const columnEvolutionChanged = columnEvolution?.changed || []
+
   const rowTableColumns = useMemo(() => {
     if (!rowPreview) return []
     const sourceColumns =
@@ -658,6 +718,9 @@ function LineagePage() {
     setViewMode(mode)
     if (mode === 'column' && columnGraph.nodes.length === 0) {
       fetchColumnGraph()
+    }
+    if (mode === 'column' && !selectedColumn && columnGraph.nodes.length > 0) {
+      selectColumnNode(columnGraph.nodes[0].id)
     }
     if (mode === 'row' && !rowStatusLoading && !rowStatus) {
       loadRowStatus()
@@ -744,6 +807,16 @@ function LineagePage() {
 
           {viewMode !== 'row' && (
             <>
+              {viewMode === 'column' && (
+                <select
+                  value={columnLens}
+                  onChange={(e) => setColumnLens(e.target.value as ColumnLens)}
+                  className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+                >
+                  <option value="lineage">Column lineage</option>
+                  <option value="evolution">Column evolution</option>
+                </select>
+              )}
               <select
                 value={groupMode}
                 onChange={(e) => setGroupMode(e.target.value as GroupingMode)}
@@ -789,6 +862,13 @@ function LineagePage() {
                       loadRowModels()
                     }
                   })
+                return
+              }
+              if (viewMode === 'column') {
+                fetchColumnGraph()
+                if (columnLens === 'evolution') {
+                  fetchColumnEvolution()
+                }
                 return
               }
               fetchGraph(maxDepth)
@@ -1026,7 +1106,7 @@ function LineagePage() {
                     })}
 
                     {layout.nodes.map((node) => {
-                      const { fill, stroke } = getNodeColor(node)
+                      const { fill, stroke } = resolveNodeColor(node)
                       const emphasized = highlightNodes.size === 0 || highlightNodes.has(node.id)
                       const faded = emphasized ? 1 : 0.35
                       const isCollapsed = (node as PositionedNode<LineageNode>).isGroup || (node as PositionedNode<LineageNode>).isSubtree
@@ -1170,6 +1250,99 @@ function LineagePage() {
             )}
             {!selectedNode && !selectedColumn && <div className="text-xs text-gray-400">Select a node to view details.</div>}
           </div>
+
+          {viewMode === 'column' && columnLens === 'evolution' && (
+            <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Column Evolution</h3>
+                {columnEvolution?.summary && (
+                  <span className="text-[11px] text-gray-400">
+                    {columnEvolution.summary.added + columnEvolution.summary.changed + columnEvolution.summary.removed} changes
+                  </span>
+                )}
+              </div>
+              {columnEvolutionLoading && <div className="text-xs text-gray-400">Loading column evolution...</div>}
+              {columnEvolutionError && (
+                <div className="text-xs text-red-300">{columnEvolutionError}</div>
+              )}
+              {!columnEvolutionLoading && !columnEvolutionError && columnEvolution && !columnEvolution.available && (
+                <div className="text-xs text-gray-400">
+                  {columnEvolution.message || 'Column evolution is not available yet.'}
+                </div>
+              )}
+              {!columnEvolutionLoading && columnEvolution?.available && columnEvolution.summary && (
+                <div className="space-y-2 text-xs text-gray-200">
+                  <div className="flex flex-wrap gap-2 text-[11px]">
+                    <span className="rounded bg-emerald-900/40 border border-emerald-700/50 px-2 py-1 text-emerald-200">
+                      Added {columnEvolution.summary.added}
+                    </span>
+                    <span className="rounded bg-amber-900/40 border border-amber-700/50 px-2 py-1 text-amber-200">
+                      Changed {columnEvolution.summary.changed}
+                    </span>
+                    <span className="rounded bg-rose-900/40 border border-rose-700/50 px-2 py-1 text-rose-200">
+                      Removed {columnEvolution.summary.removed}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-gray-400">
+                    Compared manifest v{columnEvolution.baseline_version?.version ?? '?'} → v{columnEvolution.current_version?.version ?? '?'}
+                  </div>
+                  <div className="space-y-2 max-h-56 overflow-auto pr-1">
+                    {columnEvolutionAdded.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[11px] uppercase tracking-wide text-emerald-300">Added</div>
+                        {columnEvolutionAdded.map((entry: ColumnEvolutionEntry) => (
+                          <button
+                            key={entry.column_id}
+                            onClick={() => selectColumnNode(entry.column_id)}
+                            className="w-full text-left rounded bg-emerald-950/40 border border-emerald-800/40 px-2 py-1 text-[11px] hover:bg-emerald-900/40"
+                          >
+                            {entry.model_name}:{entry.column}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {columnEvolutionChanged.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[11px] uppercase tracking-wide text-amber-300">Changed</div>
+                        {columnEvolutionChanged.map((entry: ColumnEvolutionChange) => (
+                          <button
+                            key={entry.column_id}
+                            onClick={() => selectColumnNode(entry.column_id)}
+                            className="w-full text-left rounded bg-amber-950/40 border border-amber-800/40 px-2 py-1 text-[11px] hover:bg-amber-900/40"
+                          >
+                            <div>{entry.model_name}:{entry.column}</div>
+                            {entry.changed_fields.length > 0 && (
+                              <div className="text-[10px] text-amber-200">
+                                {entry.changed_fields.join(', ')}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {columnEvolutionRemoved.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[11px] uppercase tracking-wide text-rose-300">Removed</div>
+                        {columnEvolutionRemoved.map((entry: ColumnEvolutionEntry) => (
+                          <div
+                            key={entry.column_id}
+                            className="rounded bg-rose-950/40 border border-rose-800/40 px-2 py-1 text-[11px] text-rose-200"
+                          >
+                            {entry.model_name}:{entry.column}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {columnEvolutionAdded.length === 0 &&
+                      columnEvolutionChanged.length === 0 &&
+                      columnEvolutionRemoved.length === 0 && (
+                        <div className="text-xs text-gray-400">No column changes detected.</div>
+                      )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
             <h3 className="text-sm font-semibold text-white">Impact</h3>

@@ -77,6 +77,56 @@ class ColumnLineageGraph(BaseModel):
     edges: List[ColumnLineageEdge]
 
 
+class ArtifactVersionInfo(BaseModel):
+    version: int
+    timestamp: Optional[str] = None
+    checksum: Optional[str] = None
+
+
+class ColumnEvolutionMeta(BaseModel):
+    name: str
+    description: Optional[str] = None
+    data_type: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
+
+
+class ColumnEvolutionEntry(BaseModel):
+    column_id: str
+    model_id: str
+    model_name: str
+    column: str
+    meta: ColumnEvolutionMeta
+
+
+class ColumnEvolutionChange(BaseModel):
+    column_id: str
+    model_id: str
+    model_name: str
+    column: str
+    previous: ColumnEvolutionMeta
+    current: ColumnEvolutionMeta
+    changed_fields: List[str] = Field(default_factory=list)
+
+
+class ColumnEvolutionSummary(BaseModel):
+    added: int
+    removed: int
+    changed: int
+    unchanged: int
+
+
+class ColumnEvolutionResponse(BaseModel):
+    available: bool
+    message: Optional[str] = None
+    current_version: Optional[ArtifactVersionInfo] = None
+    baseline_version: Optional[ArtifactVersionInfo] = None
+    summary: Optional[ColumnEvolutionSummary] = None
+    status_by_id: Dict[str, str] = Field(default_factory=dict)
+    added: List[ColumnEvolutionEntry] = Field(default_factory=list)
+    removed: List[ColumnEvolutionEntry] = Field(default_factory=list)
+    changed: List[ColumnEvolutionChange] = Field(default_factory=list)
+
+
 class ImpactResponse(BaseModel):
     upstream: List[str]
     downstream: List[str]

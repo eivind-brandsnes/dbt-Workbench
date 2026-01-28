@@ -1,9 +1,17 @@
 from collections import defaultdict, deque
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
+try:  # Optional dependency for smarter column lineage
+    import sqlglot
+    from sqlglot import exp
+except Exception:  # pragma: no cover - optional dependency
+    sqlglot = None
+    exp = None
+
 from app.core.config import Settings
 from app.schemas import dbt as dbt_schemas
 from app.services.artifact_service import ArtifactService
+from app.services.artifact_watcher import ArtifactWatcher
 
 
 class LineageService:
@@ -175,12 +183,204 @@ class LineageService:
                 )
 
         edges = self._build_model_edges(manifest_nodes)
-        column_edges = self._build_column_edges(edges, columns)
-        return dbt_schemas.ColumnLineageGraph(nodes=column_nodes, edges=sorted(column_edges, key=lambda e: (e.source, e.target)))
+        adapter_type = manifest.get("metadata", {}).get("adapter_type")
+        column_edges: List[dbt_schemas.ColumnLineageEdge] = []
+        processed_models: Set[str] = set()
+        sql_edges, processed_models = self._build_column_edges_from_sql(
+            manifest_nodes=manifest_nodes,
+            columns=columns,
+            adapter_type=adapter_type,
+        )
+        column_edges.extend(sql_edges)
 
-    def _build_column_edges(self, model_edges: List[dbt_schemas.LineageEdge], columns: Dict[str, Dict[str, Dict]]) -> List[dbt_schemas.ColumnLineageEdge]:
+        missing_targets = set(columns.keys()) - processed_models
+        if missing_targets:
+            fallback_edges = self._build_column_edges(edges, columns, allowed_targets=missing_targets)
+            column_edges.extend(fallback_edges)
+
+        if not column_edges:
+            column_edges = self._build_column_edges(edges, columns)
+
+        return dbt_schemas.ColumnLineageGraph(
+            nodes=column_nodes,
+            edges=sorted(column_edges, key=lambda e: (e.source, e.target)),
+        )
+
+    def _version_info(self, version: Optional[object]) -> Optional[dbt_schemas.ArtifactVersionInfo]:
+        if not version:
+            return None
+        timestamp = None
+        try:
+            timestamp = version.timestamp.isoformat() if version.timestamp else None
+        except Exception:
+            timestamp = None
+        return dbt_schemas.ArtifactVersionInfo(
+            version=version.version,
+            timestamp=timestamp,
+            checksum=getattr(version, "checksum", None),
+        )
+
+    def _evolution_meta(self, name: str, meta: Dict) -> dbt_schemas.ColumnEvolutionMeta:
+        return dbt_schemas.ColumnEvolutionMeta(
+            name=meta.get("name") or name,
+            description=meta.get("description"),
+            data_type=meta.get("type"),
+            tags=meta.get("tags") or [],
+        )
+
+    def _diff_meta(self, previous: dbt_schemas.ColumnEvolutionMeta, current: dbt_schemas.ColumnEvolutionMeta) -> List[str]:
+        changes: List[str] = []
+        if (previous.description or "") != (current.description or ""):
+            changes.append("description")
+        if (previous.data_type or "") != (current.data_type or ""):
+            changes.append("data_type")
+        if sorted(previous.tags or []) != sorted(current.tags or []):
+            changes.append("tags")
+        return changes
+
+    def build_column_evolution(
+        self,
+        watcher: ArtifactWatcher,
+        baseline_version: Optional[int] = None,
+    ) -> dbt_schemas.ColumnEvolutionResponse:
+        manifest_current = watcher.get_current_version("manifest.json")
+        if not manifest_current:
+            return dbt_schemas.ColumnEvolutionResponse(
+                available=False,
+                message="manifest.json has not been loaded yet.",
+            )
+
+        current_info = self._version_info(manifest_current)
+        if baseline_version is None:
+            baseline_version = manifest_current.version - 1 if manifest_current.version > 1 else None
+
+        if not baseline_version:
+            return dbt_schemas.ColumnEvolutionResponse(
+                available=False,
+                message="Need at least two manifest versions to compute evolution.",
+                current_version=current_info,
+            )
+
+        baseline_manifest = watcher.get_version("manifest.json", baseline_version)
+        if not baseline_manifest:
+            return dbt_schemas.ColumnEvolutionResponse(
+                available=False,
+                message=f"Manifest version {baseline_version} is not available.",
+                current_version=current_info,
+            )
+
+        baseline_info = self._version_info(baseline_manifest)
+        current_catalog = watcher.get_current_version("catalog.json")
+        baseline_catalog = watcher.get_version("catalog.json", baseline_version)
+
+        current_manifest_content = manifest_current.content or {}
+        baseline_manifest_content = baseline_manifest.content or {}
+        current_catalog_content = current_catalog.content if current_catalog else {}
+        baseline_catalog_content = baseline_catalog.content if baseline_catalog else {}
+
+        current_nodes = self._merged_nodes(current_manifest_content)
+        baseline_nodes = self._merged_nodes(baseline_manifest_content)
+        current_catalog_nodes = self._catalog_nodes(current_catalog_content)
+        baseline_catalog_nodes = self._catalog_nodes(baseline_catalog_content)
+
+        current_columns = self._collect_columns(current_nodes, current_catalog_nodes)
+        baseline_columns = self._collect_columns(baseline_nodes, baseline_catalog_nodes)
+
+        added: List[dbt_schemas.ColumnEvolutionEntry] = []
+        removed: List[dbt_schemas.ColumnEvolutionEntry] = []
+        changed: List[dbt_schemas.ColumnEvolutionChange] = []
+        status_by_id: Dict[str, str] = {}
+        unchanged_count = 0
+
+        for model_id in sorted(set(current_columns.keys()) | set(baseline_columns.keys())):
+            current_cols = current_columns.get(model_id, {})
+            baseline_cols = baseline_columns.get(model_id, {})
+            current_node = current_nodes.get(model_id, {}) or {}
+            baseline_node = baseline_nodes.get(model_id, {}) or {}
+            model_name = (
+                current_node.get("alias")
+                or current_node.get("name")
+                or baseline_node.get("alias")
+                or baseline_node.get("name")
+                or model_id
+            )
+
+            for column_name in sorted(set(current_cols.keys()) | set(baseline_cols.keys())):
+                column_id = f"{model_id}.{column_name}"
+                if column_name not in baseline_cols:
+                    meta = self._evolution_meta(column_name, current_cols[column_name])
+                    added.append(
+                        dbt_schemas.ColumnEvolutionEntry(
+                            column_id=column_id,
+                            model_id=model_id,
+                            model_name=model_name,
+                            column=column_name,
+                            meta=meta,
+                        )
+                    )
+                    status_by_id[column_id] = "added"
+                    continue
+                if column_name not in current_cols:
+                    meta = self._evolution_meta(column_name, baseline_cols[column_name])
+                    removed.append(
+                        dbt_schemas.ColumnEvolutionEntry(
+                            column_id=column_id,
+                            model_id=model_id,
+                            model_name=model_name,
+                            column=column_name,
+                            meta=meta,
+                        )
+                    )
+                    continue
+
+                previous_meta = self._evolution_meta(column_name, baseline_cols[column_name])
+                current_meta = self._evolution_meta(column_name, current_cols[column_name])
+                changed_fields = self._diff_meta(previous_meta, current_meta)
+                if changed_fields:
+                    changed.append(
+                        dbt_schemas.ColumnEvolutionChange(
+                            column_id=column_id,
+                            model_id=model_id,
+                            model_name=model_name,
+                            column=column_name,
+                            previous=previous_meta,
+                            current=current_meta,
+                            changed_fields=changed_fields,
+                        )
+                    )
+                    status_by_id[column_id] = "changed"
+                else:
+                    status_by_id[column_id] = "unchanged"
+                    unchanged_count += 1
+
+        summary = dbt_schemas.ColumnEvolutionSummary(
+            added=len(added),
+            removed=len(removed),
+            changed=len(changed),
+            unchanged=unchanged_count,
+        )
+
+        return dbt_schemas.ColumnEvolutionResponse(
+            available=True,
+            current_version=current_info,
+            baseline_version=baseline_info,
+            summary=summary,
+            status_by_id=status_by_id,
+            added=added,
+            removed=removed,
+            changed=changed,
+        )
+
+    def _build_column_edges(
+        self,
+        model_edges: List[dbt_schemas.LineageEdge],
+        columns: Dict[str, Dict[str, Dict]],
+        allowed_targets: Optional[Set[str]] = None,
+    ) -> List[dbt_schemas.ColumnLineageEdge]:
         column_edges: List[dbt_schemas.ColumnLineageEdge] = []
         for edge in model_edges:
+            if allowed_targets is not None and edge.target not in allowed_targets:
+                continue
             source_columns = columns.get(edge.source, {})
             target_columns = columns.get(edge.target, {})
             target_lookup = {name.lower(): name for name in target_columns.keys()}
@@ -197,6 +397,202 @@ class LineageService:
                         )
                     )
         return column_edges
+
+    @staticmethod
+    def _normalize_relation(value: Optional[str]) -> Optional[str]:
+        if not value:
+            return None
+        return (
+            value.replace('"', "")
+            .replace("`", "")
+            .replace("[", "")
+            .replace("]", "")
+            .strip()
+            .lower()
+        )
+
+    @staticmethod
+    def _resolve_sqlglot_dialect(adapter_type: Optional[str]) -> str:
+        if not adapter_type:
+            return "postgres"
+        adapter = adapter_type.lower()
+        mapping = {
+            "postgres": "postgres",
+            "redshift": "redshift",
+            "snowflake": "snowflake",
+            "bigquery": "bigquery",
+            "databricks": "databricks",
+            "spark": "spark",
+            "duckdb": "duckdb",
+            "trino": "trino",
+            "presto": "presto",
+        }
+        return mapping.get(adapter, "postgres")
+
+    def _build_relation_lookup(self, manifest_nodes: Dict[str, Dict]) -> Dict[str, str]:
+        lookup: Dict[str, str] = {}
+        for unique_id, node in manifest_nodes.items():
+            alias = node.get("alias") or node.get("name")
+            schema = node.get("schema")
+            database = node.get("database")
+            relation = node.get("relation_name")
+            candidates = []
+            for value in (
+                relation,
+                alias,
+                f"{schema}.{alias}" if schema and alias else None,
+                f"{database}.{schema}.{alias}" if database and schema and alias else None,
+            ):
+                normalized = self._normalize_relation(value)
+                if normalized:
+                    candidates.append(normalized)
+            for key in candidates:
+                lookup.setdefault(key, unique_id)
+        return lookup
+
+    def _extract_column_lineage_from_sql(
+        self,
+        compiled_sql: str,
+        output_columns: Dict[str, Dict],
+        relation_lookup: Dict[str, str],
+        columns: Dict[str, Dict[str, Dict]],
+        dialect: str,
+    ) -> Tuple[Set[Tuple[str, str, str, str]], bool]:
+        if not sqlglot or not exp:
+            return set(), False
+
+        try:
+            parsed = sqlglot.parse_one(compiled_sql, read=dialect)
+        except Exception:
+            return set(), False
+
+        select = parsed if isinstance(parsed, exp.Select) else parsed.find(exp.Select)
+        if not select:
+            return set(), False
+
+        output_lookup = {name.lower(): name for name in output_columns.keys()}
+        model_sources: Set[str] = set()
+        alias_map: Dict[str, str] = {}
+
+        for table in select.find_all(exp.Table):
+            table_name = table.name
+            if not table_name:
+                continue
+            alias = table.alias_or_name or table_name
+            alias_map[alias.lower()] = table_name
+            normalized = self._normalize_relation(table_name)
+            if normalized and normalized in relation_lookup:
+                model_sources.add(relation_lookup[normalized])
+
+        model_sources = set(model_sources)
+        columns_lower = {
+            model_id: {col.lower(): col for col in col_map.keys()}
+            for model_id, col_map in columns.items()
+        }
+
+        edges: Set[Tuple[str, str, str, str]] = set()
+
+        for projection in select.expressions:
+            if isinstance(projection, exp.Star):
+                continue
+            output_name = projection.alias_or_name
+            if not output_name:
+                continue
+            output_key = output_name.lower()
+            if output_key not in output_lookup:
+                continue
+            target_col = output_lookup[output_key]
+
+            source_columns: List[Tuple[Optional[str], str]] = []
+            for column in projection.find_all(exp.Column):
+                source_name = column.name
+                if not source_name:
+                    continue
+                table = column.table
+                table_name = None
+                if table:
+                    table_name = alias_map.get(table.lower(), table)
+                source_columns.append((table_name, source_name))
+
+            for table_name, source_name in source_columns:
+                source_model = None
+                if table_name:
+                    normalized = self._normalize_relation(table_name)
+                    if normalized and normalized in relation_lookup:
+                        source_model = relation_lookup[normalized]
+                else:
+                    candidates = [
+                        model_id
+                        for model_id in model_sources
+                        if source_name.lower() in columns_lower.get(model_id, {})
+                    ]
+                    if len(candidates) == 1:
+                        source_model = candidates[0]
+
+                if not source_model:
+                    continue
+
+                source_col_lookup = columns_lower.get(source_model, {})
+                source_col = source_col_lookup.get(source_name.lower())
+                if not source_col:
+                    continue
+
+                edges.add((source_model, source_col, target_col, ""))
+
+        return edges, True
+
+    def _build_column_edges_from_sql(
+        self,
+        manifest_nodes: Dict[str, Dict],
+        columns: Dict[str, Dict[str, Dict]],
+        adapter_type: Optional[str],
+    ) -> Tuple[List[dbt_schemas.ColumnLineageEdge], Set[str]]:
+        if not sqlglot or not exp:
+            return [], set()
+
+        relation_lookup = self._build_relation_lookup(manifest_nodes)
+        dialect = self._resolve_sqlglot_dialect(adapter_type)
+
+        edges: Set[Tuple[str, str, str, str]] = set()
+        processed_models: Set[str] = set()
+
+        for model_id, node in manifest_nodes.items():
+            if node.get("resource_type") not in {"model", "snapshot", "seed", "source"}:
+                continue
+            compiled_sql = node.get("compiled_code")
+            if not isinstance(compiled_sql, str) or not compiled_sql.strip():
+                continue
+
+            output_columns = columns.get(model_id, {})
+            if not output_columns:
+                continue
+
+            lineage_edges, parsed = self._extract_column_lineage_from_sql(
+                compiled_sql=compiled_sql,
+                output_columns=output_columns,
+                relation_lookup=relation_lookup,
+                columns=columns,
+                dialect=dialect,
+            )
+            if parsed and lineage_edges:
+                processed_models.add(model_id)
+            for source_model, source_col, target_col, _ in lineage_edges:
+                edges.add((source_model, source_col, target_col, model_id))
+
+        column_edges: List[dbt_schemas.ColumnLineageEdge] = []
+        for source_model, source_col, target_col, target_model in sorted(edges):
+            if not target_model:
+                continue
+            column_edges.append(
+                dbt_schemas.ColumnLineageEdge(
+                    source=f"{source_model}.{source_col}",
+                    target=f"{target_model}.{target_col}",
+                    source_column=source_col,
+                    target_column=target_col,
+                )
+            )
+
+        return column_edges, processed_models
 
     def get_grouping_metadata(self) -> List[dbt_schemas.LineageGroup]:
         graph = self.build_model_graph(max_depth=0)

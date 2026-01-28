@@ -169,6 +169,58 @@ export interface ImpactResponse {
   downstream: string[]
 }
 
+export interface ColumnEvolutionVersionInfo {
+  version: number
+  timestamp?: string | null
+  checksum?: string | null
+}
+
+export interface ColumnEvolutionMeta {
+  name: string
+  description?: string | null
+  data_type?: string | null
+  tags?: string[]
+}
+
+export interface ColumnEvolutionEntry {
+  column_id: string
+  model_id: string
+  model_name: string
+  column: string
+  meta: ColumnEvolutionMeta
+}
+
+export interface ColumnEvolutionChange {
+  column_id: string
+  model_id: string
+  model_name: string
+  column: string
+  previous: ColumnEvolutionMeta
+  current: ColumnEvolutionMeta
+  changed_fields: string[]
+}
+
+export interface ColumnEvolutionSummary {
+  added: number
+  removed: number
+  changed: number
+  unchanged: number
+}
+
+export type ColumnEvolutionStatus = 'added' | 'changed' | 'unchanged'
+
+export interface ColumnEvolutionResponse {
+  available: boolean
+  message?: string | null
+  current_version?: ColumnEvolutionVersionInfo | null
+  baseline_version?: ColumnEvolutionVersionInfo | null
+  summary?: ColumnEvolutionSummary | null
+  status_by_id?: Record<string, ColumnEvolutionStatus>
+  added?: ColumnEvolutionEntry[]
+  removed?: ColumnEvolutionEntry[]
+  changed?: ColumnEvolutionChange[]
+}
+
 // Row lineage types
 export interface RowLineageStatus {
   enabled: boolean
