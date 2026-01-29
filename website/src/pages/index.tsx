@@ -71,15 +71,16 @@ export default function Home(): JSX.Element {
             orchestration, documentation previews, and environment management — without vendor
             lock-in. Designed for local, on-prem, and air-gapped deployments.”
           </p>
-          <div className={styles.featureGrid}>
+          <div className={`${styles.featureGrid} text-black`}>
             {features.map((feature) => (
-              <div key={feature.title} className={styles.featureCard}>
-                <Heading as="h3">{feature.title}</Heading>
-                <p>{feature.description}</p>
-                <Link to={feature.link}>{feature.linkLabel}</Link>
+              <div key={feature.title} className={`${styles.featureCard} text-black`}>
+                <Heading as="h3" className="text-black">{feature.title}</Heading>
+                <p className="text-black">{feature.description}</p>
+                <Link to={feature.link} className="text-black">{feature.linkLabel}</Link>
               </div>
             ))}
           </div>
+
         </section>
 
         <section className={clsx('container', styles.screenshotSection)}>
