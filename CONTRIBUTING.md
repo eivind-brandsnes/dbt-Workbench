@@ -48,6 +48,14 @@ npm install
 npm run dev -- --host --port 3000
 ```
 
+### Documentation Site (Docusaurus)
+
+```bash
+cd website
+npm install
+npm run start
+```
+
 ### Full Stack (Docker)
 
 ```bash
@@ -172,6 +180,13 @@ cd frontend
 npm test                    # Run all tests
 npm run test:coverage       # With coverage
 npm run lint                # Lint check
+```
+
+### Documentation Site (Docusaurus)
+
+```bash
+cd website
+npm test
 ```
 
 ---

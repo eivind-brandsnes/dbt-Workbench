@@ -578,9 +578,19 @@ cd frontend
 npm test
 ```
 
+### Documentation Site (Docusaurus)
+```bash
+cd website
+npm test
+```
+
 > **Frontend CI note:** GitHub Actions caches npm dependencies from `frontend/package-lock.json`. If you add or update
 > UI dependencies, commit the updated lockfile in `frontend/` so the `actions/setup-node` step can restore the cache
 > and avoid lockfile-missing failures.
+
+> **Docs CI note:** The GitHub Pages workflow caches npm dependencies from `website/package-lock.json`. If you update
+> docs site dependencies, commit the updated lockfile in `website/` so the Pages build can restore the cache and run
+> `npm ci` successfully.
 
 Unit and integration coverage uses **Vitest** with **React Testing Library** (jsdom). The suite exercises the Version Control workflows (connected vs. missing repositories), dashboard fallbacks, and plugin pages. End-to-end UI checks use Playwright:
 
@@ -597,6 +607,7 @@ npm run test:e2e
 - **Plugin system:** `PLUGIN_SYSTEM.md`
 - **Contributing:** `CONTRIBUTING.md`
 - **Roadmap:** `ROADMAP.md`
+- **Docs website:** `website/` (Docusaurus source + build scripts)
 
 ---
 
