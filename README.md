@@ -611,6 +611,16 @@ MIT License — fully permissive for commercial and open-source use.
 
 ---
 
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=rezer-bleede/dbt-Workbench&type=Date)](https://star-history.com/#rezer-bleede/dbt-Workbench&Date)
+
+
+## ⭐ Star History
+
+[![Stargazers over time](https://starchart.cc/rezer-bleede/dbt-Workbench.svg)](https://starchart.cc/rezer-bleede/dbt-Workbench)
+
+
 ## ⭐ Support
 
 If dbt-Workbench helps you, please star the repository to support the project.
