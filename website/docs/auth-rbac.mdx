@@ -1,0 +1,71 @@
+---
+title: dbt RBAC and UI authentication
+description: Configure dbt UI authentication with JWT and role-based access control (RBAC) in dbt-Workbench.
+slug: /auth-rbac
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Auth & RBAC'},
+  ]}
+/>
+
+# dbt RBAC and UI authentication
+
+dbt-Workbench includes optional **dbt UI authentication** with JWT tokens and role-based access control. Authentication is disabled by default for local development and can be enabled in production deployments.
+
+## Authentication modes
+
+| Setting | Behavior |
+|---------|----------|
+| `AUTH_ENABLED=false` (default) | No login required, all users have Admin access |
+| `AUTH_ENABLED=true` | JWT-based authentication with username/password |
+
+## Authentication endpoints (when enabled)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/login` | POST | Login with username/password, returns JWT tokens |
+| `/auth/refresh` | POST | Refresh access token using refresh token |
+| `/auth/logout` | POST | Logout (client discards tokens) |
+| `/auth/me` | GET | Get current user information |
+| `/auth/switch-workspace` | POST | Switch active workspace |
+
+## Roles & permissions
+
+| Role | Level | Permissions |
+|------|-------|-------------|
+| **Viewer** | 0 | Read-only access to all data |
+| **Developer** | 1 | + Create/edit environments, schedules, run dbt commands |
+| **Admin** | 2 | + Manage users, plugins, workspaces, global settings |
+
+## RBAC by feature
+
+| Feature | Viewer | Developer | Admin |
+|---------|--------|-----------|-------|
+| View models, lineage, catalog | ✅ | ✅ | ✅ |
+| View runs and history | ✅ | ✅ | ✅ |
+| Execute dbt commands | ❌ | ✅ | ✅ |
+| Create/edit environments | ❌ | ✅ | ✅ |
+| Create/edit schedules | ❌ | ✅ | ✅ |
+| Enable/disable plugins | ❌ | ❌ | ✅ |
+| Manage users | ❌ | ❌ | ✅ |
+| Manage workspaces | ❌ | ❌ | ✅ |
+
+## Production checklist
+
+- Set `AUTH_ENABLED=true` and configure `JWT_SECRET_KEY`.
+- Rotate default secrets and store them in a secure secret manager.
+- Enforce password policy settings for minimum length and complexity.
+- Validate RBAC assignments for Viewer/Developer/Admin roles.
+- Audit workspace access and confirm strict path scoping is enforced.
+
+## Related pages
+
+- [dbt UI overview](/docs/dbt-ui/)
+- [air-gapped dbt UI operations](/docs/air-gapped-on-prem/)
+- [Environment management](/docs/environments/)
+- [dbt scheduler](/docs/scheduler/)

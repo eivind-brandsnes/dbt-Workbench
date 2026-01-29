@@ -1,0 +1,40 @@
+---
+title: dbt SQL workspace for compiled queries
+description: Use the dbt SQL workspace to run compiled SQL safely with dual-pane views, profiling, and pagination.
+slug: /sql-workspace
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt SQL workspace'},
+  ]}
+/>
+
+# dbt SQL workspace
+
+The **dbt SQL workspace** in dbt-Workbench is built for safe warehouse querying. It emphasizes **compiled SQL** only, with a dual-pane experience that keeps model source separate from the dbt model compiled SQL that is actually executed.
+
+## Key capabilities
+
+- **Dual-pane editor**: model source on the left, compiled SQL on the right.
+- **Compiled SQL only** execution for dbt model runs.
+- **Guardrails** for destructive queries with role-based access.
+- **Profiling** on every query to surface column statistics.
+- **Pagination** to keep large results responsive.
+
+## Execution modes
+
+1. **Custom SQL** — freeform queries against the selected environment, honoring destructive-query guardrails.
+2. **dbt models** — execute the compiled SQL generated for a model, never the raw Jinja source.
+
+If compiled artifacts are missing, the UI prompts a refresh before execution.
+
+## Related pages
+
+- [dbt run orchestration](/docs/run-orchestration/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt catalog viewer](/docs/catalog/)
+- [dbt UI overview](/docs/dbt-ui/)

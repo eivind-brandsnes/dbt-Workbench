@@ -1,0 +1,50 @@
+---
+title: How to mount dbt artifacts into a UI
+description: Step-by-step guide to mount dbt artifacts into dbt-Workbench for lineage, catalog, and docs.
+slug: /guides/mount-dbt-artifacts-into-ui
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Generate dbt artifacts',
+    text: 'Run dbt to generate manifest.json, run_results.json, and catalog.json in target/.',
+  },
+  {
+    name: 'Map the artifacts directory',
+    text: 'Mount the target/ directory to /app/dbt_artifacts or set DBT_ARTIFACTS_PATH.',
+  },
+  {
+    name: 'Include docs assets',
+    text: 'Run dbt docs generate and keep index.html plus assets alongside the artifacts.',
+  },
+  {
+    name: 'Reload the UI',
+    text: 'Refresh dbt-Workbench to confirm the artifacts viewer, catalog, and docs pages update.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to mount dbt artifacts into a UI'}]} />
+<HowToJsonLd
+  name="How to mount dbt artifacts into a UI"
+  description="Step-by-step guide to mount dbt artifacts into dbt-Workbench for lineage, catalog, and docs."
+  steps={steps}
+/>
+
+# How to mount dbt artifacts into a UI
+
+Use this guide to connect dbt artifacts to dbt-Workbench so the UI stays current.
+
+## Steps
+
+1. Generate artifacts with dbt (`manifest.json`, `run_results.json`, `catalog.json`).
+2. Mount the `target/` directory into the container (`/app/dbt_artifacts`).
+3. Run `dbt docs generate` and keep docs assets alongside the artifacts.
+4. Reload dbt-Workbench to confirm metadata updates.
+
+## Related pages
+
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt docs viewer](/docs/docs-viewer/)
+- [dbt catalog viewer](/docs/catalog/)

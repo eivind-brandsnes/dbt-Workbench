@@ -1,0 +1,46 @@
+---
+title: dbt artifacts viewer
+description: Understand which dbt artifacts power dbt-Workbench and how to mount manifest.json, run_results.json, catalog.json, and docs assets.
+slug: /artifacts
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt artifacts viewer'},
+  ]}
+/>
+
+# dbt artifacts viewer
+
+The **dbt artifacts viewer** in dbt-Workbench reads your dbt artifacts so lineage, runs, catalog metadata, and docs previews stay in sync. Keep artifacts current to ensure the UI reflects the latest project state.
+
+## Required artifacts
+
+Mount the following files into the `DBT_ARTIFACTS_PATH` directory:
+
+- `manifest.json`
+- `run_results.json`
+- `catalog.json`
+
+## Docs assets
+
+If you run `dbt docs generate`, include the generated `index.html` and assets alongside the artifacts. dbt-Workbench will host the docs viewer directly from these files.
+
+## How artifacts are used
+
+| Artifact | Used for |
+| --- | --- |
+| `manifest.json` | Model lineage, compiled SQL, dependencies |
+| `run_results.json` | Run history, statuses, and logs |
+| `catalog.json` | Catalog metadata, column statistics, freshness |
+| Docs assets | dbt docs viewer UI |
+
+## Related pages
+
+- [dbt docs viewer](/docs/docs-viewer/)
+- [dbt lineage visualization](/docs/lineage-overview/)
+- [dbt catalog viewer](/docs/catalog/)
+- [dbt run orchestration](/docs/run-orchestration/)

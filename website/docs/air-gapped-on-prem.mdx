@@ -1,0 +1,40 @@
+---
+title: air-gapped dbt UI operations
+description: Deploy an air-gapped dbt UI with dbt-Workbench, including artifact mounting, database configuration, auth hardening, and plugin opt-out.
+slug: /air-gapped-on-prem
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Air-gapped & on-prem'},
+  ]}
+/>
+
+# air-gapped dbt operations
+
+The **air-gapped dbt** deployment model is a first-class scenario for dbt-Workbench. The UI is designed for **on-prem dbt UI** and **offline dbt UI** installations where outbound network access is restricted or fully disabled.
+
+## Operational guidance
+
+- **Artifact mounting:** keep `manifest.json`, `run_results.json`, `catalog.json`, and docs assets mounted locally.
+- **Database configuration:** set `SQL_WORKSPACE_DEFAULT_CONNECTION_URL` and dbt profiles inside the secure environment.
+- **Auth hardening:** enable JWT authentication, rotate secrets, and use RBAC to enforce least privilege.
+- **Plugin opt-out:** set `PLUGIN_SYSTEM_ENABLED=false` to disable plugin discovery in minimal installations.
+- **Update cadence:** manually sync new builds and artifacts using offline delivery mechanisms.
+
+## On-prem checklist
+
+1. Store dbt artifacts on local disks or approved shared storage.
+2. Configure service users for warehouse connections with minimal privileges.
+3. Disable external integrations that require outbound HTTP.
+4. Document change control for artifacts and environment settings.
+
+## Related pages
+
+- [dbt UI overview](/docs/dbt-ui/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt RBAC authentication](/docs/auth-rbac/)
+- [dbt scheduler](/docs/scheduler/)

@@ -1,0 +1,50 @@
+---
+title: How to enable JWT auth for a self-hosted dbt UI
+description: Step-by-step guide to enable JWT authentication and RBAC in dbt-Workbench.
+slug: /guides/enable-jwt-auth
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Enable authentication',
+    text: 'Set AUTH_ENABLED=true and configure JWT_SECRET_KEY in your environment.',
+  },
+  {
+    name: 'Apply password policy',
+    text: 'Review password policy variables to enforce minimum length and complexity.',
+  },
+  {
+    name: 'Assign roles',
+    text: 'Create users and assign Viewer, Developer, or Admin roles.',
+  },
+  {
+    name: 'Verify access',
+    text: 'Login and validate that protected actions require the correct role.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to enable JWT auth for a self-hosted dbt UI'}]} />
+<HowToJsonLd
+  name="How to enable JWT auth for a self-hosted dbt UI"
+  description="Step-by-step guide to enable JWT authentication and RBAC in dbt-Workbench."
+  steps={steps}
+/>
+
+# How to enable JWT auth for a self-hosted dbt UI
+
+Enable JWT authentication for production-grade access control.
+
+## Steps
+
+1. Set `AUTH_ENABLED=true` and configure `JWT_SECRET_KEY`.
+2. Apply password policy variables for compliance.
+3. Assign roles to users (Viewer, Developer, Admin).
+4. Validate access for run orchestration and admin features.
+
+## Related pages
+
+- [dbt RBAC and authentication](/docs/auth-rbac/)
+- [air-gapped dbt UI operations](/docs/air-gapped-on-prem/)
+- [Environment management](/docs/environments/)

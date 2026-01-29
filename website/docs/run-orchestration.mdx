@@ -1,0 +1,45 @@
+---
+title: dbt run orchestration in dbt-Workbench
+description: Orchestrate dbt runs with execution buttons, live log streaming, artifacts per run, and history tracking.
+slug: /run-orchestration
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt run orchestration'},
+  ]}
+/>
+
+# dbt run orchestration
+
+The **dbt run orchestration** workflow in dbt-Workbench centralizes execution, monitoring, and artifact tracking. Run commands directly from the UI, stream logs in real time, and review artifacts on a per-run basis.
+
+## Execution workflow
+
+- **Execution buttons** for `dbt run`, `dbt test`, `dbt seed`, and `dbt docs generate`.
+- **Live log streaming** with terminal-style output.
+- **Artifacts per run** saved alongside run history.
+- **Run history** with status, duration, and quick access to logs.
+
+## Operational guardrails
+
+- Seed-aware warnings when downstream models need fresh seeds.
+- Concurrency controls via `MAX_CONCURRENT_RUNS`.
+- Logs persist even when runs fail early to preserve error context.
+
+## Connect to the scheduler and environments
+
+Scheduled runs inherit dbt profiles and targets from their selected environments. Review:
+
+- [dbt scheduler](/docs/scheduler/) for cron-based orchestration.
+- [Environment management](/docs/environments/) for dbt profile settings.
+
+## Related pages
+
+- [dbt scheduler](/docs/scheduler/)
+- [dbt SQL workspace](/docs/sql-workspace/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt UI overview](/docs/dbt-ui/)

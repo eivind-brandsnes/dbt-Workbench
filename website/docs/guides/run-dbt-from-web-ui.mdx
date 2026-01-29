@@ -1,0 +1,50 @@
+---
+title: How to run dbt from a web UI
+description: Step-by-step guide to run dbt commands from the dbt-Workbench web UI with logs and artifacts.
+slug: /guides/run-dbt-from-web-ui
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Configure an environment',
+    text: 'Set up a dbt environment with the correct profile and target in the Environments page.',
+  },
+  {
+    name: 'Open Run Orchestration',
+    text: 'Navigate to the Run Orchestration page and select a command.',
+  },
+  {
+    name: 'Start the run',
+    text: 'Click the execution button (run/test/seed/docs) to launch the job.',
+  },
+  {
+    name: 'Monitor streaming logs',
+    text: 'Follow the live logs and review artifacts when the run completes.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to run dbt from a web UI'}]} />
+<HowToJsonLd
+  name="How to run dbt from a web UI"
+  description="Step-by-step guide to run dbt commands from the dbt-Workbench web UI with logs and artifacts."
+  steps={steps}
+/>
+
+# How to run dbt from a web UI
+
+This guide walks through orchestrating dbt runs directly in dbt-Workbench.
+
+## Steps
+
+1. Configure an environment with the correct dbt profile/target.
+2. Open **Run Orchestration** in the UI.
+3. Click the execution button for the desired command.
+4. Monitor streaming logs and review artifacts when complete.
+
+## Related pages
+
+- [dbt run orchestration](/docs/run-orchestration/)
+- [Environment management](/docs/environments/)
+- [dbt artifacts viewer](/docs/artifacts/)

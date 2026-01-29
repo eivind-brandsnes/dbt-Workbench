@@ -1,0 +1,50 @@
+---
+title: How to manage multiple dbt projects in one instance
+description: Step-by-step guide to manage multiple dbt projects with workspace isolation in dbt-Workbench.
+slug: /guides/manage-multiple-dbt-projects
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Set the repositories base path',
+    text: 'Define GIT_REPOS_BASE_PATH so each workspace has its own repository root.',
+  },
+  {
+    name: 'Create or connect workspaces',
+    text: 'Use the UI to add workspaces and connect local or remote repositories.',
+  },
+  {
+    name: 'Switch active workspace',
+    text: 'Select the workspace to refresh artifacts, lineage, and runs for that project.',
+  },
+  {
+    name: 'Verify path scoping',
+    text: 'Confirm file operations stay scoped to the active workspace.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to manage multiple dbt projects in one instance'}]} />
+<HowToJsonLd
+  name="How to manage multiple dbt projects in one instance"
+  description="Step-by-step guide to manage multiple dbt projects with workspace isolation in dbt-Workbench."
+  steps={steps}
+/>
+
+# How to manage multiple dbt projects in one instance
+
+Use workspaces to isolate artifacts, repositories, and settings per dbt project.
+
+## Steps
+
+1. Set `GIT_REPOS_BASE_PATH` to a shared base directory.
+2. Create or connect workspaces in the UI.
+3. Switch the active workspace to load a different project.
+4. Verify strict path scoping for file operations.
+
+## Related pages
+
+- [dbt UI overview](/docs/dbt-ui/)
+- [Environment management](/docs/environments/)
+- [dbt run orchestration](/docs/run-orchestration/)

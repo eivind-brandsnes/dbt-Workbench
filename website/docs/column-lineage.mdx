@@ -1,0 +1,50 @@
+---
+title: dbt column lineage configuration
+description: Learn how dbt-Workbench derives dbt column lineage from manifest and catalog artifacts, plus performance modes and troubleshooting tips.
+slug: /column-lineage
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt column lineage'},
+  ]}
+/>
+
+# dbt column lineage
+
+dbt-Workbench provides **dbt column lineage** by combining metadata from `manifest.json` and `catalog.json`. This lets you trace field-level dependencies across models, sources, and exposures without manual mapping.
+
+## How column lineage is derived
+
+- **manifest.json** supplies compiled SQL and dependency metadata.
+- **catalog.json** supplies column-level metadata, types, and exposure details.
+- The UI joins both artifacts to render column-to-column relationships.
+
+## Performance modes
+
+Column lineage can be tuned for performance using `LINEAGE_PERFORMANCE_MODE`:
+
+- **fast**: prioritize quick graph loads for large projects.
+- **balanced**: default mode for most deployments.
+- **detailed**: deepest column lineage with richer relationships.
+
+You can also toggle `LOAD_COLUMN_LINEAGE_BY_DEFAULT` to load model lineage first and switch to column lineage on demand.
+
+## Troubleshooting column lineage
+
+| Issue | Likely cause | Fix |
+| --- | --- | --- |
+| Column lineage missing | `catalog.json` not mounted | Ensure `catalog.json` is present in the artifacts path. |
+| Graph loads slowly | Large project size | Switch to `fast` or reduce initial depth. |
+| Columns missing from nodes | Incomplete docs artifacts | Regenerate artifacts with `dbt docs generate`. |
+| No column lineage at all | Manifest missing | Verify `manifest.json` is mounted alongside catalog artifacts. |
+
+## Related pages
+
+- [dbt lineage visualization](/docs/lineage-overview/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt SQL workspace](/docs/sql-workspace/)
+- [dbt catalog viewer](/docs/catalog/)

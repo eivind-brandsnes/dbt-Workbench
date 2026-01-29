@@ -1,0 +1,50 @@
+---
+title: How to add a plugin to dbt-Workbench
+description: Step-by-step guide for adding a plugin to dbt-Workbench using the plugin system.
+slug: /guides/add-plugin
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Review the plugin specification',
+    text: 'Read the plugin system documentation to understand manifests and layout.',
+  },
+  {
+    name: 'Place the plugin directory',
+    text: 'Add the plugin folder under the configured PLUGINS_DIRECTORY.',
+  },
+  {
+    name: 'Enable the plugin',
+    text: 'Use the admin UI or API to enable the plugin for the workspace.',
+  },
+  {
+    name: 'Validate capabilities',
+    text: 'Confirm the plugin assets load and permissions match workspace needs.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to add a plugin to dbt-Workbench'}]} />
+<HowToJsonLd
+  name="How to add a plugin to dbt-Workbench"
+  description="Step-by-step guide for adding a plugin to dbt-Workbench using the plugin system."
+  steps={steps}
+/>
+
+# How to add a plugin to dbt-Workbench
+
+Extend dbt-Workbench by installing and enabling plugins.
+
+## Steps
+
+1. Review the plugin system specification.
+2. Place the plugin directory under `PLUGINS_DIRECTORY`.
+3. Enable the plugin from the UI or API.
+4. Validate permissions and workspace configuration.
+
+## Related pages
+
+- [Plugin system](/docs/plugin-system/)
+- [dbt UI overview](/docs/dbt-ui/)
+- [air-gapped dbt UI operations](/docs/air-gapped-on-prem/)

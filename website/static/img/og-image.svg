@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="140" viewBox="0 0 640 140">
+  <rect width="640" height="140" rx="24" fill="#0F172A"/>
+
+  <!-- icon -->
+  <g transform="translate(36,26)">
+    <rect x="0" y="30" width="22" height="60" rx="8" fill="#7DD3FC"/>
+    <rect x="28" y="10" width="22" height="80" rx="8" fill="#38BDF8"/>
+    <rect x="56" y="36" width="22" height="44" rx="8" fill="#0EA5E9"/>
+    <circle cx="67" cy="14" r="8" fill="#22D3EE"/>
+  </g>
+
+  <!-- text -->
+  <text x="140" y="86"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="44"
+        font-weight="800"
+        fill="#E2E8F0">
+    dbt <tspan font-weight="500">workbench</tspan>
+  </text>
+</svg>

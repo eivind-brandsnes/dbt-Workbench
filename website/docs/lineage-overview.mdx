@@ -1,0 +1,89 @@
+---
+title: dbt lineage visualization overview
+description: Explore dbt lineage visualization with deterministic D3/dagre layouts, grouping, expand/collapse, and impact highlighting.
+slug: /lineage-overview
+---
+
+import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const faqItems = [
+  {
+    question: 'How is the dbt lineage graph laid out?',
+    answer:
+      'dbt-Workbench uses a deterministic D3/dagre layout so the graph is stable between refreshes and across users.',
+  },
+  {
+    question: 'Can I see both model and column lineage?',
+    answer:
+      'Yes. Model-level lineage is available by default, and column-level lineage can be enabled for detailed tracing.',
+  },
+  {
+    question: 'Does the graph support grouping?',
+    answer:
+      'Grouping by schema, resource type, and tags is supported with collapsible aggregates.',
+  },
+  {
+    question: 'How do I highlight impact?',
+    answer:
+      'Upstream and downstream impact highlighting is available at both model and column granularity.',
+  },
+  {
+    question: 'What artifacts power lineage?',
+    answer:
+      'Lineage is derived from dbt manifest.json and catalog.json artifacts.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Lineage visualization'},
+  ]}
+/>
+<FaqJsonLd items={faqItems} />
+
+# dbt lineage visualization
+
+The **dbt lineage visualization** in dbt-Workbench provides deterministic, readable graphs so teams can trust what they see. Layouts are built with D3/dagre for consistent positioning, while controls let you explore large projects without losing context.
+
+## Core capabilities
+
+- **Deterministic D3/dagre layout** for consistent model placement.
+- **Model + column lineage** with a shared graph experience.
+- **Grouping controls** by schema, resource type, or tag.
+- **Depth controls** to focus on relevant subgraphs.
+- **Expand/collapse** for large DAGs.
+- **Impact highlighting** for upstream and downstream changes.
+
+## dbt lineage graph workflow
+
+1. Start on the **Lineage** page and pick a model.
+2. Expand upstream and downstream nodes to surface dependencies.
+3. Turn on column lineage for deeper tracing.
+4. Use grouping and depth settings to declutter the graph.
+
+For deep column tracing, move to the [dbt column lineage](/docs/column-lineage/) page.
+
+## FAQ
+
+### How is the dbt lineage graph laid out?
+dbt-Workbench uses a deterministic D3/dagre layout so the graph is stable between refreshes and across users.
+
+### Can I see both model and column lineage?
+Yes. Model-level lineage is available by default, and column-level lineage can be enabled for detailed tracing.
+
+### Does the graph support grouping?
+Grouping by schema, resource type, and tags is supported with collapsible aggregates.
+
+### How do I highlight impact?
+Upstream and downstream impact highlighting is available at both model and column granularity.
+
+### What artifacts power lineage?
+Lineage is derived from dbt `manifest.json` and `catalog.json` artifacts.
+
+## Related pages
+
+- [dbt column lineage](/docs/column-lineage/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt catalog viewer](/docs/catalog/)
+- [dbt UI overview](/docs/dbt-ui/)

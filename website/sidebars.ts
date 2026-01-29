@@ -1,0 +1,57 @@
+import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+
+const sidebars: SidebarsConfig = {
+  docsSidebar: [
+    {
+      type: 'category',
+      label: 'Getting Started',
+      items: ['quickstart-docker', 'screenshots'],
+    },
+    {
+      type: 'category',
+      label: 'Core Documentation',
+      items: [
+        'dbt-ui',
+        'lineage-overview',
+        'column-lineage',
+        'run-orchestration',
+        'scheduler',
+        'sql-workspace',
+        'catalog',
+        'docs-viewer',
+        'artifacts',
+        'environments',
+        'auth-rbac',
+        'air-gapped-on-prem',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'How-to Guides',
+      items: [
+        'guides/view-dbt-lineage-locally',
+        'guides/mount-dbt-artifacts-into-ui',
+        'guides/run-dbt-from-web-ui',
+        'guides/schedule-dbt-runs-with-cron',
+        'guides/debug-failed-dbt-runs',
+        'guides/use-compiled-sql-safely',
+        'guides/manage-multiple-dbt-projects',
+        'guides/enable-jwt-auth',
+        'guides/add-plugin',
+        'guides/run-air-gapped',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Reference',
+      items: ['analytics-setup', 'architecture', 'plugin-system'],
+    },
+    {
+      type: 'category',
+      label: 'Project',
+      items: ['contributing', 'roadmap'],
+    },
+  ],
+};
+
+export default sidebars;
