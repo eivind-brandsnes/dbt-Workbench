@@ -1,0 +1,56 @@
+---
+title: How to view dbt lineage locally
+description: Step-by-step guide for viewing dbt lineage locally with dbt-Workbench.
+slug: /guides/view-dbt-lineage-locally
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Run dbt to generate artifacts',
+    text: 'Execute dbt to produce manifest.json and catalog.json in your target directory.',
+  },
+  {
+    name: 'Mount artifacts into dbt-Workbench',
+    text: 'Point DBT_ARTIFACTS_PATH to your target directory or mount it via Docker Compose.',
+  },
+  {
+    name: 'Open the lineage page',
+    text: 'Navigate to the Lineage page in the UI and select a model.',
+  },
+  {
+    name: 'Enable column lineage if needed',
+    text: 'Toggle column lineage to trace field-level dependencies in the graph.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'How-to guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'How to view dbt lineage locally'},
+  ]}
+/>
+<HowToJsonLd
+  name="How to view dbt lineage locally"
+  description="Step-by-step guide for viewing dbt lineage locally with dbt-Workbench."
+  steps={steps}
+/>
+
+# How to view dbt lineage locally
+
+Use this guide to render dbt lineage visualization from local artifacts.
+
+## Steps
+
+1. Run dbt to generate `manifest.json` and `catalog.json` in `target/`.
+2. Mount the artifacts into dbt-Workbench (`DBT_ARTIFACTS_PATH`).
+3. Open the **Lineage** page and select a model.
+4. Toggle column lineage for field-level tracing.
+
+## Related pages
+
+- [dbt lineage visualization](/docs/lineage-overview/)
+- [dbt column lineage](/docs/column-lineage/)
+- [dbt artifacts viewer](/docs/artifacts/)

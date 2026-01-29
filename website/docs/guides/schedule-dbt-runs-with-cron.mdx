@@ -1,0 +1,50 @@
+---
+title: How to schedule dbt runs with cron
+description: Step-by-step guide to schedule dbt runs with cron expressions in dbt-Workbench.
+slug: /guides/schedule-dbt-runs-with-cron
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Enable the scheduler',
+    text: 'Confirm SCHEDULER_ENABLED=true and set the default timezone.',
+  },
+  {
+    name: 'Create an environment',
+    text: 'Ensure an environment exists with the correct dbt profile and target.',
+  },
+  {
+    name: 'Add a cron schedule',
+    text: 'Create a schedule with a cron expression and optional notifications.',
+  },
+  {
+    name: 'Validate run history',
+    text: 'Check the schedule diagnostics and run history for successful execution.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to schedule dbt runs with cron'}]} />
+<HowToJsonLd
+  name="How to schedule dbt runs with cron"
+  description="Step-by-step guide to schedule dbt runs with cron expressions in dbt-Workbench."
+  steps={steps}
+/>
+
+# How to schedule dbt runs with cron
+
+Use cron-style schedules to automate dbt runs in dbt-Workbench.
+
+## Steps
+
+1. Enable the scheduler and set a default timezone.
+2. Create or verify the environment used for runs.
+3. Add a schedule with your cron expression.
+4. Monitor diagnostics and run history.
+
+## Related pages
+
+- [dbt scheduler](/docs/scheduler/)
+- [Environment management](/docs/environments/)
+- [dbt run orchestration](/docs/run-orchestration/)

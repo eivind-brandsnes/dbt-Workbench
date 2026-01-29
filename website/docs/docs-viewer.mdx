@@ -1,0 +1,33 @@
+---
+title: dbt docs viewer for generated documentation
+description: Serve dbt docs generate assets directly in dbt-Workbench with a built-in dbt docs viewer.
+slug: /docs-viewer
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt docs viewer'},
+  ]}
+/>
+
+# dbt docs viewer
+
+The **dbt docs viewer** in dbt-Workbench serves the `dbt docs generate` output directly from mounted artifacts. You get the full dbt documentation experience inside the same UI used for lineage and run orchestration.
+
+## Enable docs previews
+
+1. Run `dbt docs generate` in your dbt project.
+2. Mount the generated `target/` directory into the `DBT_ARTIFACTS_PATH` location.
+3. Ensure the directory contains `index.html` plus assets.
+
+The UI automatically serves the latest docs assets with the rest of your artifacts.
+
+## Related pages
+
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt catalog viewer](/docs/catalog/)
+- [dbt UI overview](/docs/dbt-ui/)
+- [dbt lineage visualization](/docs/lineage-overview/)

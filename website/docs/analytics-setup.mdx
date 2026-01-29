@@ -1,0 +1,31 @@
+---
+title: Analytics setup for dbt-Workbench docs
+description: Optional GA4 setup for the dbt-Workbench documentation site using GA4_ID in GitHub Pages.
+slug: /analytics-setup
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'Analytics setup'}]} />
+
+# Analytics setup (optional)
+
+dbt-Workbench includes optional Google Analytics 4 tracking. The GA script is only injected when `GA4_ID` is defined at build time.
+
+## Add GA4_ID in GitHub Actions
+
+1. Open your GitHub repository settings.
+2. Navigate to **Secrets and variables → Actions**.
+3. Add a new repository secret named `GA4_ID`.
+4. Set the value to your GA4 Measurement ID (e.g., `G-XXXXXXXXXX`).
+
+## Verify it works
+
+- Trigger a new build by pushing to `main`.
+- Inspect the rendered HTML for the GA script.
+- Confirm real-time events in the GA4 console.
+
+## Related pages
+
+- [dbt UI overview](/docs/dbt-ui/)
+- [Quickstart with Docker Compose](/docs/quickstart-docker/)

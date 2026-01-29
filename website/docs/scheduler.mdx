@@ -1,0 +1,86 @@
+---
+title: dbt scheduler for cron-style runs
+description: Configure the dbt scheduler with cron, timezones, retries, notifications, and overlap or catch-up policies.
+slug: /scheduler
+---
+
+import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const faqItems = [
+  {
+    question: 'Does the dbt scheduler support cron syntax?',
+    answer:
+      'Yes. dbt-Workbench uses cron-style expressions with timezone support for scheduled dbt runs.',
+  },
+  {
+    question: 'Can I configure retry and backoff?',
+    answer:
+      'Yes. Schedules include retry policies with exponential backoff and failure diagnostics.',
+  },
+  {
+    question: 'How does overlap or catch-up work?',
+    answer:
+      'Overlap and catch-up policies control whether missed runs are queued or skipped after downtime.',
+  },
+  {
+    question: 'Are notifications supported?',
+    answer:
+      'Yes. Email, Slack, and webhook notifications are available for scheduler events.',
+  },
+  {
+    question: 'Which timezone is used by default?',
+    answer:
+      'The scheduler normalizes timestamps to UTC, with a configurable default timezone for cron evaluation.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt scheduler'},
+  ]}
+/>
+<FaqJsonLd items={faqItems} />
+
+# dbt scheduler
+
+The **dbt scheduler** in dbt-Workbench lets you automate **cron dbt runs** with reliable dbt scheduling, diagnostics, and notifications. It is built for on-prem and air-gapped operations with explicit controls over timezones and retries.
+
+## Scheduler capabilities
+
+- **Cron expressions** for recurring dbt runs.
+- **Timezone support** with persisted timestamps normalized to UTC.
+- **Notifications** via email, Slack, or webhook.
+- **Retry and backoff** policies for transient failures.
+- **Overlap and catch-up policies** to avoid duplicate runs or missing data.
+- **Diagnostics** for failure reasons, attempt timelines, and log/artifact links.
+
+## Operational notes
+
+- `SCHEDULER_DEFAULT_TIMEZONE` sets the default cron evaluation timezone.
+- `SCHEDULER_MAX_CATCHUP_RUNS` limits backlog runs after downtime.
+- Scheduled runs inherit the dbt profile and target from their selected environment.
+
+## FAQ
+
+### Does the dbt scheduler support cron syntax?
+Yes. dbt-Workbench uses cron-style expressions with timezone support for scheduled dbt runs.
+
+### Can I configure retry and backoff?
+Yes. Schedules include retry policies with exponential backoff and failure diagnostics.
+
+### How does overlap or catch-up work?
+Overlap and catch-up policies control whether missed runs are queued or skipped after downtime.
+
+### Are notifications supported?
+Yes. Email, Slack, and webhook notifications are available for scheduler events.
+
+### Which timezone is used by default?
+The scheduler normalizes timestamps to UTC, with a configurable default timezone for cron evaluation.
+
+## Related pages
+
+- [dbt run orchestration](/docs/run-orchestration/)
+- [Environment management](/docs/environments/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [air-gapped dbt UI operations](/docs/air-gapped-on-prem/)

@@ -1,0 +1,28 @@
+# dbt-Workbench Documentation
+
+dbt-Workbench is an open source dbt UI for lineage visualization, run orchestration, docs previews, and catalog management.
+
+## Key docs
+- /docs/dbt-ui/ — dbt UI overview and workflows
+- /docs/lineage-overview/ — dbt lineage visualization
+- /docs/column-lineage/ — dbt column lineage configuration
+- /docs/run-orchestration/ — run orchestration
+- /docs/scheduler/ — dbt scheduler
+- /docs/sql-workspace/ — dbt SQL workspace
+- /docs/catalog/ — dbt catalog viewer
+- /docs/docs-viewer/ — dbt docs viewer
+- /docs/artifacts/ — dbt artifacts viewer
+- /docs/auth-rbac/ — authentication and RBAC
+- /docs/air-gapped-on-prem/ — air-gapped deployments
+
+## Guides
+- /docs/guides/view-dbt-lineage-locally/
+- /docs/guides/mount-dbt-artifacts-into-ui/
+- /docs/guides/run-dbt-from-web-ui/
+- /docs/guides/schedule-dbt-runs-with-cron/
+- /docs/guides/debug-failed-dbt-runs/
+- /docs/guides/use-compiled-sql-safely/
+- /docs/guides/manage-multiple-dbt-projects/
+- /docs/guides/enable-jwt-auth/
+- /docs/guides/add-plugin/
+- /docs/guides/run-air-gapped/

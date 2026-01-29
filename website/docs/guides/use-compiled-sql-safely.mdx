@@ -1,0 +1,50 @@
+---
+title: How to use compiled SQL for safe warehouse querying
+description: Step-by-step guide to use compiled SQL safely with the dbt SQL workspace.
+slug: /guides/use-compiled-sql-safely
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Open a dbt model in SQL workspace',
+    text: 'Select a model to load the dual-pane SQL workspace view.',
+  },
+  {
+    name: 'Review compiled SQL',
+    text: 'Confirm the compiled SQL pane shows the exact query that will execute.',
+  },
+  {
+    name: 'Check guardrails',
+    text: 'Ensure destructive queries are blocked by role-based guardrails.',
+  },
+  {
+    name: 'Execute and profile results',
+    text: 'Run the compiled SQL and review profiling statistics and pagination.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to use compiled SQL for safe warehouse querying'}]} />
+<HowToJsonLd
+  name="How to use compiled SQL for safe warehouse querying"
+  description="Step-by-step guide to use compiled SQL safely with the dbt SQL workspace."
+  steps={steps}
+/>
+
+# How to use compiled SQL for safe warehouse querying
+
+Use compiled SQL to execute dbt model logic safely.
+
+## Steps
+
+1. Open a dbt model inside the SQL workspace.
+2. Review the compiled SQL pane and confirm the query.
+3. Check guardrails for destructive queries.
+4. Execute and review profiling results.
+
+## Related pages
+
+- [dbt SQL workspace](/docs/sql-workspace/)
+- [dbt run orchestration](/docs/run-orchestration/)
+- [dbt artifacts viewer](/docs/artifacts/)

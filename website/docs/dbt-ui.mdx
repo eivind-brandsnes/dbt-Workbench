@@ -1,0 +1,117 @@
+---
+title: dbt UI guide for dbt-Workbench
+description: Understand what a dbt UI is, why teams choose an open source dbt UI, and how dbt-Workbench supports lineage, runs, docs, and SQL workflows.
+slug: /dbt-ui
+---
+
+import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const faqItems = [
+  {
+    question: 'Is this dbt Cloud?',
+    answer:
+      'No. dbt-Workbench is a self-hosted dbt UI designed for local, on-prem, and air-gapped deployments without vendor lock-in.',
+  },
+  {
+    question: 'Can it run air-gapped?',
+    answer:
+      'Yes. dbt-Workbench supports offline deployments by mounting artifacts and disabling optional plugins or networked integrations.',
+  },
+  {
+    question: 'Does it support multi-project workspaces?',
+    answer:
+      'Yes. Multiple workspaces are supported with strict path scoping and isolated repositories, artifacts, and settings.',
+  },
+  {
+    question: 'Which dbt artifacts does the UI use?',
+    answer:
+      'The UI reads manifest.json, run_results.json, and catalog.json plus docs generate assets for previews.',
+  },
+  {
+    question: 'Is there an authentication option?',
+    answer:
+      'JWT authentication with role-based access control is available and optional. Default mode is open for local use.',
+  },
+  {
+    question: 'What workflows can I run from the UI?',
+    answer:
+      'Run dbt commands, inspect compiled SQL, browse catalogs, visualize lineage, manage environments, and schedule runs.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt UI guide'},
+  ]}
+/>
+<FaqJsonLd items={faqItems} />
+
+# dbt UI guide: what it is and how dbt-Workbench delivers it
+
+A **dbt UI** is the control plane that makes dbt project metadata, lineage, and run operations visible in one place. dbt-Workbench is purpose-built to deliver that experience locally or inside restricted infrastructure. It pairs a data catalog, run history, and SQL workspace with strict workspace scoping so teams can explore models safely without vendor lock-in.
+
+## What a dbt UI typically covers
+
+A complete dbt UI focuses on four workflows:
+
+1. **Artifacts and documentation visibility** — surface models, sources, tests, docs, and compiled SQL.
+2. **Lineage insight** — show how models and columns connect across the project.
+3. **Run orchestration** — run commands, monitor logs, and review run outputs.
+4. **Operational governance** — schedule runs, manage environments, and secure access.
+
+## How dbt-Workbench maps to those workflows
+
+- **Lineage visualization:** deterministic D3/dagre layout, grouping controls, and impact highlighting. See the [dbt lineage visualization](/docs/lineage-overview/) page.
+- **Column lineage:** column-level graph derived from manifest and catalog artifacts. Learn more in the [dbt column lineage](/docs/column-lineage/) guide.
+- **Run orchestration:** execution buttons, log streaming, and run history. See [dbt run orchestration](/docs/run-orchestration/).
+- **Scheduler:** cron-style schedules with retries, notifications, and diagnostics. Review the [dbt scheduler](/docs/scheduler/).
+- **Catalog and docs:** search metadata, test health, and docs previews. Visit the [dbt catalog viewer](/docs/catalog/) and [dbt docs viewer](/docs/docs-viewer/).
+- **SQL workspace:** dual-pane compiled SQL and safe execution. Explore the [dbt SQL workspace](/docs/sql-workspace/).
+
+## Hosted vs self-hosted dbt UI (vendor lock-in avoidance)
+
+Hosted dbt UI services prioritize convenience but can introduce vendor lock-in, forced upgrades, and restricted network access. A self-hosted dbt UI like dbt-Workbench offers:
+
+- Full control over artifacts, databases, and credentials.
+- Support for local, on-prem, and air-gapped operations.
+- Workspace isolation with strict path scoping to reduce data leakage.
+- Optional authentication and RBAC tailored to regulated environments.
+
+If you need compliance controls or offline deployments, start with the [air-gapped and on-prem dbt UI](/docs/air-gapped-on-prem/) guidance.
+
+## Typical dbt-Workbench workflows
+
+- **Inspect the latest artifacts** in the [dbt artifacts viewer](/docs/artifacts/) and verify docs assets.
+- **Validate model coverage** in the [dbt catalog viewer](/docs/catalog/).
+- **Trigger a run** from the [dbt run orchestration](/docs/run-orchestration/) page and watch logs stream.
+- **Schedule recurring runs** using the [dbt scheduler](/docs/scheduler/) with timezone-aware cron.
+- **Use compiled SQL** in the [dbt SQL workspace](/docs/sql-workspace/) for safe warehouse querying.
+
+## FAQ
+
+### Is this dbt Cloud?
+No. dbt-Workbench is a self-hosted dbt UI designed for local, on-prem, and air-gapped deployments without vendor lock-in.
+
+### Can it run air-gapped?
+Yes. dbt-Workbench supports offline deployments by mounting artifacts and disabling optional plugins or networked integrations.
+
+### Does it support multi-project workspaces?
+Yes. Multiple workspaces are supported with strict path scoping and isolated repositories, artifacts, and settings.
+
+### Which dbt artifacts does the UI use?
+The UI reads `manifest.json`, `run_results.json`, and `catalog.json` plus docs generate assets for previews.
+
+### Is there an authentication option?
+JWT authentication with role-based access control is available and optional. Default mode is open for local use.
+
+### What workflows can I run from the UI?
+Run dbt commands, inspect compiled SQL, browse catalogs, visualize lineage, manage environments, and schedule runs.
+
+## Related pages
+
+- [Open source dbt UI overview](/)
+- [dbt lineage visualization](/docs/lineage-overview/)
+- [dbt run orchestration](/docs/run-orchestration/)
+- [dbt scheduler](/docs/scheduler/)
+- [dbt SQL workspace](/docs/sql-workspace/)

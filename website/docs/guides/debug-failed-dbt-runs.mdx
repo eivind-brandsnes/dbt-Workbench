@@ -1,0 +1,50 @@
+---
+title: How to debug failed dbt runs using log streaming
+description: Step-by-step guide to debug failed dbt runs with live log streaming in dbt-Workbench.
+slug: /guides/debug-failed-dbt-runs
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Open the run history',
+    text: 'Navigate to the Run Orchestration page and select a failed run.',
+  },
+  {
+    name: 'Review streaming logs',
+    text: 'Open the log stream and capture the terminal output for the failure.',
+  },
+  {
+    name: 'Check artifacts',
+    text: 'Inspect run_results.json and manifest.json for context on failures.',
+  },
+  {
+    name: 'Retry with fixes',
+    text: 'Apply fixes to the dbt project or environment and rerun from the UI.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to debug failed dbt runs using log streaming'}]} />
+<HowToJsonLd
+  name="How to debug failed dbt runs using log streaming"
+  description="Step-by-step guide to debug failed dbt runs with live log streaming in dbt-Workbench."
+  steps={steps}
+/>
+
+# How to debug failed dbt runs using log streaming
+
+Follow these steps to isolate failures quickly with dbt-Workbench log streaming.
+
+## Steps
+
+1. Open **Run Orchestration** and select a failed run.
+2. Review live or stored log streaming output.
+3. Inspect run artifacts for additional context.
+4. Fix the issue and re-run the command.
+
+## Related pages
+
+- [dbt run orchestration](/docs/run-orchestration/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt scheduler](/docs/scheduler/)

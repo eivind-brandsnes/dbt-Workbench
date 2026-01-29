@@ -1,0 +1,50 @@
+---
+title: How to run dbt-Workbench air-gapped
+description: Step-by-step guide to run dbt-Workbench in an air-gapped environment with offline artifacts and hardened auth.
+slug: /guides/run-air-gapped
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Prepare offline artifacts',
+    text: 'Generate dbt artifacts and docs assets inside the restricted network.',
+  },
+  {
+    name: 'Deploy the stack locally',
+    text: 'Run dbt-Workbench with Docker Compose or your preferred orchestrator on-prem.',
+  },
+  {
+    name: 'Harden authentication',
+    text: 'Enable JWT auth and configure RBAC to enforce least privilege.',
+  },
+  {
+    name: 'Disable optional plugins',
+    text: 'Set PLUGIN_SYSTEM_ENABLED=false if you need a minimal offline footprint.',
+  },
+];
+
+<BreadcrumbJsonLd items={[{name: 'Docs', url: '/docs/'}, {name: 'How to run dbt-Workbench air-gapped'}]} />
+<HowToJsonLd
+  name="How to run dbt-Workbench air-gapped"
+  description="Step-by-step guide to run dbt-Workbench in an air-gapped environment with offline artifacts and hardened auth."
+  steps={steps}
+/>
+
+# How to run dbt-Workbench air-gapped
+
+Deploy dbt-Workbench in fully offline environments with these steps.
+
+## Steps
+
+1. Prepare offline dbt artifacts and docs assets.
+2. Deploy the stack locally on-prem.
+3. Enable JWT auth and RBAC.
+4. Disable optional plugins if required.
+
+## Related pages
+
+- [air-gapped dbt UI operations](/docs/air-gapped-on-prem/)
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt RBAC and authentication](/docs/auth-rbac/)

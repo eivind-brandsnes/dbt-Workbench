@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /search
+Disallow: /search?
+
+Sitemap: https://rezer-bleede.github.io/dbt-Workbench/sitemap.xml

@@ -1,0 +1,41 @@
+---
+title: dbt catalog viewer and metadata search
+description: Use the dbt catalog viewer for metadata search, test health, freshness signals, and validation reports.
+slug: /catalog
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'dbt catalog viewer'},
+  ]}
+/>
+
+# dbt catalog viewer
+
+The **dbt catalog viewer** in dbt-Workbench brings **dbt metadata search**, **dbt test health**, and **dbt freshness** visibility into one place. Use it to validate coverage, explore column statistics, and enrich metadata directly in the UI.
+
+## Catalog capabilities
+
+- **Metadata search** across models, sources, exposures, macros, tests, tags, and columns.
+- **Test health** indicators in validation reports and entity pages.
+- **Freshness tracking** with max loaded timestamps, thresholds, and status.
+- **Validation reports** for missing docs, owners, tags, failing tests, and stale sources.
+- **Column statistics** from `catalog.json` with profiling insights.
+
+## Editing controls
+
+To allow metadata edits, set `ALLOW_METADATA_EDITS=true`. The UI then enables:
+
+- Updating owners, tags, and descriptions.
+- Editing column-level metadata.
+- Persisting enriched metadata for catalog re-use.
+
+## Related pages
+
+- [dbt artifacts viewer](/docs/artifacts/)
+- [dbt docs viewer](/docs/docs-viewer/)
+- [dbt lineage visualization](/docs/lineage-overview/)
+- [dbt UI overview](/docs/dbt-ui/)

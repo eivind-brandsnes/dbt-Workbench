@@ -1,0 +1,37 @@
+---
+title: dbt environment management
+description: Manage dbt profiles, targets, and environment settings in dbt-Workbench for consistent runs and schedules.
+slug: /environments
+---
+
+import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Environment management'},
+  ]}
+/>
+
+# Environment management
+
+dbt-Workbench centralizes dbt profile settings and environment targets. Environments are used by run orchestration and the scheduler to ensure consistent execution.
+
+## What environments control
+
+- Active dbt profiles and targets.
+- Connection details for the SQL workspace.
+- Environment-specific run settings and credentials.
+
+## Profile management
+
+- View configured dbt profiles and available targets.
+- Add a new profile with a YAML snippet that merges into `profiles.yml`.
+- Edit the full `profiles.yml` inline for advanced changes.
+
+## Related pages
+
+- [dbt run orchestration](/docs/run-orchestration/)
+- [dbt scheduler](/docs/scheduler/)
+- [dbt SQL workspace](/docs/sql-workspace/)
+- [dbt UI overview](/docs/dbt-ui/)
