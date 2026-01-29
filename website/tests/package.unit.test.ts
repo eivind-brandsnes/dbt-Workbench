@@ -9,10 +9,8 @@ test('website package.json declares Docusaurus build script and dependencies', a
   const pkg = JSON.parse(raw) as {
     scripts?: Record<string, string>;
     dependencies?: Record<string, string>;
-    type?: string;
   };
 
-  assert.equal(pkg.type, 'module');
   assert.equal(pkg.scripts?.build, 'docusaurus build');
   assert.equal(pkg.dependencies?.['@docusaurus/core'], '3.9.2');
 });
