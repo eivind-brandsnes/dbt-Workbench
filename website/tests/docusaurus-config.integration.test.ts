@@ -14,6 +14,18 @@ test('docusaurus config derives url and baseUrl from repository', async () => {
   assert.equal(config.projectName, 'example-repo');
 });
 
+test('docusaurus config uses repository for GitHub navbar link', async () => {
+  process.env.GITHUB_REPOSITORY = 'octo-org/octo-repo';
+  const configModule = await import('../docusaurus.config?test=navbar');
+  const config = configModule.default;
+
+  const githubItem = config.themeConfig?.navbar?.items?.find(
+    (item) => typeof item === 'object' && 'href' in item && item.href?.includes('github.com'),
+  );
+
+  assert.equal(githubItem?.href, 'https://github.com/octo-org/octo-repo');
+});
+
 test('docusaurus config falls back to default repo', async () => {
   delete process.env.GITHUB_REPOSITORY;
   const configModule = await import('../docusaurus.config?test=default');

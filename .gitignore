@@ -15,6 +15,7 @@ dbt.log
 *.json
 *.msgpack
 !website/package-lock.json
+!website/package.json
 data/repos/default/
 dbt_project/logs/dbt.log
 dbt_project/target/graph.gpickle
