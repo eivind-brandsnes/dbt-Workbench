@@ -4,7 +4,7 @@ A lightweight, open-source UI for dbt that provides model browsing, lineage visu
 run orchestration, documentation previews, and environment management — without vendor lock-in.
 Designed for local, on‑prem, and air‑gapped deployments.
 
-**Docs Website:** https://rezer-bleede.github.io/dbt-Workbench/
+**Docs Website:** https://dbt-workbench.github.io
 
 ---
 ## ✨ Highlights
@@ -626,7 +626,7 @@ MIT License — fully permissive for commercial and open-source use.
 
 ## ⭐ Star History
 
-[![Stargazers over time](https://starchart.cc/rezer-bleede/dbt-Workbench.svg)](https://starchart.cc/rezer-bleede/dbt-Workbench)
+[![Stargazers over time](https://starchart.cc/dbt-workbench/dbt-Workbench.svg)](https://starchart.cc/dbt-workbench/dbt-Workbench)
 
 
 ## ⭐ Support

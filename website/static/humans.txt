@@ -1,4 +1,4 @@
 Team: dbt-Workbench maintainers
-Site: https://rezer-bleede.github.io/dbt-Workbench/
-GitHub: https://github.com/rezer-bleede/dbt-Workbench
+Site: https://dbt-workbench.github.io
+GitHub: https://github.com/dbt-workbench/dbt-Workbench
 Thanks: Community contributors and open-source maintainers.
