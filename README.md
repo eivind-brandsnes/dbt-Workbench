@@ -4,7 +4,7 @@ A lightweight, open-source UI for dbt that provides model browsing, lineage visu
 run orchestration, documentation previews, and environment management — without vendor lock-in.
 Designed for local, on‑prem, and air‑gapped deployments.
 
-**Docs Website:** https://dbt-workbench.github.io/dbt-Workbench/
+**Docs Website:** https://dbt-workbench.github.io/dbt-Workbench/ (forks: `https://<owner>.github.io/dbt-Workbench/` — see the Pages deploy output)
 
 ---
 ## ✨ Highlights
