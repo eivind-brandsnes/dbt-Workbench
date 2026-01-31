@@ -3,4 +3,4 @@ Allow: /
 Disallow: /search
 Disallow: /search?
 
-Sitemap: https://dbt-workbench.github.io/sitemap.xml
+Sitemap: https://dbt-workbench.github.io/dbt-Workbench/sitemap.xml

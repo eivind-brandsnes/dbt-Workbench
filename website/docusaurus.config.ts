@@ -5,7 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 const repository = process.env.GITHUB_REPOSITORY ?? 'dbt-workbench/dbt-Workbench';
 const [organizationName, projectName] = repository.split('/');
 const siteUrl = `https://${organizationName}.github.io`;
-const baseUrl = organizationName === 'dbt-workbench' ? '/' : `/${projectName}/`;
+const isUserOrOrgSite = projectName === `${organizationName}.github.io`;
+const baseUrl = isUserOrOrgSite ? '/' : `/${projectName}/`;
 const ga4Id = process.env.GA4_ID;
 
 const config: Config = {
