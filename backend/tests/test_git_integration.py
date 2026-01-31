@@ -164,7 +164,7 @@ def test_local_repository_initialization(tmp_path, db_session):
 
     assert summary.remote_url is None
     assert (project_root / ".git").exists()
-    assert (project_root / "models" / "welcome.sql").exists()
+    assert (project_root / "models" / "raw" / "raw_customers.sql").exists()
 
     status = git_service.get_status(db_session, 1)
     assert status.configured is True
