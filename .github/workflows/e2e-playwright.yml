@@ -66,6 +66,6 @@ jobs:
         with:
           files: frontend/test-results/junit.xml
 
-      - name: Safety: Ensure Docker Compose is down
+      - name: Ensure Docker Compose is down
         if: always()
         run: docker compose -f docker-compose.yml down -v || true
