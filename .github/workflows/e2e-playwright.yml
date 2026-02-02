@@ -6,6 +6,10 @@ on:
   push:
     branches: ['main']
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   e2e-tests:
     name: Run E2E Tests
@@ -59,12 +63,14 @@ jobs:
           name: playwright-junit
           path: frontend/test-results/junit.xml
           retention-days: 7
+        continue-on-error: true
 
       - name: Publish Test Results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: frontend/test-results/junit.xml
+        continue-on-error: true
 
       - name: Ensure Docker Compose is down
         if: always()
