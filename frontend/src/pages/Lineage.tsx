@@ -1022,6 +1022,7 @@ function LineagePage() {
                 className={`relative rounded-lg overflow-hidden border border-gray-800/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 ${
                   isFullscreen ? 'h-full w-full' : 'h-[720px]'
                 }`}
+                data-testid="lineage-graph-container"
               >
                 <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900/80 px-2 py-1 text-[11px] text-gray-200 backdrop-blur">
                   <button

@@ -15,6 +15,6 @@ test('Plugins page loads and shows adapters', async ({ page }) => {
     await expect(page.getByText('Package')).toBeVisible();
     await expect(page.getByText('Status')).toBeVisible();
 
-    // Wait for loading to finish
+    // Wait for loading to finish - use proper assertion instead of timeout
     await expect(page.getByText('Loading plugins...')).not.toBeVisible();
 });

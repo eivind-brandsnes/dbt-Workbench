@@ -19,7 +19,13 @@ test('Sidebar stays fixed while main content scrolls', async ({ page }) => {
   await main.evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });
-  await page.waitForTimeout(100);
+  
+  // Wait for scroll to complete by checking the scroll position
+  await expect(async () => {
+    const scrollTop = await main.evaluate(el => el.scrollTop);
+    expect(scrollTop).toBeGreaterThan(0);
+  }).toPass();
+  
   const afterBox = await sidebar.boundingBox();
 
   expect(initialBox).not.toBeNull();

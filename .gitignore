@@ -32,3 +32,13 @@ dbt_project/target/manifest.json
 dbt_project/target/partial_parse.msgpack
 dbt_project/target/run_results.json
 dbt_project/target/semantic_manifest.json
+
+# Playwright E2E test artifacts
+test-results/
+playwright-report/
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright.log
+*.png
+!assets/*.png
+!assets/**/*.png

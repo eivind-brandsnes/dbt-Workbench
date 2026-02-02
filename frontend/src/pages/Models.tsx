@@ -46,7 +46,7 @@ function ModelsPage() {
   }, [models, query])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="models-list-container">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Models</h1>
         <input
