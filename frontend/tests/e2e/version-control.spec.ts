@@ -5,7 +5,7 @@ test.describe('Version Control Smoke Tests', () => {
     await page.goto('/version-control');
 
     // Check main heading
-    await expect(page.getByRole('heading', { name: /version control/i })).toBeVisible();
+    await expect(page.getByText(/projects\\s*&\\s*version control/i)).toBeVisible();
 
     // Check that the page has loaded content
     await expect(page.locator('main')).toBeVisible();

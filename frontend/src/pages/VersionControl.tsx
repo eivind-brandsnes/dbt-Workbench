@@ -336,7 +336,7 @@ export default function VersionControlPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-2xl font-semibold text-white">Projects & Version Control</div>
+          <h1 className="text-2xl font-semibold text-white">Projects & Version Control</h1>
           <div className="text-sm text-gray-400">
             Manage projects (one git repo each), initialize local starters, and inspect branch health.
           </div>

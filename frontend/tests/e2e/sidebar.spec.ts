@@ -3,17 +3,30 @@ import { test, expect } from '@playwright/test';
 test('Sidebar stays fixed while main content scrolls', async ({ page }) => {
   await page.goto('/');
 
-  await page.evaluate(() => {
-    const main = document.querySelector('main');
-    if (!main) return;
-    const spacer = document.createElement('div');
-    spacer.style.height = '2000px';
-    spacer.setAttribute('data-testid', 'scroll-spacer');
-    main.appendChild(spacer);
+  // Ensure main has enough scrollable space, even if the DOM rerenders.
+  await page.addStyleTag({
+    content: `
+      main[data-testid="main-content"] {
+        height: 300px !important;
+        max-height: 300px !important;
+        overflow-y: auto !important;
+      }
+      main[data-testid="main-content"] > :first-child {
+        min-height: 2000px;
+      }
+    `,
   });
 
-  const sidebar = page.locator('aside');
-  const main = page.locator('main');
+  const sidebar = page.getByTestId('sidebar');
+  const main = page.getByTestId('main-content');
+
+  await expect(sidebar).toBeVisible();
+  await expect(main).toBeVisible();
+
+  await page.waitForFunction(() => {
+    const el = document.querySelector('main[data-testid="main-content"]') as HTMLElement | null;
+    return !!el && el.scrollHeight > el.clientHeight;
+  });
 
   const initialBox = await sidebar.boundingBox();
   await main.evaluate((el) => {
@@ -21,10 +34,7 @@ test('Sidebar stays fixed while main content scrolls', async ({ page }) => {
   });
   
   // Wait for scroll to complete by checking the scroll position
-  await expect(async () => {
-    const scrollTop = await main.evaluate(el => el.scrollTop);
-    expect(scrollTop).toBeGreaterThan(0);
-  }).toPass();
+  await expect.poll(async () => main.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
   
   const afterBox = await sidebar.boundingBox();
 
