@@ -2,39 +2,50 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { api } from '../api/client'
 import { useAuth } from './AuthContext'
 import {
-  DEFAULT_THEME_BASE,
+  ThemeColorKey,
   ThemeMode,
+  ThemePreference,
+  ThemeResolved,
   applyThemeVariables,
-  generateTheme,
+  buildThemeMode,
+  getDefaultThemePreference,
   getPreferredColorScheme,
-  normalizeThemeBaseColor,
 } from '../utils/theme'
 import { clearStoredTheme, loadStoredTheme, storeTheme } from '../storage/themeStorage'
 
-interface ThemePreferenceResponse {
-  base_color: string
-}
-
 interface ThemeContextValue {
-  baseColor: string
   mode: ThemeMode
   isLoading: boolean
-  setBaseColor: (color: string) => void
+  resolved: Record<ThemeMode, ThemeResolved>
+  setColor: (mode: ThemeMode, key: ThemeColorKey, value: string) => void
   resetTheme: () => Promise<void>
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 
-const THEME_SAVE_DEBOUNCE_MS = 400
+const THEME_SAVE_DEBOUNCE_MS = 500
+
+const buildResolvedFromPreference = (preference: ThemePreference): Record<ThemeMode, ThemeResolved> => ({
+  light: buildThemeMode('light', preference.light.colors),
+  dark: buildThemeMode('dark', preference.dark.colors),
+})
+
+const buildPreferenceFromResolved = (resolved: Record<ThemeMode, ThemeResolved>): ThemePreference => ({
+  version: 1,
+  light: { colors: resolved.light.colors, derived: resolved.light.derived },
+  dark: { colors: resolved.dark.colors, derived: resolved.dark.derived },
+})
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLoading: authLoading, user, isAuthEnabled } = useAuth()
-  const [baseColor, setBaseColorState] = useState(DEFAULT_THEME_BASE)
+  const { isLoading: authLoading, user } = useAuth()
   const [mode, setMode] = useState<ThemeMode>(getPreferredColorScheme())
+  const [resolved, setResolved] = useState<Record<ThemeMode, ThemeResolved>>(() =>
+    buildResolvedFromPreference(getDefaultThemePreference())
+  )
   const [isLoading, setIsLoading] = useState(true)
   const persistTimeoutRef = useRef<number | null>(null)
-  const lastUserIdRef = useRef<number | null>(user?.id ?? null)
   const hydratingRef = useRef(false)
+  const lastUserIdRef = useRef<number | null>(user?.id ?? null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -50,8 +61,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [])
 
   useEffect(() => {
-    applyThemeVariables(generateTheme(baseColor, mode))
-  }, [baseColor, mode])
+    applyThemeVariables(resolved[mode])
+  }, [resolved, mode])
 
   const loadTheme = useCallback(async () => {
     if (authLoading) return
@@ -61,22 +72,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const userId = user?.id ?? null
     const local = loadStoredTheme(userId)
 
+    if (local) {
+      setResolved(buildResolvedFromPreference(local))
+    }
+
     try {
-      const res = await api.get<ThemePreferenceResponse>('/theme')
-      const serverColor = normalizeThemeBaseColor(res.data.base_color)
-      setBaseColorState(serverColor)
-      storeTheme({ baseColor: serverColor }, userId)
+      const res = await api.get<ThemePreference>('/theme')
+      const preference = res.data
+      setResolved(buildResolvedFromPreference(preference))
+      storeTheme(preference, userId)
     } catch {
-      if (local?.baseColor) {
-        setBaseColorState(local.baseColor)
-      } else {
-        setBaseColorState(DEFAULT_THEME_BASE)
+      if (!local) {
+        const fallback = getDefaultThemePreference()
+        setResolved(buildResolvedFromPreference(fallback))
       }
     } finally {
       hydratingRef.current = false
       setIsLoading(false)
     }
-  }, [authLoading, user?.id, isAuthEnabled])
+  }, [authLoading, user?.id])
 
   useEffect(() => {
     const currentUserId = user?.id ?? null
@@ -92,26 +106,44 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [authLoading, loadTheme])
 
-  const schedulePersist = useCallback((color: string) => {
+  const schedulePersist = useCallback((preference: ThemePreference) => {
     if (hydratingRef.current) return
     if (persistTimeoutRef.current) {
       window.clearTimeout(persistTimeoutRef.current)
     }
     persistTimeoutRef.current = window.setTimeout(async () => {
       try {
-        await api.put('/theme', { base_color: color })
+        await api.put('/theme', preference)
       } catch {
-        // Non-blocking; local theme still applied
+        // ignore persistence errors; UI already updated locally
       }
     }, THEME_SAVE_DEBOUNCE_MS)
   }, [])
 
-  const setBaseColor = useCallback((color: string) => {
-    const normalized = normalizeThemeBaseColor(color)
-    setBaseColorState(normalized)
-    storeTheme({ baseColor: normalized }, user?.id ?? null)
-    schedulePersist(normalized)
-  }, [schedulePersist, user?.id])
+  useEffect(() => {
+    if (hydratingRef.current || isLoading) return
+    const preference = buildPreferenceFromResolved(resolved)
+    storeTheme(preference, user?.id ?? null)
+
+    const allValid = resolved.light.validation.isValid && resolved.dark.validation.isValid
+    if (allValid) {
+      schedulePersist(preference)
+    }
+  }, [resolved, schedulePersist, user?.id, isLoading])
+
+  const setColor = useCallback((targetMode: ThemeMode, key: ThemeColorKey, value: string) => {
+    setResolved((prev) => {
+      const currentColors = {
+        ...prev[targetMode].colors,
+        [key]: value,
+      }
+      const updated = buildThemeMode(targetMode, currentColors)
+      return {
+        ...prev,
+        [targetMode]: updated,
+      }
+    })
+  }, [])
 
   const resetTheme = useCallback(async () => {
     if (persistTimeoutRef.current) {
@@ -123,16 +155,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // ignore
     }
     clearStoredTheme(user?.id ?? null)
-    setBaseColorState(DEFAULT_THEME_BASE)
+    const fallback = getDefaultThemePreference()
+    setResolved(buildResolvedFromPreference(fallback))
   }, [user?.id])
 
   const value = useMemo<ThemeContextValue>(() => ({
-    baseColor,
     mode,
     isLoading,
-    setBaseColor,
+    resolved,
+    setColor,
     resetTheme,
-  }), [baseColor, mode, isLoading, setBaseColor, resetTheme])
+  }), [mode, isLoading, resolved, setColor, resetTheme])
 
   if (isLoading) {
     return null

@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class RowLineageStatus(BaseModel):
+class RowLineageBaseModel(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
+
+
+class RowLineageStatus(RowLineageBaseModel):
     enabled: bool
     available: bool
     mapping_path: str
@@ -16,44 +20,44 @@ class RowLineageStatus(BaseModel):
     warnings: List[str] = Field(default_factory=list)
 
 
-class RowLineageModelInfo(BaseModel):
+class RowLineageModelInfo(RowLineageBaseModel):
     model_name: str
     model_unique_id: Optional[str] = None
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     database: Optional[str] = None
     relation_name: Optional[str] = None
     is_root: Optional[bool] = None
     mappings_as_target: Optional[int] = None
 
 
-class RowLineageModelsResponse(BaseModel):
+class RowLineageModelsResponse(RowLineageBaseModel):
     roots: List[RowLineageModelInfo]
     models: List[RowLineageModelInfo]
     warnings: List[str] = Field(default_factory=list)
 
 
-class RowLineageExportRequest(BaseModel):
+class RowLineageExportRequest(RowLineageBaseModel):
     environment_id: Optional[int] = None
 
 
-class RowLineageExportResponse(BaseModel):
+class RowLineageExportResponse(RowLineageBaseModel):
     ran: bool
     skipped_reason: Optional[str] = None
     logs: List[str] = Field(default_factory=list)
     status: RowLineageStatus
 
 
-class RowLineagePreviewRequest(BaseModel):
+class RowLineagePreviewRequest(RowLineageBaseModel):
     model_unique_id: str
     environment_id: Optional[int] = None
     limit: Optional[int] = None
 
 
-class RowLineagePreviewResponse(BaseModel):
+class RowLineagePreviewResponse(RowLineageBaseModel):
     model_unique_id: str
     model_name: str
     relation_name: str
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     database: Optional[str] = None
     trace_column: str
     trace_column_present: bool
@@ -62,30 +66,30 @@ class RowLineagePreviewResponse(BaseModel):
     warnings: List[str] = Field(default_factory=list)
 
 
-class RowLineageNode(BaseModel):
+class RowLineageNode(RowLineageBaseModel):
     id: str
     label: str
     type: str = "row"
     model_name: str
     trace_id: str
     model_unique_id: Optional[str] = None
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     database: Optional[str] = None
     relation_name: Optional[str] = None
     row: Optional[Dict[str, Any]] = None
 
 
-class RowLineageEdge(BaseModel):
+class RowLineageEdge(RowLineageBaseModel):
     source: str
     target: str
 
 
-class RowLineageGraph(BaseModel):
+class RowLineageGraph(RowLineageBaseModel):
     nodes: List[RowLineageNode]
     edges: List[RowLineageEdge]
 
 
-class RowLineageHop(BaseModel):
+class RowLineageHop(RowLineageBaseModel):
     source_model: str
     target_model: str
     source_trace_id: str
@@ -96,17 +100,17 @@ class RowLineageHop(BaseModel):
     target_row: Optional[Dict[str, Any]] = None
 
 
-class RowLineageTarget(BaseModel):
+class RowLineageTarget(RowLineageBaseModel):
     model_unique_id: Optional[str] = None
     model_name: str
     trace_id: str
     relation_name: Optional[str] = None
-    schema: Optional[str] = None
+    schema_: Optional[str] = Field(default=None, alias="schema")
     database: Optional[str] = None
     row: Optional[Dict[str, Any]] = None
 
 
-class RowLineageTraceResponse(BaseModel):
+class RowLineageTraceResponse(RowLineageBaseModel):
     target: RowLineageTarget
     graph: RowLineageGraph
     hops: List[RowLineageHop]

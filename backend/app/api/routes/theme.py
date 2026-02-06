@@ -9,6 +9,7 @@ from app.core.auth import UserContext, WorkspaceContext, get_current_user, get_c
 from app.database.connection import SessionLocal
 from app.database.models import models as db_models
 from app.schemas.theme import ThemePreference, ThemePreferenceResponse
+from app.utils.theme import collect_violations, validate_theme_preference
 
 router = APIRouter(prefix="/theme", tags=["theme"])
 
@@ -48,12 +49,18 @@ def get_theme(
     workspace: WorkspaceContext = Depends(get_current_workspace),
 ) -> ThemePreferenceResponse:
     record = _get_theme_record(db, current_user, workspace)
-    if not record or not isinstance(record.theme, dict) or "base_color" not in record.theme:
+    if not record or not isinstance(record.theme, dict):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": "theme_not_found", "message": "No theme preference stored."},
         )
-    return ThemePreferenceResponse(**record.theme)
+    try:
+        return ThemePreferenceResponse(**record.theme)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "theme_not_found", "message": "No valid theme preference stored."},
+        )
 
 
 @router.put("", response_model=ThemePreferenceResponse)
@@ -64,6 +71,18 @@ def save_theme(
     workspace: WorkspaceContext = Depends(get_current_workspace),
 ) -> ThemePreferenceResponse:
     now = datetime.now(timezone.utc)
+    checks_by_mode = validate_theme_preference(preference)
+    violations = collect_violations(checks_by_mode)
+    if violations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "theme_contrast_invalid",
+                "message": "Theme does not meet WCAG contrast requirements.",
+                "violations": violations,
+            },
+        )
+
     payload = preference.model_dump()
     record = _get_theme_record(db, current_user, workspace)
 

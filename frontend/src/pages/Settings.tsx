@@ -3,7 +3,7 @@ import { api } from '../api/client'
 import { ArtifactSummary, GitRepository } from '../types'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { hexToHsl, toHexFromHsl } from '../utils/theme'
+import { ThemeColorKey, ThemeMode } from '../utils/theme'
 
 interface ConfigResponse {
   execution: {
@@ -22,12 +22,12 @@ interface ConfigResponse {
 
 function SettingsPage() {
   const { user } = useAuth()
-  const { baseColor, setBaseColor, resetTheme } = useTheme()
+  const { mode, resolved, setColor, resetTheme } = useTheme()
   const [artifacts, setArtifacts] = useState<ArtifactSummary | null>(null)
   const [config, setConfig] = useState<ConfigResponse | null>(null)
   const [repo, setRepo] = useState<GitRepository | null>(null)
-  const [hsl, setHsl] = useState(() => hexToHsl(baseColor))
-  const [baseInput, setBaseInput] = useState(baseColor)
+  const [editingMode, setEditingMode] = useState<ThemeMode>(mode)
+  const [drafts, setDrafts] = useState<Record<string, string>>({})
 
   useEffect(() => {
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
@@ -36,26 +36,31 @@ function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    setHsl(hexToHsl(baseColor))
-    setBaseInput(baseColor)
-  }, [baseColor])
+    setEditingMode(mode)
+  }, [mode])
 
-  const handleHslChange = (next: { h?: number; s?: number; l?: number }) => {
-    const updated = {
-      h: next.h ?? hsl.h,
-      s: next.s ?? hsl.s,
-      l: next.l ?? hsl.l,
+  const activeTheme = resolved[editingMode]
+  const previewStyle = activeTheme.variables as React.CSSProperties
+  const colorFields: Array<{ key: ThemeColorKey; label: string; description: string }> = [
+    { key: 'primary', label: 'Primary', description: 'Buttons, highlights, key actions.' },
+    { key: 'secondary', label: 'Secondary', description: 'Accent elements and secondary actions.' },
+    { key: 'background', label: 'Background', description: 'Page background.' },
+    { key: 'surface', label: 'Surface', description: 'Cards, panels, tables.' },
+    { key: 'text', label: 'Text', description: 'Default text color.' },
+  ]
+
+  const handleDraftChange = (modeKey: ThemeMode, key: ThemeColorKey, value: string) => {
+    const draftKey = `${modeKey}-${key}`
+    setDrafts((prev) => ({ ...prev, [draftKey]: value }))
+    if (/^#?[0-9a-fA-F]{6}$/.test(value.trim())) {
+      const normalized = value.startsWith('#') ? value : `#${value}`
+      setColor(modeKey, key, normalized)
     }
-    setHsl(updated)
-    setBaseColor(toHexFromHsl(updated.h, updated.s, updated.l))
   }
 
-  const handleBaseInputChange = (value: string) => {
-    setBaseInput(value)
-    if (/^#?[0-9a-fA-F]{6}$/.test(value.trim())) {
-      const next = value.startsWith('#') ? value : `#${value}`
-      setBaseColor(next)
-    }
+  const handleDraftBlur = (modeKey: ThemeMode, key: ThemeColorKey) => {
+    const draftKey = `${modeKey}-${key}`
+    setDrafts((prev) => ({ ...prev, [draftKey]: activeTheme.colors[key] }))
   }
 
   return (
@@ -70,7 +75,7 @@ function SettingsPage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-lg font-medium text-text">Color Theme</h3>
-              <p className="text-sm text-muted">Pick a base color and see the whole UI update instantly.</p>
+              <p className="text-sm text-muted">Edit each color and the UI updates instantly with WCAG contrast checks.</p>
             </div>
             <button
               onClick={() => resetTheme()}
@@ -80,70 +85,96 @@ function SettingsPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] gap-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text">Base color</label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="color"
-                    value={baseColor}
-                    onChange={(event) => setBaseColor(event.target.value)}
-                    className="h-10 w-14 rounded border border-border bg-surface"
-                    aria-label="Choose base color"
-                  />
-                  <input
-                    type="text"
-                    value={baseInput}
-                    onChange={(event) => handleBaseInputChange(event.target.value)}
-                    onBlur={() => setBaseInput(baseColor)}
-                    className="h-10 w-28 rounded border border-border bg-surface px-3 text-sm text-text font-mono"
-                  />
-                  <span className="text-xs text-muted">Hex</span>
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setEditingMode('light')}
+              className={`px-3 py-1.5 rounded-md text-sm border ${editingMode === 'light'
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-surface text-text border-border'
+                }`}
+            >
+              Light
+            </button>
+            <button
+              onClick={() => setEditingMode('dark')}
+              className={`px-3 py-1.5 rounded-md text-sm border ${editingMode === 'dark'
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-surface text-text border-border'
+                }`}
+            >
+              Dark
+            </button>
+            <span className="text-xs text-muted">Currently applied: {mode} mode</span>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted uppercase tracking-wide">Hue</label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    value={hsl.h}
-                    onChange={(event) => handleHslChange({ h: Number(event.target.value) })}
-                    className="w-full"
-                  />
-                  <div className="text-xs text-muted">{hsl.h}°</div>
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] gap-6">
+            <div className="space-y-4">
+              {colorFields.map((field) => {
+                const draftKey = `${editingMode}-${field.key}`
+                const value = drafts[draftKey] ?? activeTheme.colors[field.key]
+                return (
+                  <div key={field.key} className="rounded-md border border-border bg-surface p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-text">{field.label}</div>
+                        <div className="text-xs text-muted">{field.description}</div>
+                      </div>
+                      <input
+                        type="color"
+                        value={activeTheme.colors[field.key]}
+                        onChange={(event) => {
+                          const next = event.target.value
+                          const draftKey = `${editingMode}-${field.key}`
+                          setDrafts((prev) => ({ ...prev, [draftKey]: next }))
+                          setColor(editingMode, field.key, next)
+                        }}
+                        className="h-10 w-14 rounded border border-border bg-surface"
+                        aria-label={`${field.label} color`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={value}
+                        onChange={(event) => handleDraftChange(editingMode, field.key, event.target.value)}
+                        onBlur={() => handleDraftBlur(editingMode, field.key)}
+                        className="h-9 w-28 rounded border border-border bg-bg px-3 text-sm text-text font-mono"
+                      />
+                      <span className="text-xs text-muted uppercase">Hex</span>
+                    </div>
+                  </div>
+                )
+              })}
+
+              {activeTheme.validation.adjustments.length > 0 && (
+                <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-text">
+                  <div className="font-medium">Contrast adjustments applied</div>
+                  <div className="text-xs text-muted mt-1">
+                    {activeTheme.validation.adjustments.map((adjustment) => (
+                      <div key={`${adjustment.key}-${adjustment.to}`}>
+                        {adjustment.reason} ({adjustment.from} → {adjustment.to})
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted uppercase tracking-wide">Saturation</label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={hsl.s}
-                    onChange={(event) => handleHslChange({ s: Number(event.target.value) })}
-                    className="w-full"
-                  />
-                  <div className="text-xs text-muted">{hsl.s}%</div>
+              )}
+
+              {!activeTheme.validation.isValid && (
+                <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-text">
+                  <div className="font-medium">Theme cannot be saved yet</div>
+                  <div className="text-xs text-muted mt-1">
+                    {activeTheme.validation.violations.map((violation) => (
+                      <div key={`${violation.id}-${violation.label}`}>
+                        {violation.label} needs {violation.minRatio}:1 (current {violation.ratio.toFixed(2)}:1)
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted uppercase tracking-wide">Lightness</label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={hsl.l}
-                    onChange={(event) => handleHslChange({ l: Number(event.target.value) })}
-                    className="w-full"
-                  />
-                  <div className="text-xs text-muted">{hsl.l}%</div>
-                </div>
-              </div>
+              )}
             </div>
 
-            <div className="rounded-lg border border-border bg-bg p-4 space-y-4">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-bg p-4 space-y-4" style={previewStyle}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs text-muted uppercase tracking-wide">Preview</div>
@@ -163,6 +194,24 @@ function SettingsPage() {
               <div className="flex items-center gap-2 text-xs text-muted">
                 <span className="h-2 w-2 rounded-full bg-secondary" />
                 Secondary accent preview
+              </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-surface p-4 space-y-3">
+                <div className="text-sm font-semibold text-text">Contrast status</div>
+                <div className="space-y-2 text-xs text-muted">
+                  {activeTheme.validation.checks.map((check) => (
+                    <div key={check.id} className="flex items-center justify-between">
+                      <span>{check.label}</span>
+                      <span className={check.pass ? 'text-primary' : 'text-secondary'}>
+                        {check.ratio.toFixed(2)}:1 {check.pass ? 'Pass' : 'Fail'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[11px] text-muted">
+                  Minimum 4.5:1 for text, 3:1 for UI accents.
+                </div>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { DEFAULT_THEME_BASE, normalizeThemeBaseColor } from '../utils/theme'
+import { ThemePreference } from '../utils/theme'
 
 const baseKey = 'dbt_workbench_theme'
 
@@ -7,17 +7,15 @@ const getStorageKey = (userId?: number | null) => {
   return `${baseKey}_${userId}`
 }
 
-export interface StoredTheme {
-  baseColor: string
-}
+export type StoredTheme = ThemePreference
 
 export const loadStoredTheme = (userId?: number | null): StoredTheme | null => {
   try {
     const raw = window.localStorage.getItem(getStorageKey(userId))
     if (!raw) return null
     const parsed = JSON.parse(raw) as StoredTheme
-    if (!parsed?.baseColor) return null
-    return { baseColor: normalizeThemeBaseColor(parsed.baseColor) }
+    if (!parsed?.light?.colors || !parsed?.dark?.colors) return null
+    return parsed
   } catch {
     return null
   }
@@ -25,9 +23,7 @@ export const loadStoredTheme = (userId?: number | null): StoredTheme | null => {
 
 export const storeTheme = (theme: StoredTheme, userId?: number | null) => {
   try {
-    window.localStorage.setItem(getStorageKey(userId), JSON.stringify({
-      baseColor: normalizeThemeBaseColor(theme.baseColor),
-    }))
+    window.localStorage.setItem(getStorageKey(userId), JSON.stringify(theme))
   } catch {
     // ignore storage errors
   }
@@ -40,5 +36,3 @@ export const clearStoredTheme = (userId?: number | null) => {
     // ignore
   }
 }
-
-export const getDefaultTheme = (): StoredTheme => ({ baseColor: DEFAULT_THEME_BASE })

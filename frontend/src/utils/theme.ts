@@ -1,29 +1,92 @@
 export type ThemeMode = 'light' | 'dark'
 
-export interface ThemeDefinition {
-  baseColor: string
-  mode: ThemeMode
-  variables: Record<string, string>
+export type ThemeColorKey = 'primary' | 'secondary' | 'background' | 'surface' | 'text'
+
+export interface ThemeColors {
+  primary: string
+  secondary: string
+  background: string
+  surface: string
+  text: string
 }
 
-export const DEFAULT_THEME_BASE = '#22d3ee'
+export interface ThemeDerived {
+  primary_hover: string
+  primary_active: string
+  primary_foreground: string
+  secondary_hover: string
+  secondary_active: string
+  secondary_foreground: string
+  text_muted: string
+  bg_muted: string
+  surface_muted: string
+  border: string
+  ring: string
+}
+
+export interface ThemeModeConfig {
+  colors: ThemeColors
+  derived: ThemeDerived
+}
+
+export interface ThemePreference {
+  version: number
+  light: ThemeModeConfig
+  dark: ThemeModeConfig
+}
+
+export interface ContrastCheck {
+  id: string
+  label: string
+  ratio: number
+  minRatio: number
+  pass: boolean
+  foreground: string
+  background: string
+}
+
+export interface AdjustmentNotice {
+  key: ThemeColorKey
+  from: string
+  to: string
+  reason: string
+}
+
+export interface ThemeValidation {
+  isValid: boolean
+  checks: ContrastCheck[]
+  violations: ContrastCheck[]
+  adjustments: AdjustmentNotice[]
+}
+
+export interface ThemeResolved {
+  mode: ThemeMode
+  colors: ThemeColors
+  derived: ThemeDerived
+  variables: Record<string, string>
+  validation: ThemeValidation
+}
+
+const HEX_PATTERN = /^#([0-9a-fA-F]{6})$/
+const SHORT_HEX_PATTERN = /^#?([0-9a-fA-F]{3})$/
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
-const normalizeHex = (value: string): string => {
-  const raw = value.trim().replace(/^#/, '')
-  if (/^[0-9a-fA-F]{6}$/.test(raw)) {
-    return `#${raw.toLowerCase()}`
+export const normalizeHexColor = (value: string, fallback: string) => {
+  const raw = value.trim()
+  if (HEX_PATTERN.test(raw)) {
+    return raw.toLowerCase()
   }
-  if (/^[0-9a-fA-F]{3}$/.test(raw)) {
-    const expanded = raw.split('').map((c) => `${c}${c}`).join('')
+  const short = raw.replace(/^#/, '')
+  if (SHORT_HEX_PATTERN.test(raw)) {
+    const expanded = short.split('').map((c) => `${c}${c}`).join('')
     return `#${expanded.toLowerCase()}`
   }
-  return DEFAULT_THEME_BASE
+  return fallback
 }
 
 const hexToRgb = (hex: string) => {
-  const normalized = normalizeHex(hex).replace('#', '')
+  const normalized = normalizeHexColor(hex, '#000000').replace('#', '')
   const r = parseInt(normalized.slice(0, 2), 16)
   const g = parseInt(normalized.slice(2, 4), 16)
   const b = parseInt(normalized.slice(4, 6), 16)
@@ -109,7 +172,19 @@ const hslToRgb = (h: number, s: number, l: number) => {
   }
 }
 
+const hslToHex = (h: number, s: number, l: number) => {
+  const rgb = hslToRgb(h, s, l)
+  return rgbToHex(rgb.r, rgb.g, rgb.b)
+}
+
 const hslToCss = (h: number, s: number, l: number) => `${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`
+
+export const hexToHsl = (hex: string) => {
+  const rgb = hexToRgb(hex)
+  return rgbToHsl(rgb.r, rgb.g, rgb.b)
+}
+
+export const toHexFromHsl = (h: number, s: number, l: number) => hslToHex(h, s, l)
 
 const relativeLuminance = (r: number, g: number, b: number) => {
   const toLinear = (value: number) => {
@@ -122,7 +197,9 @@ const relativeLuminance = (r: number, g: number, b: number) => {
   return 0.2126 * rLin + 0.7152 * gLin + 0.0722 * bLin
 }
 
-const contrastRatio = (rgbA: { r: number; g: number; b: number }, rgbB: { r: number; g: number; b: number }) => {
+export const contrastRatio = (hexA: string, hexB: string) => {
+  const rgbA = hexToRgb(hexA)
+  const rgbB = hexToRgb(hexB)
   const lumA = relativeLuminance(rgbA.r, rgbA.g, rgbA.b)
   const lumB = relativeLuminance(rgbB.r, rgbB.g, rgbB.b)
   const lighter = Math.max(lumA, lumB)
@@ -130,69 +207,100 @@ const contrastRatio = (rgbA: { r: number; g: number; b: number }, rgbB: { r: num
   return (lighter + 0.05) / (darker + 0.05)
 }
 
-const pickContrastingText = (bg: { h: number; s: number; l: number }, hue: number) => {
-  const lightText = { h: hue, s: 12, l: 96 }
-  const darkText = { h: hue, s: 18, l: 12 }
-  const bgRgb = hslToRgb(bg.h, bg.s, bg.l)
-  const lightRgb = hslToRgb(lightText.h, lightText.s, lightText.l)
-  const darkRgb = hslToRgb(darkText.h, darkText.s, darkText.l)
-  const lightContrast = contrastRatio(bgRgb, lightRgb)
-  const darkContrast = contrastRatio(bgRgb, darkRgb)
-
-  if (lightContrast >= 4.5 || lightContrast >= darkContrast) {
-    return lightText
+const findLightnessForContrast = (
+  h: number,
+  s: number,
+  originalL: number,
+  backgrounds: string[],
+  minRatio: number,
+) => {
+  const candidates: number[] = []
+  for (let l = 0; l <= 100; l += 1) {
+    const hex = hslToHex(h, s, l)
+    const passes = backgrounds.every((bg) => contrastRatio(hex, bg) >= minRatio)
+    if (passes) candidates.push(l)
   }
-  return darkText
+  if (!candidates.length) {
+    return { l: originalL, valid: false }
+  }
+  let best = candidates[0]
+  let bestDelta = Math.abs(best - originalL)
+  candidates.forEach((candidate) => {
+    const delta = Math.abs(candidate - originalL)
+    if (delta < bestDelta) {
+      best = candidate
+      bestDelta = delta
+    }
+  })
+  return { l: best, valid: true }
 }
 
-const buildNeutralScale = (h: number, mode: ThemeMode) => {
-  const saturation = mode === 'dark' ? 12 : 10
+const adjustColorForContrast = (
+  hex: string,
+  backgrounds: string[],
+  minRatio: number,
+) => {
+  const hsl = hexToHsl(hex)
+  const result = findLightnessForContrast(hsl.h, hsl.s, hsl.l, backgrounds, minRatio)
+  const adjustedHex = hslToHex(hsl.h, hsl.s, result.l)
+  const ratio = Math.min(...backgrounds.map((bg) => contrastRatio(adjustedHex, bg)))
+  return {
+    color: adjustedHex,
+    changed: adjustedHex.toLowerCase() !== hex.toLowerCase(),
+    valid: result.valid && ratio >= minRatio,
+    ratio,
+  }
+}
+
+const shiftLightness = (hex: string, delta: number) => {
+  const hsl = hexToHsl(hex)
+  return hslToHex(hsl.h, hsl.s, clamp(hsl.l + delta, 0, 100))
+}
+
+const buildScale = (hex: string) => {
+  const hsl = hexToHsl(hex)
+  const deltas: Record<string, number> = {
+    50: 44,
+    100: 34,
+    200: 24,
+    300: 14,
+    400: 6,
+    500: 0,
+    600: -6,
+    700: -14,
+    800: -22,
+    900: -30,
+    950: -38,
+  }
+  const scale: Record<string, string> = {}
+  Object.entries(deltas).forEach(([key, delta]) => {
+    scale[key] = hslToHex(hsl.h, hsl.s, clamp(hsl.l + delta, 2, 98))
+  })
+  return scale
+}
+
+const buildNeutralScale = (hex: string, mode: ThemeMode) => {
+  const hsl = hexToHsl(hex)
+  const saturation = mode === 'dark' ? 10 : 8
   const lightnessScale = mode === 'dark'
     ? { 50: 96, 100: 90, 200: 82, 300: 72, 400: 60, 500: 48, 600: 36, 700: 26, 800: 18, 900: 12, 950: 7 }
     : { 50: 98, 100: 95, 200: 90, 300: 82, 400: 72, 500: 60, 600: 48, 700: 36, 800: 24, 900: 14, 950: 8 }
-
-  const scale: Record<string, { h: number; s: number; l: number }> = {}
+  const scale: Record<string, string> = {}
   Object.entries(lightnessScale).forEach(([key, l]) => {
-    scale[key] = { h, s: saturation, l }
+    scale[key] = hslToHex(hsl.h, saturation, l)
   })
   return scale
 }
 
-const buildAccentScale = (base: { h: number; s: number; l: number }) => {
-  const saturation = clamp(base.s, 20, 95)
-  const baseL = clamp(base.l, 8, 92)
-  const deltas: Record<string, number> = {
-    50: 45,
-    100: 35,
-    200: 25,
-    300: 15,
-    400: 7,
-    500: 0,
-    600: -7,
-    700: -15,
-    800: -23,
-    900: -31,
-    950: -40,
+const pickForeground = (background: string) => {
+  const white = '#ffffff'
+  const black = '#0b0b0b'
+  const whiteRatio = contrastRatio(white, background)
+  const blackRatio = contrastRatio(black, background)
+  if (whiteRatio >= 4.5 || whiteRatio >= blackRatio) {
+    return white
   }
-  const scale: Record<string, { h: number; s: number; l: number }> = {}
-  Object.entries(deltas).forEach(([key, delta]) => {
-    scale[key] = {
-      h: base.h,
-      s: saturation,
-      l: clamp(baseL + delta, 6, 96),
-    }
-  })
-  return scale
-}
-
-export const toHexFromHsl = (h: number, s: number, l: number) => {
-  const rgb = hslToRgb(h, s, l)
-  return rgbToHex(rgb.r, rgb.g, rgb.b)
-}
-
-export const hexToHsl = (hex: string) => {
-  const rgb = hexToRgb(hex)
-  return rgbToHsl(rgb.r, rgb.g, rgb.b)
+  return black
 }
 
 export const getPreferredColorScheme = (): ThemeMode => {
@@ -200,56 +308,209 @@ export const getPreferredColorScheme = (): ThemeMode => {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-export const generateTheme = (baseColor: string, mode: ThemeMode): ThemeDefinition => {
-  const normalized = normalizeHex(baseColor)
-  const baseRgb = hexToRgb(normalized)
-  const base = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b)
-  const neutral = buildNeutralScale(base.h, mode)
-  const accent = buildAccentScale(base)
+const DEFAULT_LIGHT_COLORS: ThemeColors = {
+  primary: '#0ea5e9',
+  secondary: '#22d3ee',
+  background: '#f8fafc',
+  surface: '#ffffff',
+  text: '#0f172a',
+}
 
-  const background = mode === 'dark' ? neutral[950] : neutral[50]
-  const surface = mode === 'dark' ? neutral[900] : neutral[100]
-  const panel = mode === 'dark' ? neutral[900] : neutral[50]
-  const border = mode === 'dark' ? neutral[800] : neutral[200]
-  const text = pickContrastingText(background, base.h)
-  const textMuted = mode === 'dark' ? neutral[300] : neutral[600]
-  const primary = { h: base.h, s: clamp(base.s, 20, 95), l: clamp(base.l, 8, 92) }
-  const secondary = { h: (base.h + 30) % 360, s: clamp(base.s * 0.75, 18, 85), l: clamp(base.l, 10, 90) }
-  const primaryText = pickContrastingText(primary, base.h)
-  const secondaryText = pickContrastingText(secondary, base.h)
-  const ring = mode === 'dark' ? accent[400] : accent[600]
+const DEFAULT_DARK_COLORS: ThemeColors = {
+  primary: '#22d3ee',
+  secondary: '#38bdf8',
+  background: '#0f172a',
+  surface: '#111827',
+  text: '#e2e8f0',
+}
 
-  const variables: Record<string, string> = {
-    '--color-bg': hslToCss(background.h, background.s, background.l),
-    '--color-surface': hslToCss(surface.h, surface.s, surface.l),
-    '--color-panel': hslToCss(panel.h, panel.s, panel.l),
-    '--color-text': hslToCss(text.h, text.s, text.l),
-    '--color-text-muted': hslToCss(textMuted.h, textMuted.s, textMuted.l),
-    '--color-border': hslToCss(border.h, border.s, border.l),
-    '--color-ring': hslToCss(ring.h, ring.s, ring.l),
-    '--color-primary': hslToCss(primary.h, primary.s, primary.l),
-    '--color-secondary': hslToCss(secondary.h, secondary.s, secondary.l),
-    '--color-accent': hslToCss(accent[500].h, accent[500].s, accent[500].l),
-    '--color-primary-foreground': hslToCss(primaryText.h, primaryText.s, primaryText.l),
-    '--color-secondary-foreground': hslToCss(secondaryText.h, secondaryText.s, secondaryText.l),
+export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolved => {
+  const fallback = mode === 'dark' ? DEFAULT_DARK_COLORS : DEFAULT_LIGHT_COLORS
+  const normalized: ThemeColors = {
+    primary: normalizeHexColor(input.primary, fallback.primary),
+    secondary: normalizeHexColor(input.secondary, fallback.secondary),
+    background: normalizeHexColor(input.background, fallback.background),
+    surface: normalizeHexColor(input.surface, fallback.surface),
+    text: normalizeHexColor(input.text, fallback.text),
   }
 
-  Object.entries(neutral).forEach(([key, value]) => {
-    variables[`--color-neutral-${key}`] = hslToCss(value.h, value.s, value.l)
+  const adjustments: AdjustmentNotice[] = []
+
+  const textAdjusted = adjustColorForContrast(
+    normalized.text,
+    [normalized.background, normalized.surface],
+    4.5,
+  )
+  if (textAdjusted.changed) {
+    adjustments.push({
+      key: 'text',
+      from: normalized.text,
+      to: textAdjusted.color,
+      reason: 'Adjusted text color to meet 4.5:1 contrast with background and surface.',
+    })
+  }
+
+  const primaryAdjusted = adjustColorForContrast(
+    normalized.primary,
+    [normalized.background, normalized.surface],
+    3,
+  )
+  if (primaryAdjusted.changed) {
+    adjustments.push({
+      key: 'primary',
+      from: normalized.primary,
+      to: primaryAdjusted.color,
+      reason: 'Adjusted primary color to meet 3:1 contrast with background and surface.',
+    })
+  }
+
+  const secondaryAdjusted = adjustColorForContrast(
+    normalized.secondary,
+    [normalized.background, normalized.surface],
+    3,
+  )
+  if (secondaryAdjusted.changed) {
+    adjustments.push({
+      key: 'secondary',
+      from: normalized.secondary,
+      to: secondaryAdjusted.color,
+      reason: 'Adjusted secondary color to meet 3:1 contrast with background and surface.',
+    })
+  }
+
+  const colors: ThemeColors = {
+    background: normalized.background,
+    surface: normalized.surface,
+    text: textAdjusted.color,
+    primary: primaryAdjusted.color,
+    secondary: secondaryAdjusted.color,
+  }
+
+  const hoverDelta = mode === 'dark' ? 8 : -8
+  const activeDelta = mode === 'dark' ? 14 : -14
+
+  let primaryHover = shiftLightness(colors.primary, hoverDelta)
+  primaryHover = adjustColorForContrast(primaryHover, [colors.background, colors.surface], 3).color
+  let primaryActive = shiftLightness(colors.primary, activeDelta)
+  primaryActive = adjustColorForContrast(primaryActive, [colors.background, colors.surface], 3).color
+
+  let secondaryHover = shiftLightness(colors.secondary, hoverDelta)
+  secondaryHover = adjustColorForContrast(secondaryHover, [colors.background, colors.surface], 3).color
+  let secondaryActive = shiftLightness(colors.secondary, activeDelta)
+  secondaryActive = adjustColorForContrast(secondaryActive, [colors.background, colors.surface], 3).color
+
+  const textMuted = shiftLightness(colors.text, mode === 'dark' ? -20 : 20)
+  const bgMuted = shiftLightness(colors.background, mode === 'dark' ? 4 : -4)
+  const surfaceMuted = shiftLightness(colors.surface, mode === 'dark' ? 4 : -4)
+  const border = shiftLightness(colors.surface, mode === 'dark' ? 12 : -12)
+  const ring = shiftLightness(colors.primary, mode === 'dark' ? 10 : -10)
+
+  const derived: ThemeDerived = {
+    primary_hover: primaryHover,
+    primary_active: primaryActive,
+    primary_foreground: pickForeground(colors.primary),
+    secondary_hover: secondaryHover,
+    secondary_active: secondaryActive,
+    secondary_foreground: pickForeground(colors.secondary),
+    text_muted: textMuted,
+    bg_muted: bgMuted,
+    surface_muted: surfaceMuted,
+    border,
+    ring,
+  }
+
+  const checks: ContrastCheck[] = []
+  const pushCheck = (id: string, label: string, foreground: string, background: string, minRatio: number) => {
+    const ratio = contrastRatio(foreground, background)
+    checks.push({
+      id,
+      label,
+      ratio,
+      minRatio,
+      pass: ratio >= minRatio,
+      foreground,
+      background,
+    })
+  }
+
+  pushCheck('text-bg', 'Text on background', colors.text, colors.background, 4.5)
+  pushCheck('text-surface', 'Text on surface', colors.text, colors.surface, 4.5)
+  pushCheck('primary-bg', 'Primary on background', colors.primary, colors.background, 3)
+  pushCheck('primary-surface', 'Primary on surface', colors.primary, colors.surface, 3)
+  pushCheck('secondary-bg', 'Secondary on background', colors.secondary, colors.background, 3)
+  pushCheck('secondary-surface', 'Secondary on surface', colors.secondary, colors.surface, 3)
+  pushCheck('primary-foreground', 'Primary text', derived.primary_foreground, colors.primary, 4.5)
+  pushCheck('secondary-foreground', 'Secondary text', derived.secondary_foreground, colors.secondary, 4.5)
+
+  const violations = checks.filter((check) => !check.pass)
+
+  const neutralScale = buildNeutralScale(colors.background, mode)
+  const primaryScale = buildScale(colors.primary)
+  const secondaryScale = buildScale(colors.secondary)
+
+  const toCss = (hex: string) => {
+    const { h, s, l } = hexToHsl(hex)
+    return hslToCss(h, s, l)
+  }
+
+  const variables: Record<string, string> = {
+    '--color-primary': toCss(colors.primary),
+    '--color-primary-hover': toCss(derived.primary_hover),
+    '--color-primary-active': toCss(derived.primary_active),
+    '--color-primary-foreground': toCss(derived.primary_foreground),
+    '--color-secondary': toCss(colors.secondary),
+    '--color-secondary-hover': toCss(derived.secondary_hover),
+    '--color-secondary-active': toCss(derived.secondary_active),
+    '--color-secondary-foreground': toCss(derived.secondary_foreground),
+    '--color-accent': toCss(colors.secondary),
+    '--color-bg': toCss(colors.background),
+    '--color-bg-muted': toCss(derived.bg_muted),
+    '--color-surface': toCss(colors.surface),
+    '--color-surface-muted': toCss(derived.surface_muted),
+    '--color-panel': toCss(colors.surface),
+    '--color-text': toCss(colors.text),
+    '--color-text-muted': toCss(derived.text_muted),
+    '--color-border': toCss(derived.border),
+    '--color-ring': toCss(derived.ring),
+  }
+
+  Object.entries(neutralScale).forEach(([key, value]) => {
+    variables[`--color-neutral-${key}`] = toCss(value)
   })
 
-  Object.entries(accent).forEach(([key, value]) => {
-    variables[`--color-accent-${key}`] = hslToCss(value.h, value.s, value.l)
+  Object.entries(primaryScale).forEach(([key, value]) => {
+    variables[`--color-primary-${key}`] = toCss(value)
+  })
+
+  Object.entries(secondaryScale).forEach(([key, value]) => {
+    variables[`--color-secondary-${key}`] = toCss(value)
   })
 
   return {
-    baseColor: normalized,
     mode,
+    colors,
+    derived,
     variables,
+    validation: {
+      isValid: violations.length === 0,
+      checks,
+      violations,
+      adjustments,
+    },
   }
 }
 
-export const applyThemeVariables = (definition: ThemeDefinition) => {
+export const getDefaultThemePreference = (): ThemePreference => {
+  const light = buildThemeMode('light', DEFAULT_LIGHT_COLORS)
+  const dark = buildThemeMode('dark', DEFAULT_DARK_COLORS)
+  return {
+    version: 1,
+    light: { colors: light.colors, derived: light.derived },
+    dark: { colors: dark.colors, derived: dark.derived },
+  }
+}
+
+export const applyThemeVariables = (definition: ThemeResolved) => {
   if (typeof document === 'undefined') return
   const root = document.documentElement
   Object.entries(definition.variables).forEach(([key, value]) => {
@@ -258,4 +519,7 @@ export const applyThemeVariables = (definition: ThemeDefinition) => {
   root.style.colorScheme = definition.mode
 }
 
-export const normalizeThemeBaseColor = normalizeHex
+export const ensureThemePreference = (preference: ThemePreference | null): ThemePreference => {
+  if (!preference) return getDefaultThemePreference()
+  return preference
+}
