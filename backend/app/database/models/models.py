@@ -60,6 +60,20 @@ class UserWorkspace(Base):
     workspace = relationship("Workspace", back_populates="user_links")
 
 
+class UserTheme(Base):
+    __tablename__ = "user_themes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
+    theme = Column(JSON, default=dict)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    user = relationship("User")
+    workspace = relationship("Workspace")
+
+
 class GitRepository(Base):
     __tablename__ = "git_repositories"
 
