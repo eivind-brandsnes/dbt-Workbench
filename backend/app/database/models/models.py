@@ -177,7 +177,7 @@ class Environment(Base):
     __tablename__ = "environments"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
     dbt_target_name = Column(String, nullable=True)
     connection_profile_reference = Column(String, nullable=True)
