@@ -42,3 +42,8 @@ frontend/playwright.log
 *.png
 !assets/*.png
 !assets/**/*.png
+*/target/*
+*/logs/*
+*/dbt.log
+dbt_project/logs/dbt.log
+/dbt_project/target

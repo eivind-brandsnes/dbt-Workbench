@@ -19,8 +19,8 @@ services:
     volumes:
       - ./data/artifacts:/app/data/artifacts
       - ./data/repos:/app/data/repos
-      - ./dbt_project:/app/dbt_project
-      - ./data/profiles:/app/data/profiles
+      - ./dbt_project:/app/data/repos/default
+      - ./profiles:/app/data/profiles
     networks:
       - dbt_workbench
 
