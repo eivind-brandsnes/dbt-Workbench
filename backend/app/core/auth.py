@@ -259,10 +259,9 @@ async def get_current_workspace(
                 .first()
             )
             if not workspace:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"error": "workspace_not_found", "message": "Workspace not found."},
-                )
+                # Allow stale/invalid workspace ids when auth is disabled by
+                # falling back to the default workspace below.
+                workspace = None
 
         if workspace is None:
             workspace = (

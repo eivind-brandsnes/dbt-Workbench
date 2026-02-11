@@ -89,16 +89,16 @@ class ColumnEvolutionMeta(BaseModel):
     data_type: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
 
-
 class ColumnEvolutionEntry(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     column_id: str
     model_id: str
     model_name: str
     column: str
     meta: ColumnEvolutionMeta
 
-
 class ColumnEvolutionChange(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     column_id: str
     model_id: str
     model_name: str
@@ -156,7 +156,7 @@ class ModelLineageDetail(BaseModel):
 
 
 class Run(BaseModel):
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True, protected_namespaces=())
 
     id: int
     run_id: str

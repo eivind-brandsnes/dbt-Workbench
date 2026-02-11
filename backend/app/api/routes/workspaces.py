@@ -64,10 +64,9 @@ def list_workspaces(
 
     user = auth_service.get_user(db, user_ctx.id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": "user_not_found", "message": "User not found."},
-        )
+        workspaces = auth_service.list_all_workspaces(db)
+        return [_to_summary(w) for w in workspaces]
+
     workspaces, _ = auth_service.list_workspaces_for_user(db, user)
     return [_to_summary(w) for w in workspaces]
 

@@ -8,7 +8,13 @@ from sqlalchemy.orm import Session
 from app.core.auth import UserContext, WorkspaceContext, get_current_user, get_current_workspace
 from app.database.connection import SessionLocal
 from app.database.models import models as db_models
-from app.schemas.theme import ThemePreference, ThemePreferenceResponse
+from app.schemas.theme import (
+    ThemeColors,
+    ThemeDerived,
+    ThemeModeConfig,
+    ThemePreference,
+    ThemePreferenceResponse,
+)
 from app.utils.theme import collect_violations, validate_theme_preference
 
 router = APIRouter(prefix="/theme", tags=["theme"])
@@ -50,16 +56,102 @@ def get_theme(
 ) -> ThemePreferenceResponse:
     record = _get_theme_record(db, current_user, workspace)
     if not record or not isinstance(record.theme, dict):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": "theme_not_found", "message": "No theme preference stored."},
+        return ThemePreferenceResponse(
+            version=1,
+            light=ThemeModeConfig(
+                colors=ThemeColors(
+                    primary="#3b82f6",
+                    secondary="#6366f1",
+                    background="#ffffff",
+                    surface="#f8fafc",
+                    text="#1e293b",
+                ),
+                derived=ThemeDerived(
+                    primary_hover="#2563eb",
+                    primary_active="#1d4ed8",
+                    primary_foreground="#ffffff",
+                    secondary_hover="#4f46e5",
+                    secondary_active="#3b82f6",
+                    secondary_foreground="#ffffff",
+                    text_muted="#64748b",
+                    bg_muted="#f1f5f9",
+                    surface_muted="#f1f5f9",
+                    border="#e2e8f0",
+                    ring="#94a3b8",
+                ),
+            ),
+            dark=ThemeModeConfig(
+                colors=ThemeColors(
+                    primary="#3b82f6",
+                    secondary="#6366f1",
+                    background="#0f172a",
+                    surface="#1e293b",
+                    text="#e2e8f0",
+                ),
+                derived=ThemeDerived(
+                    primary_hover="#2563eb",
+                    primary_active="#1d4ed8",
+                    primary_foreground="#ffffff",
+                    secondary_hover="#4f46e5",
+                    secondary_active="#3b82f6",
+                    secondary_foreground="#ffffff",
+                    text_muted="#94a3b8",
+                    bg_muted="#334155",
+                    surface_muted="#334155",
+                    border="#1e293b",
+                    ring="#60a5fa",
+                ),
+            ),
         )
     try:
         return ThemePreferenceResponse(**record.theme)
     except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": "theme_not_found", "message": "No valid theme preference stored."},
+        return ThemePreferenceResponse(
+            version=1,
+            light=ThemeModeConfig(
+                colors=ThemeColors(
+                    primary="#3b82f6",
+                    secondary="#6366f1",
+                    background="#ffffff",
+                    surface="#f8fafc",
+                    text="#1e293b",
+                ),
+                derived=ThemeDerived(
+                    primary_hover="#2563eb",
+                    primary_active="#1d4ed8",
+                    primary_foreground="#ffffff",
+                    secondary_hover="#4f46e5",
+                    secondary_active="#3b82f6",
+                    secondary_foreground="#ffffff",
+                    text_muted="#64748b",
+                    bg_muted="#f1f5f9",
+                    surface_muted="#f1f5f9",
+                    border="#e2e8f0",
+                    ring="#94a3b8",
+                ),
+            ),
+            dark=ThemeModeConfig(
+                colors=ThemeColors(
+                    primary="#3b82f6",
+                    secondary="#6366f1",
+                    background="#0f172a",
+                    surface="#1e293b",
+                    text="#e2e8f0",
+                ),
+                derived=ThemeDerived(
+                    primary_hover="#2563eb",
+                    primary_active="#1d4ed8",
+                    primary_foreground="#ffffff",
+                    secondary_hover="#4f46e5",
+                    secondary_active="#3b82f6",
+                    secondary_foreground="#ffffff",
+                    text_muted="#94a3b8",
+                    bg_muted="#334155",
+                    surface_muted="#334155",
+                    border="#1e293b",
+                    ring="#60a5fa",
+                ),
+            ),
         )
 
 
