@@ -5,9 +5,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { vi, describe, it, beforeEach } from 'vitest'
 
 import SqlWorkspacePage from './SqlWorkspace'
-import { SqlWorkspaceService } from '../services/sqlWorkspaceService'
-import { SchedulerService } from '../services/schedulerService'
-import { GitService } from '../services/gitService'
+import { SqlWorkspaceService } from '@/services/sqlWorkspaceService'
+import { SchedulerService } from '@/services/schedulerService'
+import { GitService } from '@/services/gitService'
 
 vi.mock('@uiw/react-codemirror', () => ({
   __esModule: true,
@@ -16,7 +16,7 @@ vi.mock('@uiw/react-codemirror', () => ({
   ),
 }))
 
-vi.mock('../hooks/useAutoRefresh', () => ({
+vi.mock('@/hooks/useAutoRefresh', () => ({
   useAutoRefresh: () => ({
     checkNow: vi.fn(),
     getCurrentVersions: vi.fn(),
@@ -24,16 +24,20 @@ vi.mock('../hooks/useAutoRefresh', () => ({
   }),
 }))
 
-vi.mock('../context/AuthContext', () => ({
+vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     isLoading: false,
     isAuthEnabled: false,
     user: { id: 1, username: 'dev', role: 'developer' },
+    activeWorkspace: { id: 1, key: 'demo', name: 'Demo', artifacts_path: '/tmp/artifacts' },
+    workspaces: [{ id: 1, key: 'demo', name: 'Demo', artifacts_path: '/tmp/artifacts' }],
+    switchWorkspace: vi.fn(),
+    logout: vi.fn(),
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
-vi.mock('../services/sqlWorkspaceService', () => ({
+vi.mock('@/services/sqlWorkspaceService', () => ({
   SqlWorkspaceService: {
     executeQuery: vi.fn(),
     executeModel: vi.fn(),
@@ -45,13 +49,13 @@ vi.mock('../services/sqlWorkspaceService', () => ({
   },
 }))
 
-vi.mock('../services/schedulerService', () => ({
+vi.mock('@/services/schedulerService', () => ({
   SchedulerService: {
     listEnvironments: vi.fn(),
   },
 }))
 
-vi.mock('../services/gitService', () => ({
+vi.mock('@/services/gitService', () => ({
   GitService: {
     status: vi.fn(),
     files: vi.fn(),
@@ -125,11 +129,19 @@ describe('SqlWorkspacePage editor controls', () => {
       original_file_path: 'models/example.sql',
     })
 
-    mockedGit.status.mockResolvedValue({ configured: true })
+    mockedGit.status.mockResolvedValue({
+      branch: 'main',
+      is_clean: true,
+      ahead: 0,
+      behind: 0,
+      changes: [],
+      has_conflicts: false,
+      configured: true,
+    })
     mockedGit.files.mockResolvedValue([])
   })
 
-  it('shows the editor action bar at the bottom without row limit or profiling toggles', async () => {
+  it('shows the toolbar action bar without row limit or profiling toggles', async () => {
     renderPage()
 
     await waitFor(() => expect(mockedSqlService.getMetadata).toHaveBeenCalled())
@@ -140,8 +152,9 @@ describe('SqlWorkspacePage editor controls', () => {
     const actionBar = await screen.findByTestId('editor-action-bar')
     const actionButtons = within(actionBar).getAllByRole('button').map((btn) => btn.textContent)
 
-    expect(actionButtons).toContain('Run (Ctrl/Cmd+Enter)')
-    expect(actionButtons.some((text) => text?.includes('Full-screen editor') || text?.includes('Exit full-screen'))).toBe(true)
+    expect(actionButtons).toContain('Run')
+    expect(actionButtons).toContain('New SQL Tab')
+    expect(actionButtons).toContain('Save')
   })
 
   it('sends profiling-enabled SQL requests without a row limit override', async () => {
@@ -152,7 +165,7 @@ describe('SqlWorkspacePage editor controls', () => {
     const editor = await screen.findByTestId('code-editor')
     fireEvent.change(editor, { target: { value: 'select 1' } })
 
-    const runButton = await screen.findByRole('button', { name: /Run \(Ctrl\/Cmd\+Enter\)/ })
+    const runButton = await screen.findByRole('button', { name: /^Run$/ })
     fireEvent.click(runButton)
 
     await waitFor(() => expect(mockedSqlService.executeQuery).toHaveBeenCalled())
@@ -190,7 +203,7 @@ describe('SqlWorkspacePage editor controls', () => {
     expect(fileButton).toBeTruthy()
     await userEvent.click(fileButton as HTMLElement)
 
-    const runButton = await screen.findByRole('button', { name: /Run \(Ctrl\/Cmd\+Enter\)/ })
+    const runButton = await screen.findByRole('button', { name: /^Run$/ })
     fireEvent.click(runButton)
 
     await waitFor(() => expect(mockedSqlService.executeModel).toHaveBeenCalled())
@@ -231,7 +244,7 @@ describe('SqlWorkspacePage editor controls', () => {
     expect(fileButton).toBeTruthy()
     await userEvent.click(fileButton as HTMLElement)
 
-    const runButton = await screen.findByRole('button', { name: /Run \(Ctrl\/Cmd\+Enter\)/ })
+    const runButton = await screen.findByRole('button', { name: /^Run$/ })
     fireEvent.click(runButton)
 
     await waitFor(() =>

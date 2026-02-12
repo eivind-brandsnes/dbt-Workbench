@@ -1,0 +1,691 @@
+.sqlwb-root {
+  --sqlwb-bg: #1f232a;
+  --sqlwb-bg-muted: #232a33;
+  --sqlwb-panel: #262d36;
+  --sqlwb-panel-2: #2b333d;
+  --sqlwb-border: #3a434d;
+  --sqlwb-border-soft: #303844;
+  --sqlwb-text: #e4e9ef;
+  --sqlwb-muted: #9eaab8;
+  --sqlwb-accent: #4f8cc9;
+  --sqlwb-accent-2: #6ba4de;
+  --sqlwb-danger: #da6f6f;
+  --sqlwb-warning: #d8b06a;
+  --sqlwb-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+  --sqlwb-sans: 'IBM Plex Sans', 'Segoe UI', Tahoma, sans-serif;
+
+  font-family: var(--sqlwb-sans);
+  color: var(--sqlwb-text);
+  background: linear-gradient(180deg, #222831 0%, #1f252d 100%);
+  border: 1px solid var(--sqlwb-border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
+.sqlwb-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border-bottom: 1px solid var(--sqlwb-border);
+  background: linear-gradient(180deg, #303945 0%, #27303a 100%);
+  flex-wrap: wrap;
+}
+
+.sqlwb-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sqlwb-toolbar-label {
+  color: var(--sqlwb-muted);
+  font-size: 12px;
+}
+
+.sqlwb-select,
+.sqlwb-form-field select,
+.sqlwb-form-field input,
+.sqlwb-history-filters select,
+.sqlwb-history-filters input,
+.sqlwb-file-actions input {
+  height: 30px;
+  background: #1f252d;
+  color: var(--sqlwb-text);
+  border: 1px solid var(--sqlwb-border);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.sqlwb-btn {
+  height: 30px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  padding: 0 10px;
+  cursor: pointer;
+  font-family: var(--sqlwb-sans);
+}
+
+.sqlwb-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sqlwb-btn-primary {
+  background: linear-gradient(180deg, #5f97d2 0%, #3e79b6 100%);
+  color: #f4f7fb;
+  border-color: #2f5f90;
+}
+
+.sqlwb-btn-ghost {
+  background: #2a323d;
+  color: var(--sqlwb-text);
+  border-color: var(--sqlwb-border);
+}
+
+.sqlwb-toggle {
+  display: inline-flex;
+  border: 1px solid var(--sqlwb-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sqlwb-toggle-btn {
+  height: 30px;
+  border: 0;
+  background: #2a323d;
+  color: var(--sqlwb-muted);
+  font-size: 12px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.sqlwb-toggle-btn.is-active {
+  background: #3a516b;
+  color: #edf5ff;
+}
+
+.sqlwb-error-banner {
+  margin: 8px 10px;
+  border: 1px solid #854f4f;
+  background: #47292c;
+  color: #ffd5d5;
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.sqlwb-workbench {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.sqlwb-left-pane {
+  min-width: 220px;
+  max-width: 520px;
+  border-right: 1px solid var(--sqlwb-border);
+  background: var(--sqlwb-bg-muted);
+  overflow: auto;
+}
+
+.sqlwb-vsplit {
+  width: 6px;
+  cursor: col-resize;
+  background: repeating-linear-gradient(
+    to bottom,
+    #2d353f,
+    #2d353f 2px,
+    #27303a 2px,
+    #27303a 4px
+  );
+}
+
+.sqlwb-center-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #20262e;
+}
+
+.sqlwb-editor-zone {
+  flex: 1;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--sqlwb-border);
+}
+
+.sqlwb-hsplit {
+  height: 6px;
+  cursor: row-resize;
+  background: repeating-linear-gradient(
+    to right,
+    #2d353f,
+    #2d353f 2px,
+    #27303a 2px,
+    #27303a 4px
+  );
+}
+
+.sqlwb-bottom-pane {
+  border-top: 1px solid var(--sqlwb-border);
+  background: var(--sqlwb-bg-muted);
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sqlwb-editor-tabs {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--sqlwb-border);
+  background: #2b333d;
+  min-height: 36px;
+}
+
+.sqlwb-editor-tab-list {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.sqlwb-editor-tab {
+  display: inline-flex;
+  align-items: center;
+  border-right: 1px solid var(--sqlwb-border-soft);
+  background: #2f3842;
+}
+
+.sqlwb-editor-tab.is-active {
+  background: #1f252d;
+}
+
+.sqlwb-editor-tab-button {
+  border: 0;
+  background: transparent;
+  color: var(--sqlwb-text);
+  padding: 0 8px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  max-width: 220px;
+}
+
+.sqlwb-editor-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sqlwb-editor-tab-dirty {
+  color: #ffcf7e;
+  font-size: 10px;
+}
+
+.sqlwb-editor-tab-close,
+.sqlwb-tab-plus {
+  border: 0;
+  background: transparent;
+  color: var(--sqlwb-muted);
+  width: 28px;
+  height: 36px;
+  cursor: pointer;
+}
+
+.sqlwb-tab-plus {
+  border-left: 1px solid var(--sqlwb-border-soft);
+  font-size: 16px;
+}
+
+.sqlwb-empty {
+  color: var(--sqlwb-muted);
+  font-size: 12px;
+  padding: 12px;
+}
+
+.sqlwb-model-editor-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+}
+
+.sqlwb-single-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+}
+
+.sqlwb-editor-pane-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sqlwb-editor-pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--sqlwb-muted);
+  margin-bottom: 6px;
+}
+
+.sqlwb-loading-text {
+  color: #8ebbe9;
+}
+
+.sqlwb-editor-cm {
+  flex: 1;
+  min-height: 220px;
+  border: 1px solid var(--sqlwb-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #1a2027;
+}
+
+.sqlwb-hint {
+  margin-top: 6px;
+  color: var(--sqlwb-muted);
+  font-size: 11px;
+}
+
+.sqlwb-inline-error {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #7f4c4c;
+  background: #412629;
+  color: #f6cece;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.sqlwb-navigator {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.sqlwb-panel {
+  border: 1px solid var(--sqlwb-border);
+  border-radius: 6px;
+  background: var(--sqlwb-panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sqlwb-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--sqlwb-border);
+  padding: 8px 10px;
+}
+
+.sqlwb-panel-header h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  color: #cdd8e3;
+}
+
+.sqlwb-tree-wrap {
+  padding: 8px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.sqlwb-file-actions,
+.sqlwb-form-field {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sqlwb-file-actions label,
+.sqlwb-form-field label,
+.sqlwb-history-filters label {
+  font-size: 11px;
+  color: var(--sqlwb-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sqlwb-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sqlwb-link {
+  border: 0;
+  background: none;
+  color: #8dbbe9;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+.sqlwb-link-danger {
+  color: var(--sqlwb-danger);
+}
+
+.sqlwb-schema-browser {
+  max-height: 280px;
+  overflow: auto;
+  padding: 8px;
+}
+
+.sqlwb-schema-block {
+  margin-bottom: 10px;
+}
+
+.sqlwb-schema-name {
+  font-size: 11px;
+  color: #b8c5d3;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  margin-bottom: 4px;
+}
+
+.sqlwb-schema-block ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sqlwb-schema-block .sqlwb-link {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sqlwb-schema-block .sqlwb-link small {
+  color: var(--sqlwb-muted);
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.sqlwb-bottom-dock {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sqlwb-bottom-tabs {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--sqlwb-border);
+  background: #2b333d;
+}
+
+.sqlwb-bottom-tab {
+  border: 0;
+  background: transparent;
+  color: var(--sqlwb-muted);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.sqlwb-bottom-tab.is-active {
+  color: var(--sqlwb-text);
+  background: #1f252d;
+  border-bottom: 2px solid var(--sqlwb-accent-2);
+}
+
+.sqlwb-bottom-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.sqlwb-result-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  overflow-x: auto;
+}
+
+.sqlwb-result-tab {
+  border: 1px solid var(--sqlwb-border);
+  background: #2f3843;
+  color: var(--sqlwb-muted);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.sqlwb-result-tab.is-active {
+  color: var(--sqlwb-text);
+  border-color: var(--sqlwb-accent);
+  background: #334a63;
+}
+
+.sqlwb-results-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--sqlwb-muted);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.sqlwb-warning-text {
+  color: var(--sqlwb-warning);
+  font-size: 11px;
+}
+
+.sqlwb-pagination {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--sqlwb-muted);
+  font-size: 12px;
+}
+
+.sqlwb-pagination-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sqlwb-null {
+  color: #94a4b5;
+}
+
+.sqlwb-table-wrap {
+  border: 1px solid var(--sqlwb-border);
+  border-radius: 6px;
+  overflow: auto;
+}
+
+.sqlwb-compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.sqlwb-compact-table th,
+.sqlwb-compact-table td {
+  border-bottom: 1px solid var(--sqlwb-border-soft);
+  padding: 8px;
+  font-size: 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.sqlwb-compact-table th {
+  background: #303844;
+  color: #c4d0dc;
+}
+
+.sqlwb-mono,
+.sqlwb-history-query code {
+  font-family: var(--sqlwb-mono);
+}
+
+.sqlwb-model-chip {
+  color: #8dbbe9;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.sqlwb-history-filters {
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.sqlwb-empty-cell {
+  text-align: center;
+  color: var(--sqlwb-muted);
+}
+
+.sqlwb-output-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sqlwb-output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sqlwb-output-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--sqlwb-mono);
+  font-size: 12px;
+}
+
+.sqlwb-output-row {
+  border: 1px solid var(--sqlwb-border-soft);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: #212a33;
+  display: grid;
+  grid-template-columns: 80px 56px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.sqlwb-output-row.level-error {
+  border-color: #6c4141;
+}
+
+.sqlwb-output-row.level-warning {
+  border-color: #6d5a38;
+}
+
+.sqlwb-output-level {
+  color: var(--sqlwb-muted);
+}
+
+.sqlwb-output-message {
+  color: var(--sqlwb-text);
+}
+
+.sqlwb-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--sqlwb-border);
+  background: linear-gradient(180deg, #2e3742 0%, #27303a 100%);
+  color: var(--sqlwb-muted);
+  font-size: 11px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.sqlwb-status-pill {
+  border: 1px solid var(--sqlwb-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.sqlwb-status-pill.is-running {
+  color: #d6ecff;
+  border-color: #4b7cae;
+  background: #2d4965;
+}
+
+.sqlwb-status-pill.is-idle {
+  color: #cad5e2;
+  border-color: #4a5562;
+  background: #2c3641;
+}
+
+@media (max-width: 1280px) {
+  .sqlwb-root {
+    min-height: calc(100vh - 140px);
+  }
+
+  .sqlwb-workbench {
+    flex-direction: column;
+  }
+
+  .sqlwb-left-pane,
+  .sqlwb-vsplit,
+  .sqlwb-hsplit {
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    height: auto;
+    display: none;
+  }
+
+  .sqlwb-model-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sqlwb-bottom-pane {
+    height: auto !important;
+    min-height: 260px;
+  }
+
+  .sqlwb-history-filters {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}

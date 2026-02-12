@@ -12,6 +12,7 @@ interface UseAutoRefreshOptions {
 export const useAutoRefresh = (options: UseAutoRefreshOptions = {}) => {
   const optionsRef = useRef(options)
   optionsRef.current = options
+  const isVitest = Boolean((import.meta as any)?.env?.VITEST)
 
   const handleVersionUpdate = useCallback((hasUpdates: boolean, response: VersionCheckResponse) => {
     if (!hasUpdates) return
@@ -42,13 +43,17 @@ export const useAutoRefresh = (options: UseAutoRefreshOptions = {}) => {
   }, [])
 
   useEffect(() => {
+    if (isVitest) {
+      return
+    }
+
     versionService.addUpdateListener(handleVersionUpdate)
     versionService.startPolling()
 
     return () => {
       versionService.removeUpdateListener(handleVersionUpdate)
     }
-  }, [handleVersionUpdate])
+  }, [handleVersionUpdate, isVitest])
 
   return {
     checkNow: () => versionService.checkNow(),
