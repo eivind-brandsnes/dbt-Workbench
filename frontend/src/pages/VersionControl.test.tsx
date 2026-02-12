@@ -81,10 +81,10 @@ describe('VersionControlPage', () => {
     render(<VersionControlPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Git status')).toBeInTheDocument()
+      expect(screen.getByText('Projects & Version Control')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('Project files')).toBeInTheDocument()
+    expect(screen.getByText('Project Files')).toBeInTheDocument()
     const filterInput = await screen.findByLabelText('Filter files')
     const treeRoot = filterInput.closest('div')?.parentElement
     expect(treeRoot).toBeTruthy()
@@ -106,8 +106,8 @@ describe('VersionControlPage', () => {
     const branchSelect = await screen.findByRole('combobox')
 
     await waitFor(() => expect(branchSelect).toHaveValue('main'))
-    expect(screen.getByText(/Recent commits/)).toBeInTheDocument()
-    expect(screen.getByText('init')).toBeInTheDocument()
+    expect(screen.getAllByText(/Recent commits/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('init').length).toBeGreaterThan(0)
   })
 
   it('prompts for connection details when git is not configured', async () => {
@@ -125,7 +125,7 @@ describe('VersionControlPage', () => {
 
     expect(await screen.findByText('Create or connect a project')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Project workspace name')).toBeInTheDocument()
-    expect(screen.getByText('Connect a repository to browse files.')).toBeInTheDocument()
+    expect(screen.getByText('Connect a repository to browse files')).toBeInTheDocument()
   })
 
   it('allows editing and saving a selected file', async () => {
@@ -154,14 +154,14 @@ describe('VersionControlPage', () => {
     const editor = await screen.findByDisplayValue('select 1')
     await userEvent.type(editor, ' from source')
 
-    const saveButton = await screen.findByRole('button', { name: 'Save file' })
+    const saveButton = await screen.findByRole('button', { name: 'Save File' })
     await userEvent.click(saveButton)
 
     await waitFor(() => expect(mockedService.writeFile).toHaveBeenCalled())
     expect(mockedService.writeFile.mock.calls[0][0].path).toBe('models/model.sql')
   })
 
-  it('creates a new file from the project panel', async () => {
+  it('creates a new file from project panel', async () => {
     render(<VersionControlPage />)
 
     const pathInput = await screen.findByPlaceholderText('models/new_file.sql')
