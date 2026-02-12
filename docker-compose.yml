@@ -38,6 +38,8 @@ services:
 
   db:
     image: postgres:13
+    ports:
+      - "5432:5432"    
     environment:
       - POSTGRES_DB=dbt_workbench
       - POSTGRES_USER=user

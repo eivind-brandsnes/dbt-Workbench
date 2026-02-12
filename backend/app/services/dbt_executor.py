@@ -259,6 +259,10 @@ class DbtExecutor:
             "adapter_type": str(adapter_type).lower() if adapter_type is not None else None,
         }
 
+    def _normalize_package_name(self, name: str) -> str:
+        """Normalize package name for comparison (dbt-utils == dbt_utils)."""
+        return name.replace('-', '_').replace('.', '_').lower()
+
     def check_missing_packages(self, project_path: Optional[str] = None) -> PackagesCheckResponse:
         """Check for missing dbt packages in project."""
         cwd = project_path if project_path else self.settings.dbt_project_path
@@ -304,8 +308,13 @@ class DbtExecutor:
                     if item.is_dir():
                         installed_packages.append(item.name)
 
-            # Determine missing packages
-            missing = [pkg for pkg in required_packages if pkg not in installed_packages]
+            # Determine missing packages with normalization for hyphen/underscore differences
+            installed_normalized = {self._normalize_package_name(p): p for p in installed_packages}
+            missing = []
+            for pkg in required_packages:
+                pkg_normalized = self._normalize_package_name(pkg)
+                if pkg_normalized not in installed_normalized:
+                    missing.append(pkg)
 
             return PackagesCheckResponse(
                 has_missing=len(missing) > 0,
