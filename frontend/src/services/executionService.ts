@@ -1,9 +1,10 @@
-import { 
-  RunRequest, 
-  RunSummary, 
-  RunDetail, 
-  RunHistoryResponse, 
+import {
+  RunRequest,
+  RunSummary,
+  RunDetail,
+  RunHistoryResponse,
   RunArtifactsResponse,
+  PackagesCheckResponse,
 } from '../types';
 import { api } from '../api/client';
 
@@ -72,6 +73,20 @@ export class ExecutionService {
       max_concurrent_runs: number;
       max_run_history: number;
     }>('/execution/status');
+    return response.data;
+  }
+
+  static async checkPackages(projectPath?: string): Promise<PackagesCheckResponse> {
+    const response = await api.get<PackagesCheckResponse>('/execution/packages/check', {
+      params: projectPath ? { project_path: projectPath } : {},
+    });
+    return response.data;
+  }
+
+  static async installPackages(projectPath?: string): Promise<RunSummary> {
+    const response = await api.post<RunSummary>('/execution/packages/install', null, {
+      params: projectPath ? { project_path: projectPath } : {},
+    });
     return response.data;
   }
 }

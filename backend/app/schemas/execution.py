@@ -17,6 +17,7 @@ class DbtCommand(str, Enum):
     TEST = "test"
     SEED = "seed"
     DOCS_GENERATE = "docs generate"
+    DEPS = "deps"
 
 
 class RunRequest(BaseModel):
@@ -74,3 +75,11 @@ class RunArtifactsResponse(BaseModel):
     run_id: str
     artifacts: List[ArtifactInfo]
     artifacts_path: str
+
+
+class PackagesCheckResponse(BaseModel):
+    has_missing: bool
+    packages_required: List[str]
+    packages_installed: List[str]
+    missing_packages: List[str]
+    packages_yml_exists: bool

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DbtCommand, RunRequest, ModelSummary, Environment, RunStatus } from '../types';
+import { DbtCommand, RunRequest, ModelSummary, Environment, RunStatus, PackagesCheckResponse, GitRepository } from '../types';
 import { ExecutionService } from '../services/executionService';
 import { ArtifactService } from '../services/artifactService';
 import { api } from '../api/client';
 import { EnvironmentService } from '../services/environmentService';
 import { useAuth } from '../context/AuthContext';
 import { Autocomplete } from './Autocomplete';
+import { DepsModal } from './DepsModal';
 
 export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const { activeWorkspace } = useAuth();
@@ -14,12 +15,15 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [pendingCommand, setPendingCommand] = useState<DbtCommand | null>(null);
+  const [packagesCheck, setPackagesCheck] = useState<PackagesCheckResponse | null>(null);
+  const [showDepsModal, setShowDepsModal] = useState(false);
   const isMountedRef = useRef(true);
 
   // Suggestion data
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [availableTargets, setAvailableTargets] = useState<string[]>([]);
   const [environments, setEnvironments] = useState<Environment[]>([]);
+  const [repo, setRepo] = useState<GitRepository | null>(null);
 
   // Parameter form state
   const [selectModels, setSelectModels] = useState('');
@@ -53,10 +57,32 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   }, []);
 
   useEffect(() => {
+    api.get<GitRepository>('/git/repository')
+      .then(res => setRepo(res.data))
+      .catch(() => setRepo(null));
+  }, [activeWorkspace?.id]);
+
+  useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  const handleDepsComplete = async () => {
+    setShowDepsModal(false);
+    setIsLoading(true);
+
+    // Re-run the original command
+    if (pendingCommand) {
+      await handleSubmit(undefined, pendingCommand);
+    }
+  };
+
+  const handleDepsCancel = () => {
+    setShowDepsModal(false);
+    setPendingCommand(null);
+    setIsLoading(false);
+  };
 
   const waitForRunCompletion = async (runId: string, initialStatus?: RunStatus) => {
     let status: RunStatus | undefined = initialStatus;
@@ -99,6 +125,16 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
     setWarning(null);
 
     try {
+      // Check for missing packages
+      const check = await ExecutionService.checkPackages(repo?.directory);
+      setPackagesCheck(check);
+
+      if (check.has_missing) {
+        setShowDepsModal(true);
+        setIsLoading(false);
+        return;
+      }
+
       if (activeCommand !== 'seed') {
         const seedStatus = await ArtifactService.getSeedStatus();
         if (seedStatus.warning) {
@@ -327,6 +363,15 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
           ))}
         </div>
       </form>
+
+      {showDepsModal && packagesCheck && (
+        <DepsModal
+          packagesCheck={packagesCheck}
+          projectPath={repo?.directory}
+          onInstallComplete={handleDepsComplete}
+          onCancel={handleDepsCancel}
+        />
+      )}
     </div>
   );
 };

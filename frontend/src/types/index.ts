@@ -359,7 +359,7 @@ export interface VersionCheckResponse {
 
 // Execution types
 export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
-export type DbtCommand = 'run' | 'test' | 'seed' | 'docs generate';
+export type DbtCommand = 'run' | 'test' | 'seed' | 'docs generate' | 'deps';
 
 export interface RunRequest {
   command: DbtCommand;
@@ -367,6 +367,14 @@ export interface RunRequest {
   description?: string;
   workspace_id?: number;
   run_row_lineage?: boolean;
+}
+
+export interface PackagesCheckResponse {
+  has_missing: boolean;
+  packages_required: string[];
+  packages_installed: string[];
+  missing_packages: string[];
+  packages_yml_exists: boolean;
 }
 
 export interface RunSummary {

@@ -16,8 +16,8 @@ from app.core.watcher_manager import get_watcher
 from app.database.connection import SessionLocal
 from app.database.models import models as db_models
 from app.schemas.execution import (
-    DbtCommand, RunStatus, RunSummary, RunDetail, 
-    LogMessage, ArtifactInfo
+    DbtCommand, RunStatus, RunSummary, RunDetail,
+    LogMessage, ArtifactInfo, PackagesCheckResponse
 )
 
 
@@ -204,6 +204,43 @@ class DbtExecutor:
             # Swallow YAML/IO errors; we will fall back to env/CLI flags.
             return {}, profile_name, None
 
+    def _extract_package_name(self, package_def: Dict[str, Any], package_type: str) -> Optional[str]:
+        """Extract clean package name from package definition."""
+        try:
+            if package_type == 'git':
+                # From git: "dbt-labs/dbt-utils" -> "dbt-utils"
+                git = package_def.get('git', '')
+                if git:
+                    return git.split('/')[-1].replace('.git', '')
+                # From URL: "https://github.com/..." -> extract repo name
+                url = package_def.get('git', package_def.get('url', ''))
+                if url:
+                    return url.rstrip('/').split('/')[-1].replace('.git', '')
+            elif package_type == 'local':
+                # From local: "../my-package" -> "my-package"
+                local = package_def.get('local', '')
+                return local.rstrip('/').split('/')[-1] if local else None
+            elif package_type == 'package':
+                # From package: "dbt-labs/dbt_utils" -> "dbt_utils"
+                pkg = package_def.get('package', '')
+                if pkg:
+                    return pkg.split('/')[-1]
+        except Exception:
+            pass
+        return None
+
+    def _clean_package_lock(self, project_path: str) -> None:
+        """Remove package-lock.yml if it exists to avoid inconsistent state."""
+        try:
+            cwd = project_path if project_path else self.settings.dbt_project_path
+            cwd_path = Path(cwd).resolve()
+            lock_file = cwd_path / "package-lock.yml"
+            if lock_file.exists():
+                lock_file.unlink()
+                print(f"Removed package-lock.yml from {cwd}")
+        except Exception as e:
+            print(f"Failed to remove package-lock.yml: {e}")
+
     def _extract_connection_values(self, target_cfg: Dict[str, Any]) -> Dict[str, Optional[str]]:
         """Extract common connection values from a dbt profile target config."""
         host = target_cfg.get("host")
@@ -221,6 +258,71 @@ class DbtExecutor:
             "password": str(password) if password is not None else None,
             "adapter_type": str(adapter_type).lower() if adapter_type is not None else None,
         }
+
+    def check_missing_packages(self, project_path: Optional[str] = None) -> PackagesCheckResponse:
+        """Check for missing dbt packages in project."""
+        cwd = project_path if project_path else self.settings.dbt_project_path
+        cwd_path = Path(cwd).resolve()
+
+        packages_yml = cwd_path / "packages.yml"
+
+        if not packages_yml.exists():
+            return PackagesCheckResponse(
+                has_missing=False,
+                packages_required=[],
+                packages_installed=[],
+                missing_packages=[],
+                packages_yml_exists=False
+            )
+
+        try:
+            packages_content = yaml.safe_load(packages_yml.read_text(encoding="utf-8"))
+            packages_list = packages_content.get('packages', [])
+
+            required_packages = []
+            for pkg in packages_list:
+                if not isinstance(pkg, dict):
+                    continue
+
+                pkg_name = None
+                if 'git' in pkg or 'url' in pkg:
+                    pkg_name = self._extract_package_name(pkg, 'git')
+                elif 'local' in pkg:
+                    pkg_name = self._extract_package_name(pkg, 'local')
+                elif 'package' in pkg:
+                    pkg_name = self._extract_package_name(pkg, 'package')
+
+                if pkg_name:
+                    required_packages.append(pkg_name)
+
+            # Check installed packages
+            dbt_packages_dir = cwd_path / "dbt_packages"
+            installed_packages = []
+
+            if dbt_packages_dir.exists():
+                for item in dbt_packages_dir.iterdir():
+                    if item.is_dir():
+                        installed_packages.append(item.name)
+
+            # Determine missing packages
+            missing = [pkg for pkg in required_packages if pkg not in installed_packages]
+
+            return PackagesCheckResponse(
+                has_missing=len(missing) > 0,
+                packages_required=required_packages,
+                packages_installed=installed_packages,
+                missing_packages=missing,
+                packages_yml_exists=True
+            )
+        except Exception as e:
+            print(f"Error checking packages: {e}")
+            return PackagesCheckResponse(
+                has_missing=False,
+                packages_required=[],
+                packages_installed=[],
+                missing_packages=[],
+                packages_yml_exists=True
+            )
 
     def _resolve_row_lineage_export_path(
         self,
@@ -538,7 +640,11 @@ class DbtExecutor:
             cwd = run_detail.project_path if run_detail.project_path else self.settings.dbt_project_path
             if not os.path.isabs(cwd):
                 cwd = os.path.abspath(cwd)
-            
+
+            # Clean package-lock.yml for deps command to avoid inconsistent state
+            if run_detail.command == DbtCommand.DEPS:
+                self._clean_package_lock(cwd)
+
             # Start subprocess
             process = subprocess.Popen(
                 cmd,

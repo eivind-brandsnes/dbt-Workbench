@@ -10,7 +10,13 @@ import { ArtifactService } from '../services/artifactService'
 
 vi.mock('../api/client', () => ({ api: { get: vi.fn() } }))
 vi.mock('../services/executionService', () => ({
-  ExecutionService: { startRun: vi.fn(), getRunStatus: vi.fn() },
+  ExecutionService: {
+    startRun: vi.fn(),
+    getRunStatus: vi.fn(),
+    checkPackages: vi.fn(),
+    installPackages: vi.fn(),
+    createLogStream: vi.fn(),
+  },
 }))
 vi.mock('../services/environmentService', () => ({ EnvironmentService: { list: vi.fn() } }))
 vi.mock('../services/artifactService', () => ({ ArtifactService: { getSeedStatus: vi.fn() } }))
@@ -19,6 +25,9 @@ const mockedApi = api as { get: ReturnType<typeof vi.fn> }
 const mockedExecutionService = ExecutionService as {
   startRun: ReturnType<typeof vi.fn>
   getRunStatus: ReturnType<typeof vi.fn>
+  checkPackages: ReturnType<typeof vi.fn>
+  installPackages: ReturnType<typeof vi.fn>
+  createLogStream: ReturnType<typeof vi.fn>
 }
 const mockedEnvironmentService = EnvironmentService as { list: ReturnType<typeof vi.fn> }
 const mockedArtifactService = ArtifactService as { getSeedStatus: ReturnType<typeof vi.fn> }
@@ -41,13 +50,14 @@ vi.mock('../context/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
-describe('RunCommand', () => {
+  describe('RunCommand', () => {
   const selectTarget = async () => {
     const targetInput = await screen.findByPlaceholderText('e.g., dev')
     await userEvent.type(targetInput, 'dev')
   }
 
   beforeEach(() => {
+    vi.clearAllMocks()
     vi.clearAllMocks()
     mockedApi.get.mockResolvedValue({ data: [] })
     mockedEnvironmentService.list.mockResolvedValue([
@@ -176,5 +186,110 @@ describe('RunCommand', () => {
     const panel = container.firstElementChild as HTMLElement | null
     expect(panel).not.toBeNull()
     expect(panel).toHaveClass('bg-blue-50')
+  })
+
+  describe('Package Checking', () => {
+    it('shows modal when missing packages detected', async () => {
+      mockedExecutionService.checkPackages.mockResolvedValue({
+        has_missing: true,
+        packages_required: ['dbt-utils'],
+        packages_installed: [],
+        missing_packages: ['dbt-utils'],
+        packages_yml_exists: true,
+      })
+
+      const onRunStarted = vi.fn()
+      render(<RunCommand onRunStarted={onRunStarted} />)
+
+      await selectTarget()
+      await userEvent.click(screen.getByTestId('run-execute'))
+
+      await waitFor(() => {
+        expect(screen.queryByText('Missing dbt Packages')).toBeInTheDocument()
+        expect(screen.getByText('dbt-utils')).toBeInTheDocument()
+      })
+      expect(mockedExecutionService.startRun).not.toHaveBeenCalled()
+    })
+
+    it('proceeds normally when no missing packages', async () => {
+      mockedExecutionService.checkPackages.mockResolvedValue({
+        has_missing: false,
+        packages_required: [],
+        packages_installed: [],
+        missing_packages: [],
+        packages_yml_exists: false,
+      })
+
+      const onRunStarted = vi.fn()
+      render(<RunCommand onRunStarted={onRunStarted} />)
+
+      await selectTarget()
+      await userEvent.click(screen.getByTestId('run-execute'))
+
+      await waitFor(() => {
+        expect(screen.queryByText('Missing dbt Packages')).not.toBeInTheDocument()
+        expect(mockedExecutionService.startRun).toHaveBeenCalled()
+      })
+      expect(onRunStarted).toHaveBeenCalledWith('123')
+    })
+
+    it('does not check packages for seed command', async () => {
+      mockedExecutionService.checkPackages.mockResolvedValue({
+        has_missing: true,
+        packages_required: ['dbt-utils'],
+        packages_installed: [],
+        missing_packages: ['dbt-utils'],
+        packages_yml_exists: true,
+      })
+
+      render(<RunCommand />)
+
+      await selectTarget()
+      await userEvent.click(screen.getByTestId('seed-execute'))
+
+      await waitFor(() => {
+        expect(mockedExecutionService.checkPackages).toHaveBeenCalled()
+        expect(mockedExecutionService.startRun).toHaveBeenCalled()
+      })
+    })
+
+    it('displays installed packages list in modal', async () => {
+      mockedExecutionService.checkPackages.mockResolvedValue({
+        has_missing: true,
+        packages_required: ['dbt-utils', 'dbt-expectations'],
+        packages_installed: ['dbt-expectations'],
+        missing_packages: ['dbt-utils'],
+        packages_yml_exists: true,
+      })
+
+      render(<RunCommand />)
+
+      await selectTarget()
+      await userEvent.click(screen.getByTestId('run-execute'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Installed Packages')).toBeInTheDocument()
+        expect(screen.getByText('dbt-expectations')).toBeInTheDocument()
+      })
+    })
+
+    it('shows correct count of missing packages in modal', async () => {
+      mockedExecutionService.checkPackages.mockResolvedValue({
+        has_missing: true,
+        packages_required: ['dbt-utils', 'dbt-expectations', 'dbt-codegen'],
+        packages_installed: ['dbt-expectations'],
+        missing_packages: ['dbt-utils', 'dbt-codegen'],
+        packages_yml_exists: true,
+      })
+
+      render(<RunCommand />)
+
+      await selectTarget()
+      await userEvent.click(screen.getByTestId('run-execute'))
+
+      await waitFor(() => {
+        expect(screen.getByText(/2 of 3 required packages are not installed/i)).toBeInTheDocument()
+      })
+    })
   })
 })

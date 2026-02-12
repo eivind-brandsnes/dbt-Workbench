@@ -17,6 +17,7 @@ services:
       - BACKEND_PORT=8000
       - SQL_WORKSPACE_DEFAULT_CONNECTION_URL=postgresql://user:password@db:5432/dbt_workbench
     volumes:
+      - ./data:/app/data
       - ./data/artifacts:/app/data/artifacts
       - ./data/repos:/app/data/repos
       - ./dbt_project:/app/data/repos/default

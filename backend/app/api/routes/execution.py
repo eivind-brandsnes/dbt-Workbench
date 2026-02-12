@@ -1,4 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
+from typing import Optional
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
@@ -18,6 +19,8 @@ from app.schemas.execution import (
     RunHistoryResponse,
     RunRequest,
     RunSummary,
+    PackagesCheckResponse,
+    DbtCommand,
 )
 from app.services import git_service
 from app.services.dbt_executor import executor
@@ -237,3 +240,70 @@ async def get_execution_status():
         "max_concurrent_runs": executor.settings.max_concurrent_runs,
         "max_run_history": executor.settings.max_run_history,
     }
+
+
+@router.get(
+    "/packages/check",
+    response_model=PackagesCheckResponse,
+    dependencies=[Depends(get_current_user)],
+)
+async def check_packages(
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+    project_path: Optional[str] = Query(None),
+):
+    """Check for missing dbt packages in project."""
+    try:
+        effective_project_path = None
+        if workspace.id:
+            repo = git_service.get_repository(db, workspace.id)
+            if repo and repo.directory:
+                effective_project_path = repo.directory
+
+        result = executor.check_missing_packages(
+            project_path=project_path or effective_project_path
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check packages: {str(e)}")
+
+
+@router.post(
+    "/packages/install",
+    response_model=RunSummary,
+    dependencies=[Depends(require_role(Role.DEVELOPER))],
+)
+async def install_packages(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    workspace: WorkspaceContext = Depends(get_current_workspace),
+    project_path: Optional[str] = Query(None),
+):
+    """Install dbt packages by running dbt deps."""
+    try:
+        workspace_id = workspace.id or 0
+        effective_project_path = None
+        if workspace.id:
+            repo = git_service.get_repository(db, workspace.id)
+            if repo and repo.directory:
+                effective_project_path = repo.directory
+
+        run_id = await executor.start_run(
+            command=DbtCommand.DEPS,
+            parameters={},
+            description="Install dbt packages",
+            project_path=project_path or effective_project_path,
+            artifacts_path=workspace.artifacts_path,
+        )
+
+        background_tasks.add_task(executor.execute_run, run_id)
+
+        run_status = executor.get_run_status(run_id)
+        if not run_status:
+            raise HTTPException(status_code=500, detail="Failed to start deps installation")
+
+        return run_status
+    except RuntimeError as e:
+        raise HTTPException(status_code=429, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to install packages: {str(e)}")

@@ -168,10 +168,94 @@ def _initialize_local_repo(target_path: Path, branch: str) -> Repo:
     return repo
 
 
+def _cleanup_invalid_directory(target_path: Path, workspace_key: str) -> None:
+    """Remove directory if it exists but is not a valid git repo.
+
+    This handles the case where a directory exists but is not a git repository,
+    which would cause git clone to fail.
+
+    Args:
+        target_path: Path to the repository directory
+        workspace_key: Workspace key for logging purposes
+    """
+    if target_path.exists():
+        git_dir = target_path / ".git"
+        if not git_dir.exists():
+            # Directory exists but is not a git repo - remove it
+            import shutil
+            print(
+                f"Cleaning up invalid directory for workspace '{workspace_key}': "
+                f"'{target_path}' exists but is not a git repository. "
+                f"Removing to allow fresh clone."
+            )
+            try:
+                shutil.rmtree(target_path)
+                print(f"Successfully removed invalid directory: {target_path}")
+            except Exception as e:
+                print(f"Error removing directory {target_path}: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "error": "cleanup_failed",
+                        "message": f"Failed to remove invalid directory: {str(e)}",
+                    },
+                ) from e
+
+
 def _workspace_root(settings, workspace: db_models.Workspace) -> Path:
     root = Path(settings.git_repos_base_path).joinpath(workspace.key).resolve()
     root.mkdir(parents=True, exist_ok=True)
     return root
+
+def _validate_target_path(settings, target_path: Path, workspace: db_models.Workspace) -> Path:
+    """Validate and normalize target path for repository.
+
+    Ensures the path is within the appropriate directory structure:
+    - If using default workspace path: under git_repos_base_path
+    - If using custom directory: under data_root for flexibility
+
+    Args:
+        settings: Application settings
+        target_path: Proposed target path
+        workspace: Workspace object
+
+    Returns:
+        Validated and normalized target path
+
+    Raises:
+        HTTPException: If path is invalid or outside allowed directories
+    """
+    repos_base = Path(settings.git_repos_base_path).resolve()
+    data_root = _data_root(settings)
+
+    # Resolve the target path
+    target_path = target_path.resolve()
+
+    # Check if path is within allowed directories
+    try:
+        # Try relative to repos_base first (preferred location)
+        relative_to_repos = target_path.relative_to(repos_base)
+    except ValueError:
+        # Not in repos_base, check if it's at least in data_root
+        try:
+            target_path.relative_to(data_root)
+            # It's in data_root but not in repos_base - this is allowed
+            # (for custom directories like /app/data/<project>)
+        except ValueError:
+            # Not in data_root either - invalid path
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "invalid_path",
+                    "message": (
+                        f"Repository path must be within {repos_base} or {data_root}. "
+                        f"Got: {target_path}"
+                    ),
+                },
+            )
+
+    return target_path
+
 
 def _data_root(settings) -> Path:
     """Returns the base data directory (parent of repos base path)."""
@@ -286,10 +370,13 @@ def connect_repository(
 
     if directory:
         target_path = Path(directory).resolve()
-        # Allow checking against the broader data root to support /app/data/<project>
-        _assert_subpath(_data_root(settings), target_path)
+        # Validate and normalize the path
+        target_path = _validate_target_path(settings, target_path, workspace)
     else:
         target_path = _workspace_root(settings, workspace)
+
+    # Clean up invalid directory if it exists but is not a git repo
+    _cleanup_invalid_directory(target_path, workspace.key)
 
     target_path.mkdir(parents=True, exist_ok=True)
 
@@ -299,14 +386,35 @@ def connect_repository(
         if not (target_path / ".git").exists():
             try:
                 repo = Repo.clone_from(remote_url, target_path, branch=branch)
-            except GitCommandError:
+            except GitCommandError as e:
+                # Check if the error is about non-empty directory (shouldn't happen due to cleanup)
+                if "already exists and is not an empty directory" in str(e.stderr):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail={
+                            "error": "directory_not_empty",
+                            "message": (
+                                f"Directory '{target_path}' already exists and is not empty. "
+                                "Please disconnect and reconnect the repository to fix this issue."
+                            ),
+                        },
+                    ) from e
                 # Fall back to cloning the default branch when the requested branch is missing
-                repo = Repo.clone_from(remote_url, target_path)
                 try:
-                    branch = repo.active_branch.name  # Use the branch that was actually checked out
-                except TypeError:
-                    # Detached HEAD; pick the first local branch if available
-                    branch = repo.heads[0].name if repo.heads else branch
+                    repo = Repo.clone_from(remote_url, target_path)
+                    try:
+                        branch = repo.active_branch.name  # Use the branch that was actually checked out
+                    except TypeError:
+                        # Detached HEAD; pick the first local branch if available
+                        branch = repo.heads[0].name if repo.heads else branch
+                except GitCommandError as e2:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail={
+                            "error": "clone_failed",
+                            "message": f"Failed to clone repository from {remote_url}: {str(e2)}",
+                        },
+                    ) from e2
         else:
             repo = _ensure_repo(str(target_path))
     else:
