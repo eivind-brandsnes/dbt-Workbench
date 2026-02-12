@@ -496,164 +496,166 @@ export default function VersionControlPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-4">Projects</h2>
-            <p className="text-sm text-gray-400 mb-4">One project per git repository</p>
-
-            {projectsLoading && (
-              <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
-                <div className="text-gray-400 text-sm">Loading projects...</div>
-              </div>
-            )}
-
-            {projectsError && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-sm text-red-400">
-                {projectsError}
-              </div>
-            )}
-
-            {!projectsLoading && !projectsError && (
-              <div className="space-y-3">
-                {projects.map((project) => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    isActive={project.id === workspaceId}
-                    onActivate={() => handleSwitchProject(project.id)}
-                  />
-                ))}
-
-                {!projects.length && (
-                  <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
-                    <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <div className="text-gray-400 text-sm mb-2">No projects yet</div>
-                    <p className="text-xs text-gray-500">Create a project to get started with version control</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-4">Working Changes</h2>
-            <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
-              <GitChanges status={status} />
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 space-y-6">
-          {repository && !repoMissing && (
-            <RepoStatusCard
-              repository={repository}
-              status={status}
-              onPull={() => GitService.pull().then(reload)}
-              onPush={() => GitService.push().then(reload)}
-              onDisconnect={handleDisconnect}
-              onAddProject={() => setShowCloneForm(true)}
-              loading={loading}
-              disabled={actionsDisabled}
-            />
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <BranchSelector
-              branches={branches}
-              history={history}
-              currentBranch={currentBranch}
-              onBranchChange={handleBranchChange}
-              disabled={actionsDisabled}
-            />
-
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-semibold text-white mb-4">Recent Commits</h2>
-              <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
-                <CommitTimeline history={history} maxEntries={5} />
-              </div>
-            </div>
-          </div>
+              <h2 className="text-lg font-semibold text-white mb-4">Projects</h2>
+              <p className="text-sm text-gray-400 mb-4">One project per git repository</p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <h2 className="text-lg font-semibold text-white mb-4">Project Files</h2>
-              <p className="text-sm text-gray-400 mb-4">Browse and manage dbt files</p>
-
-              {repoMissing ? (
+              {projectsLoading && (
                 <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
-                  <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <div className="text-gray-400 text-sm">Connect a repository to browse files</div>
+                  <div className="text-gray-400 text-sm">Loading projects...</div>
                 </div>
-              ) : (
-                <>
-                  <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
-                    <FileTree
-                      nodes={files}
-                      onSelect={loadFile}
-                      selectedPath={selectedPath}
-                      storageKey={`version-control-${workspaceId ?? 'none'}`}
-                      emptyMessage="No project files found."
-                    />
-                  </div>
+              )}
 
-                  <div className="mt-4 bg-black/20 border border-gray-800 rounded-lg p-4">
-                    <h3 className="text-white font-semibold mb-3">Create File</h3>
-                    <form className="space-y-3" onSubmit={handleCreateFile}>
-                      <input
-                        type="text"
-                        className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
-                        placeholder="models/new_file.sql"
-                        value={newFilePath}
-                        onChange={(e) => setNewFilePath(e.target.value)}
-                      />
-                      <textarea
-                        className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-xs font-mono text-gray-100 min-h-[120px] resize-y focus:border-accent/60 focus:outline-none"
-                        placeholder="File contents"
-                        value={newFileContent}
-                        onChange={(e) => setNewFileContent(e.target.value)}
-                      />
-                      <input
-                        type="text"
-                        className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
-                        placeholder="Commit message (optional)"
-                        value={newFileMessage}
-                        onChange={(e) => setNewFileMessage(e.target.value)}
-                      />
-                      <button type="submit" className="btn btn-sm w-full" disabled={actionsDisabled}>
-                        Create file
-                      </button>
-                      {fileSaveError && <div className="text-xs text-red-400">{fileSaveError}</div>}
-                      {fileSaveStatus && <div className="text-xs text-green-400">{fileSaveStatus}</div>}
-                    </form>
-                  </div>
-                </>
+              {projectsError && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-sm text-red-400">
+                  {projectsError}
+                </div>
+              )}
+
+              {!projectsLoading && !projectsError && (
+                <div className="space-y-3">
+                  {projects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      isActive={project.id === workspaceId}
+                      onActivate={() => handleSwitchProject(project.id)}
+                    />
+                  ))}
+
+                  {!projects.length && (
+                    <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
+                      <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      <div className="text-gray-400 text-sm mb-2">No projects yet</div>
+                      <p className="text-xs text-gray-500">Create a project to get started with version control</p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            <div className="lg:col-span-2">
-              <FileEditorPanel
-                selectedPath={selectedPath}
-                fileContent={fileContent}
-                fileEditContent={fileEditContent}
-                onFileEditContentChange={setFileEditContent}
-                diffs={diffs}
-                commitMessage={commitMessage}
-                onCommitMessageChange={setCommitMessage}
-                onSave={handleSaveFile}
-                onCommit={handleCommit}
-                loading={loading}
-                disabled={actionsDisabled}
-              />
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">Working Changes</h2>
+              <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
+                <GitChanges status={status} />
+              </div>
             </div>
           </div>
 
-          <AuditLogList records={auditRecords} />
+          <div className="lg:col-span-2 space-y-6">
+            {repository && !repoMissing && (
+              <RepoStatusCard
+                repository={repository}
+                status={status}
+                onPull={() => GitService.pull().then(reload)}
+                onPush={() => GitService.push().then(reload)}
+                onDisconnect={handleDisconnect}
+                onAddProject={() => setShowCloneForm(true)}
+                loading={loading}
+                disabled={actionsDisabled}
+              />
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <BranchSelector
+                branches={branches}
+                history={history}
+                currentBranch={currentBranch}
+                onBranchChange={handleBranchChange}
+                disabled={actionsDisabled}
+              />
+
+              <div>
+                <h2 className="text-lg font-semibold text-white mb-4">Recent Commits</h2>
+                <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
+                  <CommitTimeline history={history} maxEntries={5} />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <h2 className="text-lg font-semibold text-white mb-4">Project Files</h2>
+            <p className="text-sm text-gray-400 mb-4">Browse and manage dbt files</p>
+
+            {repoMissing ? (
+              <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
+                <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div className="text-gray-400 text-sm">Connect a repository to browse files</div>
+              </div>
+            ) : (
+              <>
+                <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
+                  <FileTree
+                    nodes={files}
+                    onSelect={loadFile}
+                    selectedPath={selectedPath}
+                    storageKey={`version-control-${workspaceId ?? 'none'}`}
+                    emptyMessage="No project files found."
+                  />
+                </div>
+
+                <div className="mt-4 bg-black/20 border border-gray-800 rounded-lg p-4">
+                  <h3 className="text-white font-semibold mb-3">Create File</h3>
+                  <form className="space-y-3" onSubmit={handleCreateFile}>
+                    <input
+                      type="text"
+                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                      placeholder="models/new_file.sql"
+                      value={newFilePath}
+                      onChange={(e) => setNewFilePath(e.target.value)}
+                    />
+                    <textarea
+                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-xs font-mono text-gray-100 min-h-[120px] resize-y focus:border-accent/60 focus:outline-none"
+                      placeholder="File contents"
+                      value={newFileContent}
+                      onChange={(e) => setNewFileContent(e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                      placeholder="Commit message (optional)"
+                      value={newFileMessage}
+                      onChange={(e) => setNewFileMessage(e.target.value)}
+                    />
+                    <button type="submit" className="btn btn-sm w-full" disabled={actionsDisabled}>
+                      Create file
+                    </button>
+                    {fileSaveError && <div className="text-xs text-red-400">{fileSaveError}</div>}
+                    {fileSaveStatus && <div className="text-xs text-green-400">{fileSaveStatus}</div>}
+                  </form>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="lg:col-span-2">
+            <FileEditorPanel
+              selectedPath={selectedPath}
+              fileContent={fileContent}
+              fileEditContent={fileEditContent}
+              onFileEditContentChange={setFileEditContent}
+              diffs={diffs}
+              commitMessage={commitMessage}
+              onCommitMessageChange={setCommitMessage}
+              onSave={handleSaveFile}
+              onCommit={handleCommit}
+              loading={loading}
+              disabled={actionsDisabled}
+            />
+          </div>
+        </div>
+
+        <AuditLogList records={auditRecords} />
       </div>
     </div>
   )
