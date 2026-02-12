@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { api } from '../api/client'
 import { Table } from '../components/Table'
+import { useAi } from '../context/AiContext'
 import { RowLineageService } from '../services/rowLineageService'
 import { SchedulerService } from '../services/schedulerService'
 import {
@@ -259,6 +260,7 @@ const buildGroupedGraph = <T extends LineageNode | ColumnNode>(
 
 function LineagePage() {
   const navigate = useNavigate()
+  const { openPanel } = useAi()
   const [graph, setGraph] = useState<LineageGraph>({ nodes: [], edges: [], groups: [] })
   const [columnGraph, setColumnGraph] = useState<ColumnLineageGraph>({ nodes: [], edges: [] })
   const [groupMode, setGroupMode] = useState<GroupingMode>('none')
@@ -776,6 +778,24 @@ function LineagePage() {
       .finally(() => setRowTraceLoading(false))
   }
 
+  const handleAiLineageExplain = () => {
+    const targetNode = selectedNode || rowSelectedModelUniqueId || ''
+    const prompt = selectedColumn
+      ? `Explain lineage impact for node '${targetNode}' and column '${selectedColumn}'. Include likely upstream and downstream implications.`
+      : targetNode
+        ? `Explain lineage impact for node '${targetNode}', including critical upstream and downstream dependencies.`
+        : 'Summarize the current lineage graph and identify high-impact dependencies.'
+
+    openPanel({
+      prompt,
+      context: {
+        lineage_graph: true,
+        lineage_node_id: targetNode || undefined,
+        lineage_column: selectedColumn || undefined,
+      },
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -784,6 +804,13 @@ function LineagePage() {
           <p className="text-sm text-gray-400">Navigate model, column, and row lineage with grouping, collapse, and impact analysis.</p>
         </div>
         <div className="flex flex-wrap gap-3 items-center justify-end">
+          <button
+            type="button"
+            onClick={handleAiLineageExplain}
+            className="rounded border border-border px-3 py-2 text-sm text-text hover:bg-panel"
+          >
+            AI Explain Lineage
+          </button>
           <div className="flex rounded-md border border-gray-700 overflow-hidden shrink-0">
             {([
               { id: 'model', label: 'Model' },

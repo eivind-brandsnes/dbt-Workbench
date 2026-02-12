@@ -1,4 +1,16 @@
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from ..connection import Base
@@ -388,3 +400,144 @@ class AuditLog(Base):
 
     workspace = relationship("Workspace")
     user = relationship("User")
+
+
+class AiWorkspaceSetting(Base):
+    __tablename__ = "ai_workspace_settings"
+    __table_args__ = (UniqueConstraint("workspace_id", name="uq_ai_workspace_settings_workspace_id"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
+    enabled = Column(Boolean, default=True)
+    default_mode = Column(String, default="direct")  # direct | mcp
+    default_direct_provider = Column(String, default="openai")
+    default_model_openai = Column(String, nullable=True)
+    default_model_anthropic = Column(String, nullable=True)
+    default_model_gemini = Column(String, nullable=True)
+    allow_session_provider_override = Column(Boolean, default=True)
+    allow_data_context_results = Column(Boolean, default=True)
+    allow_data_context_run_logs = Column(Boolean, default=True)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    workspace = relationship("Workspace")
+
+
+class AiWorkspaceSecret(Base):
+    __tablename__ = "ai_workspace_secrets"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "secret_key", name="uq_ai_workspace_secret_workspace_key"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
+    secret_key = Column(String, nullable=False)
+    encrypted_value = Column(Text, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    workspace = relationship("Workspace")
+
+
+class AiMcpServer(Base):
+    __tablename__ = "ai_mcp_servers"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "name", name="uq_ai_mcp_server_workspace_name"),
+        Index("ix_ai_mcp_servers_workspace_enabled", "workspace_id", "enabled"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    mode = Column(String, nullable=False)  # remote_http | remote_sse | local_stdio
+    enabled = Column(Boolean, default=True)
+    config = Column(JSON, default=dict)
+    secret_refs = Column(JSON, default=list)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    workspace = relationship("Workspace")
+
+
+class AiConversation(Base):
+    __tablename__ = "ai_conversations"
+    __table_args__ = (Index("ix_ai_conversations_workspace_created", "workspace_id", "created_at"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    title = Column(String, nullable=False, default="New conversation")
+    meta = Column(JSON, default=dict)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    workspace = relationship("Workspace")
+    user = relationship("User")
+
+
+class AiMessage(Base):
+    __tablename__ = "ai_messages"
+    __table_args__ = (Index("ix_ai_messages_conversation_created", "conversation_id", "created_at"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
+    conversation_id = Column(Integer, ForeignKey("ai_conversations.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    role = Column(String, nullable=False)  # user | assistant | system
+    content = Column(Text, nullable=False)
+    provider_mode = Column(String, nullable=True)
+    provider_name = Column(String, nullable=True)
+    model_name = Column(String, nullable=True)
+    message_metadata = Column(JSON, default=dict)
+    created_at = Column(DateTime)
+
+    workspace = relationship("Workspace")
+    conversation = relationship("AiConversation")
+    user = relationship("User")
+
+
+class AiToolTrace(Base):
+    __tablename__ = "ai_tool_traces"
+    __table_args__ = (Index("ix_ai_tool_traces_workspace_created", "workspace_id", "created_at"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
+    conversation_id = Column(Integer, ForeignKey("ai_conversations.id"), nullable=False, index=True)
+    message_id = Column(Integer, ForeignKey("ai_messages.id"), nullable=True, index=True)
+    tool_name = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="ok")
+    input_payload = Column(JSON, default=dict)
+    output_payload = Column(JSON, default=dict)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime)
+
+    workspace = relationship("Workspace")
+    conversation = relationship("AiConversation")
+    message = relationship("AiMessage")
+
+
+class AiActionProposal(Base):
+    __tablename__ = "ai_action_proposals"
+    __table_args__ = (Index("ix_ai_action_workspace_status_created", "workspace_id", "status", "created_at"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    proposal_id = Column(String, unique=True, index=True, nullable=False)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
+    conversation_id = Column(Integer, ForeignKey("ai_conversations.id"), nullable=False, index=True)
+    message_id = Column(Integer, ForeignKey("ai_messages.id"), nullable=True, index=True)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    proposal_type = Column(String, nullable=False)  # sql_execute | dbt_run
+    status = Column(String, nullable=False, default="pending")  # pending | confirmed | rejected | expired | executed
+    payload = Column(JSON, default=dict)
+    risk_flags = Column(JSON, default=list)
+    result_payload = Column(JSON, default=dict)
+    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+    confirmed_at = Column(DateTime, nullable=True)
+    confirmed_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+
+    workspace = relationship("Workspace")
+    conversation = relationship("AiConversation")
+    message = relationship("AiMessage")

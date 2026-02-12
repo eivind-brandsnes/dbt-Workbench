@@ -143,6 +143,13 @@ backend/app/
 | `column_lineage` | Column-level relationships |
 | `git_repositories` | Connected repositories |
 | `plugin_workspace_configs` | Per-workspace plugin settings |
+| `ai_workspace_settings` | Workspace AI defaults and policy toggles |
+| `ai_workspace_secrets` | Encrypted workspace AI secrets |
+| `ai_mcp_servers` | Workspace MCP server registry and connectivity config |
+| `ai_conversations` | AI conversation headers per workspace/user |
+| `ai_messages` | Persisted AI/user messages per conversation |
+| `ai_tool_traces` | AI tool/context trace logs |
+| `ai_action_proposals` | Confirmable SQL/dbt action proposals |
 | `audit_logs` | Audit trail |
 
 **Schema Compatibility:**
@@ -178,6 +185,20 @@ The backend reads dbt-generated JSON artifacts from a mounted directory.
 On first launch the backend initializes a local Git repository that mirrors the demo dbt project
 layout. The seeded project includes raw, staging, and mart models with inline sample data so
 `dbt run` works immediately for workspace execution, lineage previews, and run history.
+
+### **2.6 AI Copilot Layer**
+
+The AI Copilot introduces a workspace-aware orchestration layer with dual connectivity:
+
+- **Direct providers**: OpenAI, Anthropic, Gemini
+- **MCP**: `remote_http`, `remote_sse`, `local_stdio` (allowlisted templates only)
+
+Core behaviors:
+
+- Runtime provider-mode switching with workspace defaults and optional session override
+- Encrypted workspace secrets with environment-variable fallback
+- Full prompt/response/tool/action auditing per workspace
+- Proposal-based execution for SQL/dbt actions with explicit user confirmation
 
 ---
 

@@ -19,6 +19,8 @@ import PluginsInstalledPage from './pages/PluginsInstalled'
 import PluginMarketplacePage from './pages/PluginMarketplace'
 import VersionControlPage from './pages/VersionControl'
 import { useAuth } from './context/AuthContext'
+import { AiProvider } from './context/AiContext'
+import { AiAssistantPanel } from './components/ai/AiAssistantPanel'
 
 function App() {
   const { isLoading, isAuthEnabled, user, activeWorkspace } = useAuth()
@@ -58,33 +60,36 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-surface overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <TopBar />
-        <main className="flex-1 overflow-y-auto p-6 space-y-6" key={activeWorkspace?.id ?? 'none'} data-testid="main-content">
-          <Routes key={activeWorkspace?.id ?? 'routes-none'}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/models" element={<ModelsPage />} />
-            <Route path="/models/:modelId" element={<ModelDetailPage />} />
-            <Route path="/lineage" element={<LineagePage />} />
-            <Route path="/sql" element={<SqlWorkspacePage />} />
-            <Route path="/runs" element={<RunsPage />} />
-            <Route path="/run-history" element={<RunHistoryPage />} />
-            <Route path="/schedules" element={<SchedulesPage />} />
-            <Route path="/environments" element={<EnvironmentsPage />} />
-            <Route path="/plugins" element={<PluginsInstalledPage />} />
-            <Route path="/plugins/installed" element={<PluginsInstalledPage />} />
-            <Route path="/plugins/marketplace" element={<PluginMarketplacePage />} />
-            <Route path="/version-control" element={<VersionControlPage />} />
-            <Route path="/docs" element={<DocsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/login" element={<LoginPage />} />
-          </Routes>
-        </main>
+    <AiProvider>
+      <div className="flex h-screen bg-surface overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <TopBar />
+          <main className="flex-1 overflow-y-auto p-6 space-y-6" key={activeWorkspace?.id ?? 'none'} data-testid="main-content">
+            <Routes key={activeWorkspace?.id ?? 'routes-none'}>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/models" element={<ModelsPage />} />
+              <Route path="/models/:modelId" element={<ModelDetailPage />} />
+              <Route path="/lineage" element={<LineagePage />} />
+              <Route path="/sql" element={<SqlWorkspacePage />} />
+              <Route path="/runs" element={<RunsPage />} />
+              <Route path="/run-history" element={<RunHistoryPage />} />
+              <Route path="/schedules" element={<SchedulesPage />} />
+              <Route path="/environments" element={<EnvironmentsPage />} />
+              <Route path="/plugins" element={<PluginsInstalledPage />} />
+              <Route path="/plugins/installed" element={<PluginsInstalledPage />} />
+              <Route path="/plugins/marketplace" element={<PluginMarketplacePage />} />
+              <Route path="/version-control" element={<VersionControlPage />} />
+              <Route path="/docs" element={<DocsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/login" element={<LoginPage />} />
+            </Routes>
+          </main>
+        </div>
+        <RefreshIndicator onRefreshNeeded={handleRefreshNeeded} />
+        <AiAssistantPanel />
       </div>
-      <RefreshIndicator onRefreshNeeded={handleRefreshNeeded} />
-    </div>
+    </AiProvider>
   )
 }
 

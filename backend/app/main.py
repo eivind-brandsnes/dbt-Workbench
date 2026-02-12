@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 from app.api.routes import (
+    ai,
     artifacts,
     auth,
     catalog,
@@ -123,6 +124,7 @@ app.include_router(theme.router)
 app.include_router(plugins.router)
 app.include_router(git.router)
 app.include_router(profiles.router)
+app.include_router(ai.router)
 
 
 @app.get("/config")
@@ -172,6 +174,15 @@ async def get_config():
             "default_workspace_key": settings.default_workspace_key,
             "default_workspace_name": settings.default_workspace_name,
             "single_project_mode": settings.single_project_mode,
+        },
+        "ai": {
+            "enabled": settings.ai_enabled,
+            "default_mode": settings.ai_default_mode,
+            "default_direct_provider": settings.ai_default_direct_provider,
+            "allow_session_provider_override": settings.ai_allow_session_provider_override,
+            "mcp_local_allowlist_configured": bool(settings.ai_mcp_local_allowlist_json and settings.ai_mcp_local_allowlist_json != "{}"),
+            "max_input_tokens": settings.ai_max_input_tokens,
+            "max_output_tokens": settings.ai_max_output_tokens,
         },
     }
 

@@ -370,6 +370,25 @@ Additional behaviors:
 | `PLUGIN_API_VERSION` | `1.0.0` | Plugin API version |
 | `PLUGIN_ALLOWED_ENV_PREFIXES` | `DBT_,DBT_WORKBENCH_` | Allowed environment variable prefixes for plugins |
 
+### AI Copilot
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AI_ENABLED` | `true` | Enable AI Copilot endpoints and UI |
+| `AI_SECRETS_MASTER_KEY` | - | Master key used to encrypt workspace AI secrets at rest |
+| `AI_DEFAULT_MODE` | `direct` | Default provider mode (`direct` or `mcp`) |
+| `AI_DEFAULT_DIRECT_PROVIDER` | `openai` | Default direct provider (`openai`, `anthropic`, `gemini`) |
+| `AI_DEFAULT_DIRECT_MODEL_OPENAI` | - | Default OpenAI model override |
+| `AI_DEFAULT_DIRECT_MODEL_ANTHROPIC` | - | Default Anthropic model override |
+| `AI_DEFAULT_DIRECT_MODEL_GEMINI` | - | Default Gemini model override |
+| `AI_ALLOW_SESSION_PROVIDER_OVERRIDE` | `true` | Allow per-session provider override in UI |
+| `AI_MCP_LOCAL_ALLOWLIST_JSON` | `{}` | JSON allowlist for local MCP stdio templates |
+| `AI_MCP_PROCESS_IDLE_TTL_SECONDS` | `300` | Idle timeout for local MCP processes |
+| `AI_MCP_CONNECT_TIMEOUT_SECONDS` | `20` | Connection timeout for MCP calls |
+| `AI_MAX_INPUT_TOKENS` | - | Optional soft max input tokens (no hard enforcement by default) |
+| `AI_MAX_OUTPUT_TOKENS` | - | Optional soft max output tokens (no hard enforcement by default) |
+| `AI_AUDIT_RETENTION_DAYS` | - | Optional AI audit retention window |
+
 ---
 
 ## 🧩 Features Overview
@@ -468,6 +487,15 @@ Additional behaviors:
 - Model diff viewer
 - Historical lineage browser
 
+### **Phase 12 — AI Copilot (Complete)**
+- Global AI assistant panel with workspace-aware conversations
+- Runtime provider switching between direct LLM APIs and MCP servers
+- SQL copilot actions in SQL Workspace (explain/generate/optimize/fix prompts)
+- Lineage Q&A and run troubleshooting context actions
+- Admin-configurable AI defaults, secrets, and MCP server registry
+- Proposal-based execution flow for SQL/dbt actions with explicit confirmation
+- Full AI prompt/response/tool/action audit persistence per workspace
+
 ---
 
 ## 🔗 API Reference
@@ -535,6 +563,26 @@ Run log streams now emit a terminal message even when the underlying dbt process
 | `/plugins/config` | POST | Create plugin config (Admin) |
 | `/plugins/config/{name}` | PUT | Update plugin config (Admin) |
 | `/plugins/config/{name}` | DELETE | Delete plugin config (Admin) |
+
+### AI API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ai/settings` | GET | Get effective AI workspace settings (sanitized) |
+| `/ai/settings` | PUT | Update AI workspace defaults (Admin) |
+| `/ai/settings/secrets` | PUT | Upsert encrypted AI secrets (Admin) |
+| `/ai/mcp/templates` | GET | List local MCP allowlist templates (Admin) |
+| `/ai/mcp/servers` | GET | List workspace MCP servers |
+| `/ai/mcp/servers` | POST | Create MCP server config (Admin) |
+| `/ai/mcp/servers/{id}` | PUT | Update MCP server config (Admin) |
+| `/ai/mcp/servers/{id}` | DELETE | Delete MCP server config (Admin) |
+| `/ai/conversations` | GET | List AI conversations in current workspace |
+| `/ai/conversations` | POST | Create AI conversation |
+| `/ai/conversations/{id}/messages` | GET | List conversation messages |
+| `/ai/chat/stream` | POST | Stream AI response via SSE |
+| `/ai/actions/{proposal_id}` | GET | Get proposal details |
+| `/ai/actions/{proposal_id}/confirm` | POST | Confirm and execute proposal (Developer/Admin) |
+| `/ai/actions/{proposal_id}/reject` | POST | Reject proposal |
 
 ### Git API
 

@@ -129,6 +129,13 @@ This document tracks the development milestones of dbt-Workbench.
 - Role-aware editing controls
 - Conflict handling cues
 
+### Phase 12 — AI Copilot (Direct LLM + MCP) ✅
+- Workspace-aware AI assistant with persisted conversations
+- Runtime provider switching between direct APIs and MCP servers
+- SQL copilot, lineage Q&A, and run troubleshooting contextual actions
+- Admin controls for AI defaults, secrets, and MCP server registry
+- Proposal-based SQL/dbt execution with explicit confirmation
+
 ---
 
 ## 🔄 In Progress

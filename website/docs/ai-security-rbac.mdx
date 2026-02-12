@@ -1,0 +1,48 @@
+---
+title: AI Security & RBAC
+description: Security model for AI copilot and action proposals.
+slug: /ai-security-rbac
+---
+
+# AI Security & RBAC
+
+## Access Model
+
+- Viewer/Developer/Admin can use AI chat features.
+- Only Developer/Admin can confirm executable proposals.
+
+## Workspace Isolation
+
+All AI entities are workspace-scoped:
+
+- settings
+- secrets
+- MCP servers
+- conversations/messages
+- tool traces
+- action proposals
+
+## Secret Handling
+
+- Secrets are encrypted at rest using `AI_SECRETS_MASTER_KEY`.
+- Raw secret values are never returned by APIs.
+- Environment variable fallback is supported.
+
+## Proposal Confirmation
+
+Executable SQL/dbt proposals are single-action records with status lifecycle:
+
+- `pending`
+- `executed`
+- `rejected`
+- `expired`
+
+No proposal executes without explicit confirmation.
+
+## Auditing
+
+AI interactions persist:
+
+- prompts/responses
+- tool traces
+- proposal creation and resolution events

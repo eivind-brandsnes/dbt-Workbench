@@ -4,6 +4,8 @@ import { ArtifactSummary, GitRepository } from '../types'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { ThemeColorKey, ThemeMode } from '../utils/theme'
+import { AiService } from '../services/aiService'
+import { AiMcpServer, AiSettings } from '../types/ai'
 
 interface ConfigResponse {
   execution: {
@@ -28,11 +30,25 @@ function SettingsPage() {
   const [repo, setRepo] = useState<GitRepository | null>(null)
   const [editingMode, setEditingMode] = useState<ThemeMode>(mode)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [aiSettings, setAiSettings] = useState<AiSettings | null>(null)
+  const [mcpServers, setMcpServers] = useState<AiMcpServer[]>([])
+  const [aiSecrets, setAiSecrets] = useState<Record<string, string>>({
+    openai_api_key: '',
+    anthropic_api_key: '',
+    gemini_api_key: '',
+  })
+  const [newMcpName, setNewMcpName] = useState('')
+  const [newMcpMode, setNewMcpMode] = useState<'remote_http' | 'remote_sse' | 'local_stdio'>('remote_http')
+  const [newMcpUrl, setNewMcpUrl] = useState('')
+  const [aiSaveMessage, setAiSaveMessage] = useState<string | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   useEffect(() => {
     api.get<ArtifactSummary>('/artifacts').then((res) => setArtifacts(res.data)).catch(() => setArtifacts(null))
     api.get<ConfigResponse>('/config').then((res) => setConfig(res.data)).catch(() => setConfig(null))
     api.get<GitRepository>('/git/repository').then((res) => setRepo(res.data)).catch(() => setRepo(null))
+    AiService.getSettings().then(setAiSettings).catch(() => setAiSettings(null))
+    AiService.listMcpServers().then(setMcpServers).catch(() => setMcpServers([]))
   }, [])
 
   useEffect(() => {
@@ -61,6 +77,93 @@ function SettingsPage() {
   const handleDraftBlur = (modeKey: ThemeMode, key: ThemeColorKey) => {
     const draftKey = `${modeKey}-${key}`
     setDrafts((prev) => ({ ...prev, [draftKey]: activeTheme.colors[key] }))
+  }
+
+  const handleSaveAiSettings = async () => {
+    if (!aiSettings) return
+    setAiSaveMessage(null)
+    setAiError(null)
+    try {
+      const updated = await AiService.updateSettings({
+        enabled: aiSettings.enabled,
+        default_mode: aiSettings.default_mode,
+        default_direct_provider: aiSettings.default_direct_provider,
+        allow_session_provider_override: aiSettings.allow_session_provider_override,
+        allow_data_context_results: aiSettings.allow_data_context_results,
+        allow_data_context_run_logs: aiSettings.allow_data_context_run_logs,
+      })
+      setAiSettings(updated)
+      setAiSaveMessage('AI settings saved.')
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Failed to save AI settings')
+    }
+  }
+
+  const handleSaveAiSecrets = async () => {
+    const filtered = Object.fromEntries(Object.entries(aiSecrets).filter(([, value]) => value.trim()))
+    if (Object.keys(filtered).length === 0) {
+      setAiError('Provide at least one secret value to save.')
+      return
+    }
+    setAiSaveMessage(null)
+    setAiError(null)
+    try {
+      await AiService.updateSecrets({ secrets: filtered })
+      setAiSecrets({ openai_api_key: '', anthropic_api_key: '', gemini_api_key: '' })
+      setAiSaveMessage('AI secrets saved.')
+      const refreshed = await AiService.getSettings()
+      setAiSettings(refreshed)
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Failed to save AI secrets')
+    }
+  }
+
+  const handleCreateMcpServer = async () => {
+    if (!newMcpName.trim()) {
+      setAiError('MCP server name is required.')
+      return
+    }
+    if ((newMcpMode === 'remote_http' || newMcpMode === 'remote_sse') && !newMcpUrl.trim()) {
+      setAiError('MCP server URL is required for remote mode.')
+      return
+    }
+
+    setAiSaveMessage(null)
+    setAiError(null)
+    try {
+      const config = newMcpMode === 'local_stdio' ? { template_key: newMcpName.trim() } : { url: newMcpUrl.trim() }
+      await AiService.createMcpServer({
+        name: newMcpName.trim(),
+        mode: newMcpMode,
+        enabled: true,
+        config,
+        secret_refs: [],
+      })
+      const rows = await AiService.listMcpServers()
+      setMcpServers(rows)
+      setNewMcpName('')
+      setNewMcpUrl('')
+      setAiSaveMessage('MCP server added.')
+      const refreshed = await AiService.getSettings()
+      setAiSettings(refreshed)
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Failed to create MCP server')
+    }
+  }
+
+  const handleDeleteMcpServer = async (serverId: number) => {
+    setAiSaveMessage(null)
+    setAiError(null)
+    try {
+      await AiService.deleteMcpServer(serverId)
+      const rows = await AiService.listMcpServers()
+      setMcpServers(rows)
+      setAiSaveMessage('MCP server removed.')
+      const refreshed = await AiService.getSettings()
+      setAiSettings(refreshed)
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Failed to delete MCP server')
+    }
   }
 
   return (
@@ -215,6 +318,176 @@ function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="md:col-span-2 bg-surface border border-border shadow rounded-lg p-6 space-y-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-text">AI Copilot</h3>
+              <p className="text-sm text-muted">Configure workspace defaults, API secrets, and MCP connectivity.</p>
+            </div>
+            <div className="text-xs text-muted">
+              {aiSettings?.ai_system_enabled ? 'System enabled' : 'System disabled by env'}
+            </div>
+          </div>
+
+          {aiSaveMessage && <div className="rounded border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">{aiSaveMessage}</div>}
+          {aiError && <div className="rounded border border-secondary/30 bg-secondary/10 px-3 py-2 text-sm text-secondary">{aiError}</div>}
+
+          {!aiSettings ? (
+            <div className="text-sm text-muted">Loading AI settings…</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="space-y-1 text-sm">
+                  <div className="text-muted">Default mode</div>
+                  <select
+                    value={aiSettings.default_mode}
+                    onChange={(e) => setAiSettings((prev) => (prev ? { ...prev, default_mode: e.target.value as 'direct' | 'mcp' } : prev))}
+                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                  >
+                    <option value="direct">Direct API</option>
+                    <option value="mcp">MCP</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm">
+                  <div className="text-muted">Direct provider</div>
+                  <select
+                    value={aiSettings.default_direct_provider}
+                    onChange={(e) =>
+                      setAiSettings((prev) =>
+                        prev ? { ...prev, default_direct_provider: e.target.value as 'openai' | 'anthropic' | 'gemini' } : prev,
+                      )
+                    }
+                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                  >
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="gemini">Gemini</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm">
+                  <div className="text-muted">Session override</div>
+                  <select
+                    value={aiSettings.allow_session_provider_override ? 'on' : 'off'}
+                    onChange={(e) =>
+                      setAiSettings((prev) =>
+                        prev ? { ...prev, allow_session_provider_override: e.target.value === 'on' } : prev,
+                      )
+                    }
+                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                  >
+                    <option value="on">Allowed</option>
+                    <option value="off">Disabled</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="space-y-1 text-sm">
+                  <div className="text-muted">OpenAI API key</div>
+                  <input
+                    type="password"
+                    value={aiSecrets.openai_api_key}
+                    onChange={(e) => setAiSecrets((prev) => ({ ...prev, openai_api_key: e.target.value }))}
+                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    placeholder={aiSettings.has_direct_credentials?.openai ? 'Configured (enter to rotate)' : 'sk-...'}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <div className="text-muted">Anthropic API key</div>
+                  <input
+                    type="password"
+                    value={aiSecrets.anthropic_api_key}
+                    onChange={(e) => setAiSecrets((prev) => ({ ...prev, anthropic_api_key: e.target.value }))}
+                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    placeholder={aiSettings.has_direct_credentials?.anthropic ? 'Configured (enter to rotate)' : 'sk-ant-...'}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <div className="text-muted">Gemini API key</div>
+                  <input
+                    type="password"
+                    value={aiSecrets.gemini_api_key}
+                    onChange={(e) => setAiSecrets((prev) => ({ ...prev, gemini_api_key: e.target.value }))}
+                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    placeholder={aiSettings.has_direct_credentials?.gemini ? 'Configured (enter to rotate)' : 'AIza...'}
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveAiSettings}
+                  className="rounded bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+                >
+                  Save AI settings
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveAiSecrets}
+                  className="rounded border border-border px-3 py-2 text-sm text-text hover:bg-panel"
+                >
+                  Save API secrets
+                </button>
+              </div>
+
+              <div className="rounded border border-border bg-panel p-4 space-y-3">
+                <div className="text-sm font-medium text-text">MCP Servers</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <input
+                    value={newMcpName}
+                    onChange={(e) => setNewMcpName(e.target.value)}
+                    placeholder="Server name"
+                    className="rounded border border-border bg-bg px-3 py-2 text-sm text-text"
+                  />
+                  <select
+                    value={newMcpMode}
+                    onChange={(e) => setNewMcpMode(e.target.value as 'remote_http' | 'remote_sse' | 'local_stdio')}
+                    className="rounded border border-border bg-bg px-3 py-2 text-sm text-text"
+                  >
+                    <option value="remote_http">remote_http</option>
+                    <option value="remote_sse">remote_sse</option>
+                    <option value="local_stdio">local_stdio</option>
+                  </select>
+                  <input
+                    value={newMcpUrl}
+                    onChange={(e) => setNewMcpUrl(e.target.value)}
+                    placeholder={newMcpMode === 'local_stdio' ? 'Template key optional' : 'https://mcp-host/endpoint'}
+                    className="rounded border border-border bg-bg px-3 py-2 text-sm text-text"
+                    disabled={newMcpMode === 'local_stdio'}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateMcpServer}
+                  className="rounded border border-border px-3 py-2 text-sm text-text hover:bg-bg"
+                >
+                  Add MCP server
+                </button>
+
+                <div className="space-y-2">
+                  {mcpServers.map((server) => (
+                    <div key={server.id} className="flex items-center justify-between rounded border border-border bg-bg px-3 py-2 text-sm">
+                      <div>
+                        <div className="font-medium text-text">{server.name}</div>
+                        <div className="text-xs text-muted">{server.mode}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs text-secondary hover:underline"
+                        onClick={() => handleDeleteMcpServer(server.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                  {mcpServers.length === 0 && <div className="text-sm text-muted">No MCP servers configured.</div>}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Project Configuration */}

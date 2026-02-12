@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useAi } from '../context/AiContext'
 
 interface TopBarProps {
   projectName?: string
@@ -8,6 +9,7 @@ interface TopBarProps {
 
 export function TopBar({ projectName, environment }: TopBarProps) {
   const { activeWorkspace, user, logout, isAuthEnabled, switchWorkspace, workspaces } = useAuth()
+  const { openPanel, settings } = useAi()
   
   const [selection, setSelection] = useState<string>('')
 
@@ -49,6 +51,16 @@ export function TopBar({ projectName, environment }: TopBarProps) {
         </div>
       </div>
       <div className="flex items-center space-x-3">
+        {settings.ai_system_enabled && settings.enabled && (
+          <button
+            type="button"
+            onClick={() => openPanel()}
+            className="text-xs text-gray-300 hover:text-white border border-gray-700 px-3 py-1 rounded-md"
+            title="Open AI Copilot"
+          >
+            AI Copilot
+          </button>
+        )}
         <div className="text-sm text-gray-300 bg-gray-800 px-3 py-1 rounded-full">
           {displayEnv}
         </div>

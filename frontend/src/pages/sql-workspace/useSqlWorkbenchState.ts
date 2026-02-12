@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
 
 import { useAuth } from '@/context/AuthContext'
+import { useAi } from '@/context/AiContext'
 import { useAutoRefresh } from '@/hooks/useAutoRefresh'
 import { GitService } from '@/services/gitService'
 import { SchedulerService } from '@/services/schedulerService'
@@ -111,6 +112,7 @@ const truncate = (value: string, max = 80) => (value.length <= max ? value : `${
 
 export const useSqlWorkbenchState = () => {
   const { user, isAuthEnabled, activeWorkspace } = useAuth()
+  const { openPanel } = useAi()
   const isDeveloperOrAdmin = !isAuthEnabled || user?.role === 'developer' || user?.role === 'admin'
   const workspaceId = activeWorkspace?.id ?? null
 
@@ -1058,6 +1060,45 @@ export const useSqlWorkbenchState = () => {
     }))
   }, [metadata])
 
+  const openAiCopilot = useCallback(
+    (intent: 'explain' | 'generate' | 'optimize' | 'fix') => {
+      const sql = activeTab?.sqlText?.trim() || ''
+      const modelId = activeTab?.selectedModelId || undefined
+      const envId = typeof environmentId === 'number' ? environmentId : undefined
+      const fencedSql = sql ? `\`\`\`sql\n${sql}\n\`\`\`` : ''
+
+      let prompt = 'Help me with SQL in dbt-Workbench.'
+      if (intent === 'explain') {
+        prompt = sql
+          ? `Explain this SQL and highlight correctness/performance concerns.\n\n${fencedSql}`
+          : 'Explain how to approach writing SQL for this dbt model.'
+      } else if (intent === 'generate') {
+        prompt = sql
+          ? `Generate an improved SQL variant based on this draft and explain key changes.\n\n${fencedSql}`
+          : 'Generate SQL for the active dbt model based on available metadata.'
+      } else if (intent === 'optimize') {
+        prompt = sql
+          ? `Optimize this SQL for readability and performance.\n\n${fencedSql}`
+          : 'Suggest SQL optimization strategies for the active model.'
+      } else if (intent === 'fix') {
+        prompt = sql
+          ? `Fix likely syntax/logic issues in this SQL and return a corrected query.\n\n${fencedSql}`
+          : 'Help me debug SQL issues in the active model.'
+      }
+
+      openPanel({
+        prompt,
+        context: {
+          sql_metadata: true,
+          sql_history: true,
+          compiled_model_id: modelId,
+          environment_id: envId,
+        },
+      })
+    },
+    [activeTab?.selectedModelId, activeTab?.sqlText, environmentId, openPanel],
+  )
+
   return {
     isDeveloperOrAdmin,
     workspaceId,
@@ -1144,5 +1185,6 @@ export const useSqlWorkbenchState = () => {
     handleCancelRun,
     handleDeleteHistoryEntry,
     handleRerunHistoryEntry,
+    openAiCopilot,
   }
 }

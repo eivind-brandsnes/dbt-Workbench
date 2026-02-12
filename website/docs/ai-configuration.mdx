@@ -1,0 +1,39 @@
+---
+title: AI Configuration
+description: Configure AI defaults, secrets, and workspace behavior.
+slug: /ai-configuration
+---
+
+# AI Configuration
+
+## Workspace Settings
+
+Configure from **Settings → AI Copilot**:
+
+- `default_mode`: `direct` or `mcp`
+- `default_direct_provider`: `openai`, `anthropic`, or `gemini`
+- `allow_session_provider_override`
+- data-context toggles for results and run logs
+
+## Secrets
+
+API keys are stored per workspace and encrypted at rest.
+
+- `openai_api_key`
+- `anthropic_api_key`
+- `gemini_api_key`
+
+Environment fallback is supported if workspace secret is not set.
+
+## Environment Variables
+
+Important backend env vars:
+
+- `AI_ENABLED`
+- `AI_SECRETS_MASTER_KEY`
+- `AI_DEFAULT_MODE`
+- `AI_DEFAULT_DIRECT_PROVIDER`
+- `AI_DEFAULT_DIRECT_MODEL_OPENAI`
+- `AI_DEFAULT_DIRECT_MODEL_ANTHROPIC`
+- `AI_DEFAULT_DIRECT_MODEL_GEMINI`
+- `AI_ALLOW_SESSION_PROVIDER_OVERRIDE`

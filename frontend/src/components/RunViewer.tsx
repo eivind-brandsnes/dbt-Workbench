@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RunDetail, RunStatus, LogMessage } from '../types';
 import { ExecutionService } from '../services/executionService';
 import { StatusBadge } from './StatusBadge';
+import { useAi } from '../context/AiContext';
 
 interface RunViewerProps {
   runId: string;
@@ -9,6 +10,7 @@ interface RunViewerProps {
 }
 
 export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
+  const { openPanel } = useAi()
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,6 +112,29 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
     }
   };
 
+  const handleAiTroubleshoot = () => {
+    if (!runDetail) return
+    const recentLogs = logs.slice(-60).join('\n')
+    const prompt = [
+      `Troubleshoot this dbt run and suggest fixes.`,
+      `Run id: ${runDetail.run_id}`,
+      `Command: dbt ${runDetail.command}`,
+      `Status: ${runDetail.status}`,
+      runDetail.error_message ? `Error: ${runDetail.error_message}` : '',
+      recentLogs ? `Recent logs:\\n${recentLogs}` : '',
+    ]
+      .filter(Boolean)
+      .join('\\n\\n')
+
+    openPanel({
+      prompt,
+      context: {
+        run_id: runDetail.run_id,
+        run_logs: true,
+      },
+    })
+  }
+
   const formatDuration = (seconds?: number): string => {
     if (!seconds) return 'N/A';
     const mins = Math.floor(seconds / 60);
@@ -151,6 +176,12 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
             <StatusBadge status={runDetail.status} />
           </div>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={handleAiTroubleshoot}
+              className="px-3 py-1 text-sm bg-panel text-text border border-border rounded hover:bg-panel/80"
+            >
+              AI troubleshoot
+            </button>
             {['queued', 'running'].includes(runDetail.status) && (
               <button
                 onClick={handleCancel}

@@ -1,0 +1,39 @@
+---
+title: AI MCP Connectivity
+description: Configure MCP servers for AI copilot mode.
+slug: /ai-mcp-connectivity
+---
+
+# AI MCP Connectivity
+
+## Supported MCP Server Modes
+
+- `remote_http`
+- `remote_sse`
+- `local_stdio`
+
+## Local MCP Allowlist
+
+Local stdio servers are restricted to allowlisted templates via:
+
+- `AI_MCP_LOCAL_ALLOWLIST_JSON`
+
+Example:
+
+```json
+{
+  "local-mcp": {
+    "command": ["node", "server.js"],
+    "allowed_args": ["--workspace-mode"]
+  }
+}
+```
+
+Only allowlisted template commands and args are launched.
+
+## Operational Controls
+
+- `AI_MCP_PROCESS_IDLE_TTL_SECONDS`
+- `AI_MCP_CONNECT_TIMEOUT_SECONDS`
+
+These control local process lifecycle and MCP call timeout behavior.

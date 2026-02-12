@@ -156,6 +156,34 @@ class Settings(BaseSettings):
         alias="PLUGIN_ALLOWED_ENV_PREFIXES",
     )
 
+    # AI settings
+    ai_enabled: bool = Field(True, alias="AI_ENABLED")
+    ai_secrets_master_key: str | None = Field(default=None, alias="AI_SECRETS_MASTER_KEY")
+    ai_default_mode: str = Field("direct", alias="AI_DEFAULT_MODE")
+    ai_default_direct_provider: str = Field("openai", alias="AI_DEFAULT_DIRECT_PROVIDER")
+    ai_default_direct_model_openai: str | None = Field(
+        default=None,
+        alias="AI_DEFAULT_DIRECT_MODEL_OPENAI",
+    )
+    ai_default_direct_model_anthropic: str | None = Field(
+        default=None,
+        alias="AI_DEFAULT_DIRECT_MODEL_ANTHROPIC",
+    )
+    ai_default_direct_model_gemini: str | None = Field(
+        default=None,
+        alias="AI_DEFAULT_DIRECT_MODEL_GEMINI",
+    )
+    ai_allow_session_provider_override: bool = Field(
+        default=True,
+        alias="AI_ALLOW_SESSION_PROVIDER_OVERRIDE",
+    )
+    ai_mcp_local_allowlist_json: str = Field("{}", alias="AI_MCP_LOCAL_ALLOWLIST_JSON")
+    ai_mcp_process_idle_ttl_seconds: int = Field(300, alias="AI_MCP_PROCESS_IDLE_TTL_SECONDS")
+    ai_mcp_connect_timeout_seconds: int = Field(20, alias="AI_MCP_CONNECT_TIMEOUT_SECONDS")
+    ai_max_input_tokens: int | None = Field(default=None, alias="AI_MAX_INPUT_TOKENS")
+    ai_max_output_tokens: int | None = Field(default=None, alias="AI_MAX_OUTPUT_TOKENS")
+    ai_audit_retention_days: int | None = Field(default=None, alias="AI_AUDIT_RETENTION_DAYS")
+
 
 @lru_cache
 def get_settings() -> Settings:

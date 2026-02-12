@@ -1,0 +1,36 @@
+---
+title: AI Copilot Overview
+description: Workspace-aware AI copilot with direct LLM and MCP connectivity.
+slug: /ai-overview
+---
+
+# AI Copilot Overview
+
+dbt-Workbench includes a workspace-scoped AI copilot that supports:
+
+- Global assistant chat panel
+- SQL copilot prompts from SQL Workspace
+- Lineage Q&A context prompts
+- Run troubleshooting prompts from run logs
+- Proposal-based SQL/dbt execution requiring explicit user confirmation
+
+## Connectivity Modes
+
+1. **Direct LLM API**
+- OpenAI
+- Anthropic
+- Gemini
+
+2. **MCP**
+- `remote_http`
+- `remote_sse`
+- `local_stdio` (allowlist templates only)
+
+## Provider Selection
+
+- Admin sets workspace defaults.
+- Optional per-session user override can be enabled.
+
+## Execution Safety
+
+Generated executable actions are stored as proposals and are never auto-run by default. Developers/Admins must confirm execution.

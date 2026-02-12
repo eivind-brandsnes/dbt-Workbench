@@ -93,6 +93,36 @@ function SqlWorkspacePage() {
         <p className="text-sm text-gray-400">
           DBeaver-style SQL workbench with dbt model execution, compiled SQL visibility, history, and profiling.
         </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel"
+            onClick={() => state.openAiCopilot('explain')}
+          >
+            AI Explain SQL
+          </button>
+          <button
+            type="button"
+            className="rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel"
+            onClick={() => state.openAiCopilot('generate')}
+          >
+            AI Generate SQL
+          </button>
+          <button
+            type="button"
+            className="rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel"
+            onClick={() => state.openAiCopilot('optimize')}
+          >
+            AI Optimize SQL
+          </button>
+          <button
+            type="button"
+            className="rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel"
+            onClick={() => state.openAiCopilot('fix')}
+          >
+            AI Fix SQL
+          </button>
+        </div>
       </div>
 
       <div className="sqlwb-root">
