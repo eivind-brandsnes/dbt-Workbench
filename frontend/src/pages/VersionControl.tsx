@@ -333,9 +333,8 @@ export default function VersionControlPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text">Projects & Version Control</h1>
           <p className="text-sm text-muted mt-1">
-            Manage projects, git operations, and version control
+            Projects & Version Control: Manage projects, git operations, and version control
           </p>
         </div>
         {!showCloneForm && (

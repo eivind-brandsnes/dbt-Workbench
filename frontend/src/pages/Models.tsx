@@ -48,7 +48,7 @@ function ModelsPage() {
   return (
     <div className="space-y-4" data-testid="models-list-container">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text">Models</h1>
+        <p className="text-sm text-muted mt-1">Models</p>        
         <input
           className="panel-input rounded-md px-3 py-2 text-sm"
           placeholder="Search models"

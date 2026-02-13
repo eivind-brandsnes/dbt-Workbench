@@ -26,7 +26,6 @@ function RunsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text">dbt Execution</h1>
         <RefreshIndicator isRefreshing={isRefreshing} hasUpdates={hasUpdates} />
       </div>
       

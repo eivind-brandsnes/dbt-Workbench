@@ -23,8 +23,9 @@ export function TopBar({ projectName, environment }: TopBarProps) {
   return (
     <header className="panel-gradient-subtle panel-divider sticky top-0 z-10 flex items-center justify-between border-b px-6 py-4">
       <div>
-        <div className="text-sm uppercase text-muted">Workspace</div>
-        <div className="flex items-center space-x-3">
+        
+        <div className="flex items-center justify-between space-x-3 w-full">
+          <div className="text-sm uppercase text-muted">Workspace</div>
           <div className="text-lg font-semibold text-text">{displayProject}</div>
           {workspaces.length > 1 && (
             <select

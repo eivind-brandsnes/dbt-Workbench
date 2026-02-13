@@ -84,9 +84,8 @@ export default function PluginsInstalled() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Installed Plugins</h1>
           <p className="text-sm text-muted">
-            Manage system plugins and dbt adapters.
+            Installed Plugins: Manage system plugins and dbt adapters.
           </p>
         </div>
       </div>
