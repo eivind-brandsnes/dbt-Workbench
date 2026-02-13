@@ -35,7 +35,7 @@ describe('App layout', () => {
     expect(appShell).not.toBeNull()
     expect(appShell).toHaveClass('overflow-hidden')
 
-    const sidebar = screen.getByRole('complementary')
+    const sidebar = screen.getByTestId('sidebar')
     expect(sidebar).toHaveClass('h-screen')
 
     const main = screen.getByRole('main')

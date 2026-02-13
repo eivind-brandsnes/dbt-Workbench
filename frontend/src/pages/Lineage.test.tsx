@@ -1,3 +1,4 @@
+import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -13,6 +14,17 @@ vi.mock('../api/client', () => {
     },
   }
 })
+
+vi.mock('../context/AiContext', () => ({
+  useAi: () => ({
+    openPanel: vi.fn(),
+    settings: {
+      enabled: true,
+      ai_system_enabled: true,
+    },
+  }),
+  AiProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
 
 const mockedGet = api.get as unknown as ReturnType<typeof vi.fn>
 const mockedPost = api.post as unknown as ReturnType<typeof vi.fn>
@@ -320,6 +332,9 @@ describe('LineagePage', () => {
     await waitFor(() =>
       expect(mockedGet).toHaveBeenCalledWith(
         expect.stringContaining('/row-lineage/trace/model.rowlineage_demo.mart_model/mart-1'),
+        expect.objectContaining({
+          params: expect.objectContaining({ environment_id: 1 }),
+        }),
       ),
     )
 

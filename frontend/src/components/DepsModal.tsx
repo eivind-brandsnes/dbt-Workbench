@@ -92,24 +92,24 @@ export const DepsModal: React.FC<DepsModalProps> = ({
     }
   };
 
-  const primaryButtonClassName = "inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 disabled:opacity-50";
-  const secondaryButtonClassName = "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800";
+  const primaryButtonClassName = "inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50";
+  const secondaryButtonClassName = "panel-gradient-subtle inline-flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-text hover:bg-panel/70";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-6">
-      <div className="flex h-[80vh] w-full max-w-4xl flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+      <div className="panel-gradient flex h-[80vh] w-full max-w-4xl flex-col rounded-2xl p-6 shadow-xl">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-semibold text-text">
               Missing dbt Packages
             </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-sm text-muted">
               {packagesCheck.missing_packages.length} of {packagesCheck.packages_required.length} required packages are not installed
             </p>
           </div>
           <button
             onClick={onCancel}
-            className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+            className="text-muted hover:text-text"
             disabled={installing}
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,23 +122,23 @@ export const DepsModal: React.FC<DepsModalProps> = ({
           <>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div>
-                <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">Missing Packages</h3>
+                <h3 className="mb-3 text-sm font-medium text-text">Missing Packages</h3>
                 <ul className="space-y-2">
                   {packagesCheck.missing_packages.map((pkg) => (
                     <li key={pkg} className="flex items-center gap-2 text-sm">
                       <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
-                      <span className="text-slate-700 dark:text-slate-300">{pkg}</span>
+                      <span className="text-text">{pkg}</span>
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">Installed Packages</h3>
+                <h3 className="mb-3 text-sm font-medium text-text">Installed Packages</h3>
                 <ul className="space-y-2">
                   {packagesCheck.packages_installed.map((pkg) => (
                     <li key={pkg} className="flex items-center gap-2 text-sm">
                       <span className="inline-flex h-2 w-2 rounded-full bg-green-500" />
-                      <span className="text-slate-700 dark:text-slate-300">{pkg}</span>
+                      <span className="text-text">{pkg}</span>
                     </li>
                   ))}
                 </ul>
@@ -146,7 +146,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
             </div>
 
             {error && (
-              <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+              <div className="mt-4 rounded-lg border border-rose-400/40 bg-rose-500/12 p-3 text-sm text-rose-300">
                 {error}
               </div>
             )}
@@ -174,7 +174,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
           <>
             <div className="mt-4 flex items-center gap-3">
               <StatusBadge status={runDetail.status} />
-              <span className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="text-sm text-muted">
                 Installing dbt packages...
               </span>
             </div>
@@ -182,8 +182,8 @@ export const DepsModal: React.FC<DepsModalProps> = ({
             <div className="mt-4 flex-1 overflow-hidden">
               <div className="flex h-full flex-col">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">Installation Logs</h3>
-                  <label className="flex items-center text-sm text-slate-600 dark:text-slate-400">
+                  <h3 className="text-sm font-medium text-text">Installation Logs</h3>
+                  <label className="flex items-center text-sm text-muted">
                     <input
                       type="checkbox"
                       checked={autoScroll}
@@ -193,9 +193,9 @@ export const DepsModal: React.FC<DepsModalProps> = ({
                     Auto-scroll
                   </label>
                 </div>
-                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm flex-1 overflow-y-auto">
+                <div className="panel-gradient-subtle flex-1 overflow-y-auto rounded-lg p-4 font-mono text-sm text-emerald-300">
                   {logs.length === 0 ? (
-                    <p className="text-gray-500">Waiting for logs...</p>
+                    <p className="text-muted">Waiting for logs...</p>
                   ) : (
                     logs.map((line, index) => (
                       <div key={index} className="whitespace-pre-wrap">
@@ -209,7 +209,7 @@ export const DepsModal: React.FC<DepsModalProps> = ({
             </div>
 
             {runDetail.error_message && (
-              <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+              <div className="mt-4 rounded-lg border border-rose-400/40 bg-rose-500/12 p-3 text-sm text-rose-300">
                 {runDetail.error_message}
               </div>
             )}

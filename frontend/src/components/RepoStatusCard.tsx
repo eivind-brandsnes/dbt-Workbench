@@ -44,51 +44,51 @@ export function RepoStatusCard({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-white font-semibold">Repository</h3>
-          <p className="text-sm text-gray-400">Git operations and status</p>
+          <h3 className="text-text font-semibold">Repository</h3>
+          <p className="text-sm text-muted">Git operations and status</p>
         </div>
         <button className="btn btn-sm" onClick={onAddProject}>
           Add Project
         </button>
       </div>
 
-      <div className="bg-black/20 border border-gray-800 rounded-lg p-4 space-y-3">
+      <div className="panel-gradient-subtle border border-border rounded-lg p-4 space-y-3">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-sm text-gray-300">Connected</span>
+          <span className="text-sm text-muted">Connected</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div>
-            <div className="text-xs text-gray-500 mb-1">Remote URL</div>
-            <div className="text-gray-200 font-mono truncate text-xs">
+            <div className="text-xs text-muted mb-1">Remote URL</div>
+            <div className="text-text font-mono truncate text-xs">
               {repository.remote_url || 'Local project (no remote)'}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-500 mb-1">Default Branch</div>
-            <div className="text-gray-200 text-xs">{repository.default_branch}</div>
+            <div className="text-xs text-muted mb-1">Default Branch</div>
+            <div className="text-text text-xs">{repository.default_branch}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-500 mb-1">Project Root</div>
-            <div className="text-gray-200 font-mono truncate text-xs">{repository.directory}</div>
+            <div className="text-xs text-muted mb-1">Project Root</div>
+            <div className="text-text font-mono truncate text-xs">{repository.directory}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-500 mb-1">Last Synced</div>
-            <div className="text-gray-200 text-xs">{formatDate(repository.last_synced_at)}</div>
+            <div className="text-xs text-muted mb-1">Last Synced</div>
+            <div className="text-text text-xs">{formatDate(repository.last_synced_at)}</div>
           </div>
         </div>
 
         {status && (
-          <div className="border-t border-gray-800 pt-3">
+          <div className="border-t border-border pt-3">
             <div className="flex items-center gap-4 text-xs">
               <span className="flex items-center gap-1.5">
-                <span className="text-gray-500">Ahead:</span>
-                <span className="text-gray-200">{status.ahead}</span>
+                <span className="text-muted">Ahead:</span>
+                <span className="text-text">{status.ahead}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="text-gray-500">Behind:</span>
-                <span className="text-gray-200">{status.behind}</span>
+                <span className="text-muted">Behind:</span>
+                <span className="text-text">{status.behind}</span>
               </span>
               {status.has_conflicts && (
                 <span className="flex items-center gap-1.5 text-red-400">

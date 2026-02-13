@@ -11,7 +11,7 @@ type NavItem = {
   icon: ReactNode
 }
 
-const iconClasses = 'h-5 w-5 flex-shrink-0 text-gray-400'
+const iconClasses = 'h-5 w-5 flex-shrink-0 text-muted transition-colors'
 
 function DashboardIcon() {
   return (
@@ -167,7 +167,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`bg-panel border-r border-gray-800 h-screen sticky top-0 flex shrink-0 flex-col overflow-y-auto transition-all duration-200 ${
+      className={`panel-gradient panel-divider border-r h-screen sticky top-0 flex shrink-0 flex-col overflow-y-auto transition-all duration-200 ${
         collapsed ? 'w-20 px-3 py-4' : 'w-64 px-4 py-6'
       }`}
       data-testid="sidebar"
@@ -196,7 +196,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="hidden md:inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-700 text-gray-400 hover:bg-gray-800"
+          className="hidden md:inline-flex items-center justify-center h-8 w-8 rounded-md border border-border text-muted hover:bg-panel/70 hover:text-text"
           aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
         >
           <svg
@@ -220,8 +220,10 @@ export function Sidebar() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                isActive ? 'bg-accent/10 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              `flex items-center gap-3 px-3 py-2 rounded-md text-sm border transition-colors ${
+                isActive
+                  ? 'bg-primary/15 text-text border-primary/35'
+                  : 'text-muted border-transparent hover:bg-panel/60 hover:text-text'
               } ${collapsed ? 'justify-center' : ''}`
             }
             end={item.to === '/'}

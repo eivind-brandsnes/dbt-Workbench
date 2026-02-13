@@ -144,11 +144,11 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
 
   if (isLoading) {
     return (
-      <div className="bg-blue-50 rounded-lg shadow p-6">
+      <div className="panel-gradient rounded-lg p-6">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="mb-4 h-4 w-1/4 rounded bg-surface-muted"></div>
+          <div className="mb-2 h-4 w-1/2 rounded bg-surface-muted"></div>
+          <div className="h-4 w-3/4 rounded bg-surface-muted"></div>
         </div>
       </div>
     );
@@ -156,21 +156,21 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
 
   if (error || !runDetail) {
     return (
-      <div className="bg-blue-50 rounded-lg shadow p-6">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-600">{error || 'Run not found'}</p>
+      <div className="panel-gradient rounded-lg p-6">
+        <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-4">
+          <p className="text-rose-300">{error || 'Run not found'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-blue-50 rounded-lg shadow">
+    <div className="panel-gradient rounded-lg">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="panel-divider border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-semibold text-gray-500">
+            <h2 className="text-xl font-semibold text-text">
               dbt {runDetail.command}
             </h2>
             <StatusBadge status={runDetail.status} />
@@ -178,14 +178,14 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
           <div className="flex items-center space-x-2">
             <button
               onClick={handleAiTroubleshoot}
-              className="px-3 py-1 text-sm bg-panel text-text border border-border rounded hover:bg-panel/80"
+              className="panel-gradient-subtle rounded border border-border px-3 py-1 text-sm text-text hover:bg-panel/80"
             >
               AI troubleshoot
             </button>
             {['queued', 'running'].includes(runDetail.status) && (
               <button
                 onClick={handleCancel}
-                className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                className="rounded border border-rose-400/40 bg-rose-500/20 px-3 py-1 text-sm text-rose-100 hover:bg-rose-500/28"
               >
                 Cancel
               </button>
@@ -193,7 +193,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
             {onClose && (
               <button
                 onClick={onClose}
-                className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
+                className="panel-gradient-subtle rounded border border-border px-3 py-1 text-sm text-text hover:bg-panel/80"
               >
                 Close
               </button>
@@ -204,33 +204,33 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
         {/* Run Info */}
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span className="text-gray-500">Run ID:</span>
-            <p className="font-mono text-xs text-gray-500">{runDetail.run_id}</p>
+            <span className="text-muted">Run ID:</span>
+            <p className="font-mono text-xs text-muted">{runDetail.run_id}</p>
           </div>
           <div>
-            <span className="text-gray-500">Started:</span>
-            <p className="text-gray-500">{new Date(runDetail.start_time).toLocaleString()}</p>
+            <span className="text-muted">Started:</span>
+            <p className="text-muted">{new Date(runDetail.start_time).toLocaleString()}</p>
           </div>
           <div>
-            <span className="text-gray-500">Duration:</span>
-            <p className="text-gray-500">{formatDuration(runDetail.duration_seconds)}</p>
+            <span className="text-muted">Duration:</span>
+            <p className="text-muted">{formatDuration(runDetail.duration_seconds)}</p>
           </div>
           <div>
-            <span className="text-gray-500">Artifacts:</span>
-            <p className="text-gray-500">{runDetail.artifacts_available ? 'Available' : 'None'}</p>
+            <span className="text-muted">Artifacts:</span>
+            <p className="text-muted">{runDetail.artifacts_available ? 'Available' : 'None'}</p>
           </div>
         </div>
 
         {runDetail.description && (
           <div className="mt-2">
-            <span className="text-gray-500 text-sm">Description:</span>
+            <span className="text-sm text-muted">Description:</span>
             <p className="text-sm">{runDetail.description}</p>
           </div>
         )}
 
         {runDetail.error_message && (
-          <div className="mt-2 bg-red-50 border border-red-200 rounded p-2">
-            <p className="text-sm text-red-600">{runDetail.error_message}</p>
+          <div className="mt-2 rounded border border-rose-400/40 bg-rose-500/12 p-2">
+            <p className="text-sm text-rose-300">{runDetail.error_message}</p>
           </div>
         )}
       </div>
@@ -238,7 +238,7 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
       {/* Logs */}
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-500">Logs</h3>
+          <h3 className="text-lg font-medium text-muted">Logs</h3>
           <div className="flex items-center space-x-2">
             <label className="flex items-center text-sm">
               <input
@@ -252,9 +252,9 @@ export const RunViewer: React.FC<RunViewerProps> = ({ runId, onClose }) => {
           </div>
         </div>
 
-        <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+        <div className="panel-gradient-subtle max-h-96 overflow-y-auto rounded-lg p-4 font-mono text-sm text-emerald-300">
           {logs.length === 0 ? (
-            <p className="text-gray-500">No logs available</p>
+            <p className="text-muted">No logs available</p>
           ) : (
             logs.map((line, index) => (
               <div key={index} className="whitespace-pre-wrap">

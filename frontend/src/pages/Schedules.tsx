@@ -252,8 +252,8 @@ function SchedulesPage() {
   const renderStatusBadge = (status: ScheduleStatus) => {
     const color =
       status === 'active'
-        ? 'bg-green-100 text-green-800'
-        : 'bg-yellow-100 text-yellow-800';
+        ? 'border border-emerald-400/35 bg-emerald-500/14 text-emerald-300'
+        : 'border border-amber-400/35 bg-amber-500/14 text-amber-300';
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${color}`}>
         {status === 'active' ? 'Active' : 'Paused'}
@@ -295,22 +295,22 @@ function SchedulesPage() {
     return run.status;
   };
 
-  const labelClass = 'text-sm font-medium text-slate-700 dark:text-slate-200';
-  const helperTextClass = 'mt-1 text-xs text-slate-500 dark:text-slate-400';
+  const labelClass = 'text-sm font-medium text-muted';
+  const helperTextClass = 'mt-1 text-xs text-muted';
   const inputClass =
-    'mt-1 block w-full h-10 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500';
+    'panel-input mt-1 block h-10 w-full rounded-xl px-3 text-sm';
   const textareaClass =
-    'mt-1 block w-full min-h-[96px] rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500';
+    'panel-input mt-1 block min-h-[96px] w-full rounded-xl px-3 py-2 text-sm';
   const sectionCardClass =
-    'rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white/60 dark:bg-slate-950/60 p-5 shadow-sm space-y-4';
+    'panel-gradient-subtle rounded-xl p-5 space-y-4';
   const envError = error === 'Environment is required';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">Schedules</h1>
-          <p className="text-sm text-gray-400">
+          <h1 className="text-2xl font-bold text-text">Schedules</h1>
+          <p className="text-sm text-muted">
             Configure automated dbt runs with cron schedules, retries, and notifications.
           </p>
         </div>
@@ -325,28 +325,28 @@ function SchedulesPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
+        <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-4 text-sm text-rose-300">
           {error}
         </div>
       )}
 
       {overview && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Active Schedules</div>
-            <div className="mt-1 text-2xl font-semibold text-gray-900">
+          <div className="panel-gradient rounded-lg p-4">
+            <div className="text-sm text-muted">Active Schedules</div>
+            <div className="mt-1 text-2xl font-semibold text-text">
               {overview.active_schedules}
             </div>
           </div>
-          <div className="bg-blue-50 rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Total Scheduled Runs</div>
-            <div className="mt-1 text-2xl font-semibold text-gray-900">
+          <div className="panel-gradient rounded-lg p-4">
+            <div className="text-sm text-muted">Total Scheduled Runs</div>
+            <div className="mt-1 text-2xl font-semibold text-text">
               {overview.total_scheduled_runs}
             </div>
           </div>
-          <div className="bg-blue-50 rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Success / Failure</div>
-            <div className="mt-1 text-2xl font-semibold text-gray-900">
+          <div className="panel-gradient rounded-lg p-4">
+            <div className="text-sm text-muted">Success / Failure</div>
+            <div className="mt-1 text-2xl font-semibold text-text">
               {overview.total_successful_runs} / {overview.total_failed_runs}
             </div>
           </div>
@@ -356,23 +356,23 @@ function SchedulesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Schedule list */}
         <div className="lg:col-span-1">
-          <div className="bg-blue-50 rounded-lg shadow">
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">All Schedules</h2>
+          <div className="panel-gradient rounded-lg">
+            <div className="panel-divider flex items-center justify-between border-b px-4 py-3">
+              <h2 className="text-lg font-semibold text-text">All Schedules</h2>
             </div>
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-border">
               {schedules.map(schedule => (
                 <button
                   key={schedule.id}
                   onClick={() => handleSelectSchedule(schedule.id)}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:outline-none"
+                  className="w-full px-4 py-3 text-left hover:bg-panel/60 focus:outline-none"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-text">
                         {schedule.name}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted">
                         dbt {schedule.dbt_command} · Next:{' '}
                         {schedule.next_run_time
                           ? new Date(schedule.next_run_time).toLocaleString()
@@ -386,7 +386,7 @@ function SchedulesPage() {
                 </button>
               ))}
               {schedules.length === 0 && (
-                <div className="px-4 py-6 text-center text-sm text-gray-500">
+                <div className="px-4 py-6 text-center text-sm text-muted">
                   No schedules defined yet.
                 </div>
               )}
@@ -397,19 +397,19 @@ function SchedulesPage() {
         {/* Detail / form */}
         <div className="lg:col-span-2">
           {mode === 'list' && (
-            <div className="bg-blue-50 rounded-lg shadow p-6 text-sm text-gray-500">
+            <div className="panel-gradient rounded-lg p-6 text-sm text-muted">
               Select a schedule to view details, or create a new schedule.
             </div>
           )}
 
           {(mode === 'create' || mode === 'edit') && (
             <div className="mx-auto max-w-5xl">
-              <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="space-y-1 border-b border-slate-200/70 px-6 py-5 dark:border-slate-800">
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+              <div className="panel-gradient rounded-2xl">
+                <div className="panel-divider space-y-1 border-b px-6 py-5">
+                  <h2 className="text-xl font-semibold text-text">
                     {mode === 'create' ? 'Create schedule' : 'Edit schedule'}
                   </h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-sm text-muted">
                     Configure a dbt command to run automatically.
                   </p>
                 </div>
@@ -419,14 +419,14 @@ function SchedulesPage() {
                     <div className="space-y-6">
                       <div className={sectionCardClass}>
                         <div>
-                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          <h3 className="text-sm font-semibold text-text">
                             Basics
                           </h3>
                           <p className={helperTextClass}>
                             Core details for your schedule.
                           </p>
                         </div>
-                        <div className="space-y-4 border-t border-slate-200/70 pt-4 dark:border-slate-800">
+                        <div className="panel-divider space-y-4 border-t pt-4">
                           <div>
                             <label className={labelClass}>Name</label>
                             <input
@@ -471,7 +471,7 @@ function SchedulesPage() {
                           <div>
                             <label className={labelClass}>
                               Environment
-                              <span className="ml-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <span className="ml-2 text-xs font-medium text-muted">
                                 Required
                               </span>
                             </label>
@@ -485,7 +485,7 @@ function SchedulesPage() {
                               }
                               className={`${inputClass} ${
                                 envError
-                                  ? 'border-red-300 focus:border-red-400 focus:ring-red-500/40'
+                                  ? 'border-rose-400/55'
                                   : ''
                               }`}
                               aria-invalid={envError}
@@ -499,7 +499,7 @@ function SchedulesPage() {
                               ))}
                             </select>
                             {envError ? (
-                              <p id="environment-error" className="mt-1 text-xs text-red-600">
+                              <p id="environment-error" className="mt-1 text-xs text-rose-300">
                                 Environment is required.
                               </p>
                             ) : (
@@ -513,14 +513,14 @@ function SchedulesPage() {
                     <div className="space-y-6">
                       <div className={sectionCardClass}>
                         <div>
-                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          <h3 className="text-sm font-semibold text-text">
                             Schedule
                           </h3>
                           <p className={helperTextClass}>
                             Define when and where the job runs.
                           </p>
                         </div>
-                        <div className="space-y-4 border-t border-slate-200/70 pt-4 dark:border-slate-800">
+                        <div className="panel-divider space-y-4 border-t pt-4">
                           <div>
                             <label className={labelClass}>Cron expression</label>
                             <input
@@ -550,14 +550,14 @@ function SchedulesPage() {
 
                       <div className={sectionCardClass}>
                         <div>
-                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          <h3 className="text-sm font-semibold text-text">
                             Retries &amp; behavior
                           </h3>
                           <p className={helperTextClass}>
                             Controls for reliability and concurrency.
                           </p>
                         </div>
-                        <div className="space-y-4 border-t border-slate-200/70 pt-4 dark:border-slate-800">
+                        <div className="panel-divider space-y-4 border-t pt-4">
                           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                               <label className={labelClass}>Max retries</label>
@@ -651,18 +651,18 @@ function SchedulesPage() {
                               </select>
                             </div>
                           </div>
-                          <div className="rounded-xl border border-slate-200/70 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-950/70">
-                            <label className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-200">
+                          <div className="panel-gradient-subtle rounded-xl p-3">
+                            <label className="flex items-start gap-3 text-sm text-text">
                               <input
                                 id="enabled"
                                 type="checkbox"
                                 checked={form.enabled}
                                 onChange={e => handleFormChange('enabled', e.target.checked)}
-                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-2 focus:ring-sky-500/50 dark:border-slate-600"
+                                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/50"
                               />
                               <span>
                                 <span className="font-medium">Enabled</span>
-                                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                                <span className="mt-1 block text-xs text-muted">
                                   Run this schedule automatically when active.
                                 </span>
                               </span>
@@ -674,13 +674,13 @@ function SchedulesPage() {
                   </div>
                 </div>
 
-                <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200/70 bg-white/80 px-6 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
+                <div className="panel-gradient-subtle panel-divider sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t px-6 py-4 backdrop-blur">
                   <button
                     type="button"
                     onClick={() => {
                       setMode(selectedSchedule ? 'detail' : 'list');
                     }}
-                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300/50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800/60 dark:focus:ring-slate-700/60"
+                    className="panel-gradient-subtle inline-flex items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-panel/70 focus:outline-none focus:ring-2 focus:ring-ring/50"
                   >
                     Cancel
                   </button>
@@ -688,7 +688,7 @@ function SchedulesPage() {
                     type="button"
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isSaving ? 'Saving...' : 'Save'}
                   </button>
@@ -699,11 +699,11 @@ function SchedulesPage() {
 
           {mode === 'detail' && selectedSchedule && (
             <div className="space-y-4">
-              <div className="bg-blue-50 rounded-lg shadow p-6">
+              <div className="panel-gradient rounded-lg p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{selectedSchedule.name}</h2>
-                    <p className="text-sm text-gray-500">
+                    <h2 className="text-lg font-semibold text-text">{selectedSchedule.name}</h2>
+                    <p className="text-sm text-muted">
                       dbt {selectedSchedule.dbt_command} ·{' '}
                       {renderStatusBadge(selectedSchedule.status)}
                     </p>
@@ -712,25 +712,25 @@ function SchedulesPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={handleRunNow}
-                        className="px-3 py-1 text-sm rounded-md border border-accent/30 bg-accent/10 text-gray-900 hover:bg-accent/20"
+                        className="rounded-md border border-primary/30 bg-primary/15 px-3 py-1 text-sm text-text hover:bg-primary/20"
                       >
                         Run now
                       </button>
                       <button
                         onClick={handleTestNotifications}
-                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-blue-50 text-gray-700 hover:bg-gray-50"
+                        className="panel-gradient-subtle rounded-md border border-border px-3 py-1 text-sm text-muted hover:bg-panel/70"
                       >
                         Test notifications
                       </button>
                       <button
                         onClick={handleEditClick}
-                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-blue-50 text-gray-700 hover:bg-gray-50"
+                        className="panel-gradient-subtle rounded-md border border-border px-3 py-1 text-sm text-muted hover:bg-panel/70"
                       >
                         Edit
                       </button>
                       <button
                         onClick={handlePauseResume}
-                        className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-blue-50 text-gray-700 hover:bg-gray-50"
+                        className="panel-gradient-subtle rounded-md border border-border px-3 py-1 text-sm text-muted hover:bg-panel/70"
                       >
                         {selectedSchedule.status === 'active' ? 'Pause' : 'Resume'}
                       </button>
@@ -746,26 +746,26 @@ function SchedulesPage() {
 
                 <dl className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <dt className="font-medium text-gray-700">Cron</dt>
-                    <dd className="mt-1 font-mono text-gray-900">
+                    <dt className="font-medium text-muted">Cron</dt>
+                    <dd className="mt-1 font-mono text-text">
                       {selectedSchedule.cron_expression}
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-gray-700">Timezone</dt>
-                    <dd className="mt-1 text-gray-900">{selectedSchedule.timezone}</dd>
+                    <dt className="font-medium text-muted">Timezone</dt>
+                    <dd className="mt-1 text-text">{selectedSchedule.timezone}</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-gray-700">Next Run</dt>
-                    <dd className="mt-1 text-gray-900">
+                    <dt className="font-medium text-muted">Next Run</dt>
+                    <dd className="mt-1 text-text">
                       {selectedSchedule.next_run_time
                         ? new Date(selectedSchedule.next_run_time).toLocaleString()
                         : 'n/a'}
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-gray-700">Last Run</dt>
-                    <dd className="mt-1 text-gray-900">
+                    <dt className="font-medium text-muted">Last Run</dt>
+                    <dd className="mt-1 text-text">
                       {selectedSchedule.last_run_time
                         ? new Date(selectedSchedule.last_run_time).toLocaleString()
                         : 'n/a'}
@@ -775,16 +775,16 @@ function SchedulesPage() {
               </div>
 
               {notificationResult && (
-                <div className="bg-blue-50 rounded-lg shadow p-4">
+                <div className="panel-gradient rounded-lg p-4">
                   <h3 className="text-md font-semibold mb-2">Notification test results</h3>
-                  <ul className="text-sm text-gray-700 space-y-1">
+                  <ul className="space-y-1 text-sm text-muted">
                     {notificationResult.results.map(result => (
                       <li key={result.channel}>
                         <span className="font-medium">{result.channel}</span>:{' '}
                         {result.success ? (
-                          <span className="text-green-700">success</span>
+                          <span className="text-emerald-300">success</span>
                         ) : (
-                          <span className="text-red-700">
+                          <span className="text-rose-300">
                             failed{result.error_message ? ` – ${result.error_message}` : ''}
                           </span>
                         )}
@@ -794,76 +794,76 @@ function SchedulesPage() {
                 </div>
               )}
 
-              <div className="bg-blue-50 rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                  <h3 className="text-md font-semibold text-gray-900">Historical Runs</h3>
+              <div className="panel-gradient rounded-lg">
+                <div className="panel-divider flex items-center justify-between border-b px-6 py-4">
+                  <h3 className="text-md font-semibold text-text">Historical Runs</h3>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                <div className="panel-table overflow-x-auto">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead>
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Run
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Trigger
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Status
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Attempts
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Failure reason
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Scheduled
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Started
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Finished
                         </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                           Details
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-blue-50 divide-y divide-gray-200">
+                    <tbody className="divide-y divide-border">
                       {runs.map(run => (
                         <tr key={run.id}>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             {run.id}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             {run.triggering_event}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             <StatusBadge status={getRunStatusForDisplay(run)} />
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             {run.attempts_total}
                           </td>
                           <td
-                            className="px-4 py-2 text-sm text-gray-900 max-w-xs truncate"
+                            className="max-w-xs truncate px-4 py-2 text-sm text-text"
                             title={getRunFailureReason(run)}
                           >
                             {getRunFailureReason(run)}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             {new Date(run.scheduled_at).toLocaleString()}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             {run.started_at ? new Date(run.started_at).toLocaleString() : 'n/a'}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             {run.finished_at ? new Date(run.finished_at).toLocaleString() : 'n/a'}
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-900">
+                          <td className="px-4 py-2 text-sm text-text">
                             <button
-                              className="text-gray-900 hover:underline"
+                              className="text-text hover:underline"
                               onClick={() =>
                                 setExpandedRunId(prev => (prev === run.id ? null : run.id))
                               }
@@ -878,7 +878,7 @@ function SchedulesPage() {
                         <tr>
                           <td
                             colSpan={9}
-                            className="px-4 py-6 text-center text-sm text-gray-500"
+                            className="px-4 py-6 text-center text-sm text-muted"
                           >
                             No runs found for this schedule.
                           </td>
@@ -889,11 +889,11 @@ function SchedulesPage() {
                   {runs.map(
                     run =>
                       expandedRunId === run.id && (
-                        <div key={`details-${run.id}`} className="border-t border-gray-200 px-6 py-4">
-                          <div className="space-y-3 text-sm text-gray-800">
-                            <div className="font-semibold text-gray-900">Attempts</div>
+                        <div key={`details-${run.id}`} className="panel-divider border-t px-6 py-4">
+                          <div className="space-y-3 text-sm text-text">
+                            <div className="font-semibold text-text">Attempts</div>
                             {run.attempts.length === 0 && (
-                              <div className="text-gray-600">No attempts recorded for this run.</div>
+                              <div className="text-muted">No attempts recorded for this run.</div>
                             )}
                             {run.attempts.length > 0 && (
                               <ul className="space-y-2">
@@ -901,15 +901,15 @@ function SchedulesPage() {
                                   .slice()
                                   .sort((a, b) => a.attempt_number - b.attempt_number)
                                   .map(attempt => (
-                                    <li key={attempt.id} className="border border-gray-200 rounded-md p-3">
+                                    <li key={attempt.id} className="panel-gradient-subtle rounded-md p-3">
                                       <div className="flex items-center justify-between">
                                         <div className="font-medium">Attempt {attempt.attempt_number}</div>
                                         <StatusBadge status={attempt.status} />
                                       </div>
-                                      <div className="text-gray-700 mt-1">
+                                      <div className="mt-1 text-muted">
                                         {attempt.error_message || 'No error message provided.'}
                                       </div>
-                                      <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
+                                      <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-muted md:grid-cols-3">
                                         <div>
                                           <span className="font-semibold">Queued:</span>{' '}
                                           {attempt.queued_at
@@ -934,17 +934,17 @@ function SchedulesPage() {
                               </ul>
                             )}
 
-                            <div className="font-semibold text-gray-900">Debug information</div>
+                            <div className="font-semibold text-text">Debug information</div>
                             {Object.keys(run.log_links || {}).length === 0 &&
                               Object.keys(run.artifact_links || {}).length === 0 && (
-                                <div className="text-gray-600">No debug links were provided for this run.</div>
+                                <div className="text-muted">No debug links were provided for this run.</div>
                               )}
                             <div className="flex flex-wrap gap-2">
                               {Object.entries(run.log_links || {}).map(([label, link]) => (
                                 <a
                                   key={`log-${label}`}
                                   href={resolveDebugLink(link)}
-                                  className="text-gray-900 hover:underline"
+                                  className="text-text hover:underline"
                                   target="_blank"
                                   rel="noreferrer"
                                 >
@@ -955,7 +955,7 @@ function SchedulesPage() {
                                 <a
                                   key={`artifact-${label}`}
                                   href={resolveDebugLink(link)}
-                                  className="text-gray-900 hover:underline"
+                                  className="text-text hover:underline"
                                   target="_blank"
                                   rel="noreferrer"
                                 >

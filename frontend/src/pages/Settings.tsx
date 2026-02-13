@@ -174,7 +174,7 @@ function SettingsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Theme Selector */}
-        <div className="md:col-span-2 bg-panel border border-border shadow rounded-lg p-6 space-y-4">
+        <div className="panel-gradient md:col-span-2 rounded-lg p-6 space-y-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-lg font-medium text-text">Color Theme</h3>
@@ -182,7 +182,7 @@ function SettingsPage() {
             </div>
             <button
               onClick={() => resetTheme()}
-              className="inline-flex items-center justify-center rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-text hover:bg-surface/80"
+              className="panel-gradient-subtle inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm font-medium text-text hover:bg-panel/70"
             >
               Reset to default theme
             </button>
@@ -193,7 +193,7 @@ function SettingsPage() {
               onClick={() => setEditingMode('light')}
               className={`px-3 py-1.5 rounded-md text-sm border ${editingMode === 'light'
                 ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-surface text-text border-border'
+                : 'panel-gradient-subtle text-text border-border'
                 }`}
             >
               Light
@@ -202,7 +202,7 @@ function SettingsPage() {
               onClick={() => setEditingMode('dark')}
               className={`px-3 py-1.5 rounded-md text-sm border ${editingMode === 'dark'
                 ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-surface text-text border-border'
+                : 'panel-gradient-subtle text-text border-border'
                 }`}
             >
               Dark
@@ -216,7 +216,7 @@ function SettingsPage() {
                 const draftKey = `${editingMode}-${field.key}`
                 const value = drafts[draftKey] ?? activeTheme.colors[field.key]
                 return (
-                  <div key={field.key} className="rounded-md border border-border bg-surface p-4 space-y-2">
+                  <div key={field.key} className="panel-gradient-subtle rounded-md border border-border p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-medium text-text">{field.label}</div>
@@ -231,7 +231,7 @@ function SettingsPage() {
                           setDrafts((prev) => ({ ...prev, [draftKey]: next }))
                           setColor(editingMode, field.key, next)
                         }}
-                        className="h-10 w-14 rounded border border-border bg-surface"
+                        className="panel-input h-10 w-14 rounded border border-border"
                         aria-label={`${field.label} color`}
                       />
                     </div>
@@ -241,7 +241,7 @@ function SettingsPage() {
                         value={value}
                         onChange={(event) => handleDraftChange(editingMode, field.key, event.target.value)}
                         onBlur={() => handleDraftBlur(editingMode, field.key)}
-                        className="h-9 w-28 rounded border border-border bg-bg px-3 text-sm text-text font-mono"
+                        className="panel-input h-9 w-28 rounded border border-border bg-bg px-3 text-sm text-text font-mono"
                       />
                       <span className="text-xs text-muted uppercase">Hex</span>
                     </div>
@@ -250,7 +250,7 @@ function SettingsPage() {
               })}
 
               {activeTheme.validation.adjustments.length > 0 && (
-                <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-text">
+                <div className="panel-gradient-subtle rounded-md border border-border p-3 text-sm text-text">
                   <div className="font-medium">Contrast adjustments applied</div>
                   <div className="text-xs text-muted mt-1">
                     {activeTheme.validation.adjustments.map((adjustment) => (
@@ -263,7 +263,7 @@ function SettingsPage() {
               )}
 
               {!activeTheme.validation.isValid && (
-                <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-text">
+                <div className="panel-gradient-subtle rounded-md border border-border p-3 text-sm text-text">
                   <div className="font-medium">Theme cannot be saved yet</div>
                   <div className="text-xs text-muted mt-1">
                     {activeTheme.validation.violations.map((violation) => (
@@ -277,7 +277,7 @@ function SettingsPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-lg border border-border bg-bg p-4 space-y-4" style={previewStyle}>
+              <div className="panel-gradient-subtle rounded-lg border border-border p-4 space-y-4" style={previewStyle}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs text-muted uppercase tracking-wide">Preview</div>
@@ -287,7 +287,7 @@ function SettingsPage() {
                   Primary
                 </span>
               </div>
-              <div className="rounded-md border border-border bg-panel p-4 space-y-2">
+              <div className="panel-gradient-subtle rounded-md border border-border p-4 space-y-2">
                 <div className="text-sm font-medium text-text">Panel heading</div>
                 <div className="text-xs text-muted">This is how surface + text colors combine.</div>
                 <button className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm">
@@ -300,7 +300,7 @@ function SettingsPage() {
               </div>
               </div>
 
-              <div className="rounded-lg border border-border bg-surface p-4 space-y-3">
+              <div className="panel-gradient-subtle rounded-lg border border-border p-4 space-y-3">
                 <div className="text-sm font-semibold text-text">Contrast status</div>
                 <div className="space-y-2 text-xs text-muted">
                   {activeTheme.validation.checks.map((check) => (
@@ -320,7 +320,7 @@ function SettingsPage() {
           </div>
         </div>
 
-        <div className="md:col-span-2 bg-surface border border-border shadow rounded-lg p-6 space-y-4">
+        <div className="panel-gradient md:col-span-2 rounded-lg p-6 space-y-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-lg font-medium text-text">AI Copilot</h3>
@@ -344,7 +344,7 @@ function SettingsPage() {
                   <select
                     value={aiSettings.default_mode}
                     onChange={(e) => setAiSettings((prev) => (prev ? { ...prev, default_mode: e.target.value as 'direct' | 'mcp' } : prev))}
-                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    className="panel-input w-full rounded border border-border px-3 py-2 text-sm text-text"
                   >
                     <option value="direct">Direct API</option>
                     <option value="mcp">MCP</option>
@@ -359,7 +359,7 @@ function SettingsPage() {
                         prev ? { ...prev, default_direct_provider: e.target.value as 'openai' | 'anthropic' | 'gemini' } : prev,
                       )
                     }
-                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    className="panel-input w-full rounded border border-border px-3 py-2 text-sm text-text"
                   >
                     <option value="openai">OpenAI</option>
                     <option value="anthropic">Anthropic</option>
@@ -375,7 +375,7 @@ function SettingsPage() {
                         prev ? { ...prev, allow_session_provider_override: e.target.value === 'on' } : prev,
                       )
                     }
-                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    className="panel-input w-full rounded border border-border px-3 py-2 text-sm text-text"
                   >
                     <option value="on">Allowed</option>
                     <option value="off">Disabled</option>
@@ -390,7 +390,7 @@ function SettingsPage() {
                     type="password"
                     value={aiSecrets.openai_api_key}
                     onChange={(e) => setAiSecrets((prev) => ({ ...prev, openai_api_key: e.target.value }))}
-                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    className="panel-input w-full rounded border border-border px-3 py-2 text-sm text-text"
                     placeholder={aiSettings.has_direct_credentials?.openai ? 'Configured (enter to rotate)' : 'sk-...'}
                   />
                 </label>
@@ -400,7 +400,7 @@ function SettingsPage() {
                     type="password"
                     value={aiSecrets.anthropic_api_key}
                     onChange={(e) => setAiSecrets((prev) => ({ ...prev, anthropic_api_key: e.target.value }))}
-                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    className="panel-input w-full rounded border border-border px-3 py-2 text-sm text-text"
                     placeholder={aiSettings.has_direct_credentials?.anthropic ? 'Configured (enter to rotate)' : 'sk-ant-...'}
                   />
                 </label>
@@ -410,7 +410,7 @@ function SettingsPage() {
                     type="password"
                     value={aiSecrets.gemini_api_key}
                     onChange={(e) => setAiSecrets((prev) => ({ ...prev, gemini_api_key: e.target.value }))}
-                    className="w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                    className="panel-input w-full rounded border border-border px-3 py-2 text-sm text-text"
                     placeholder={aiSettings.has_direct_credentials?.gemini ? 'Configured (enter to rotate)' : 'AIza...'}
                   />
                 </label>
@@ -433,19 +433,19 @@ function SettingsPage() {
                 </button>
               </div>
 
-              <div className="rounded border border-border bg-panel p-4 space-y-3">
+              <div className="panel-gradient-subtle rounded border border-border p-4 space-y-3">
                 <div className="text-sm font-medium text-text">MCP Servers</div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <input
                     value={newMcpName}
                     onChange={(e) => setNewMcpName(e.target.value)}
                     placeholder="Server name"
-                    className="rounded border border-border bg-bg px-3 py-2 text-sm text-text"
+                    className="panel-input rounded border border-border bg-bg px-3 py-2 text-sm text-text"
                   />
                   <select
                     value={newMcpMode}
                     onChange={(e) => setNewMcpMode(e.target.value as 'remote_http' | 'remote_sse' | 'local_stdio')}
-                    className="rounded border border-border bg-bg px-3 py-2 text-sm text-text"
+                    className="panel-input rounded border border-border bg-bg px-3 py-2 text-sm text-text"
                   >
                     <option value="remote_http">remote_http</option>
                     <option value="remote_sse">remote_sse</option>
@@ -455,7 +455,7 @@ function SettingsPage() {
                     value={newMcpUrl}
                     onChange={(e) => setNewMcpUrl(e.target.value)}
                     placeholder={newMcpMode === 'local_stdio' ? 'Template key optional' : 'https://mcp-host/endpoint'}
-                    className="rounded border border-border bg-bg px-3 py-2 text-sm text-text"
+                    className="panel-input rounded border border-border bg-bg px-3 py-2 text-sm text-text"
                     disabled={newMcpMode === 'local_stdio'}
                   />
                 </div>
@@ -469,7 +469,7 @@ function SettingsPage() {
 
                 <div className="space-y-2">
                   {mcpServers.map((server) => (
-                    <div key={server.id} className="flex items-center justify-between rounded border border-border bg-bg px-3 py-2 text-sm">
+                    <div key={server.id} className="panel-gradient-subtle flex items-center justify-between rounded border border-border px-3 py-2 text-sm">
                       <div>
                         <div className="font-medium text-text">{server.name}</div>
                         <div className="text-xs text-muted">{server.mode}</div>
@@ -491,25 +491,25 @@ function SettingsPage() {
         </div>
 
         {/* Project Configuration */}
-        <div className="bg-surface border border-border shadow rounded-lg p-6 space-y-4">
+        <div className="panel-gradient rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-text border-b border-border pb-2">Project Configuration</h3>
           <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-muted">Project Path</dt>
-              <dd className="mt-1 text-sm text-text font-mono bg-panel p-1 rounded">
+              <dd className="panel-gradient-subtle mt-1 rounded p-1 text-sm font-mono text-text">
                 {repo?.directory || config?.execution.dbt_project_path || 'Loading...'}
               </dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-muted">Artifacts Path</dt>
-              <dd className="mt-1 text-sm text-text font-mono bg-panel p-1 rounded">
+              <dd className="panel-gradient-subtle mt-1 rounded p-1 text-sm font-mono text-text">
                 {/* Artifacts are stored in runs/ but displayed path often refers to where we look for them initially */}
                 {config?.artifacts_path || 'Loading...'}
               </dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-muted">API URL</dt>
-              <dd className="mt-1 text-sm text-text font-mono bg-panel p-1 rounded">
+              <dd className="panel-gradient-subtle mt-1 rounded p-1 text-sm font-mono text-text">
                 {(import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8000'}
               </dd>
             </div>
@@ -517,7 +517,7 @@ function SettingsPage() {
         </div>
 
         {/* Artifact Status */}
-        <div className="bg-surface border border-border shadow rounded-lg p-6 space-y-4">
+        <div className="panel-gradient rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-text border-b border-border pb-2">Artifact Status</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -556,7 +556,7 @@ function SettingsPage() {
         </div>
 
         {/* User Info */}
-        <div className="bg-surface border border-border shadow rounded-lg p-6 space-y-4">
+        <div className="panel-gradient rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-text border-b border-border pb-2">User Information</h3>
           <dl className="grid grid-cols-1 gap-x-4 gap-y-4">
             <div>
@@ -577,7 +577,7 @@ function SettingsPage() {
         </div>
 
         {/* About */}
-        <div className="bg-surface border border-border shadow rounded-lg p-6 space-y-4">
+        <div className="panel-gradient rounded-lg p-6 space-y-4">
           <h3 className="text-lg font-medium text-text border-b border-border pb-2">About</h3>
           <p className="text-sm text-muted">
             dbt-Workbench is a developer tool for inspecting and managing dbt projects.

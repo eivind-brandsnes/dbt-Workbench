@@ -58,7 +58,7 @@ export default function PluginsInstalled() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <div className="inline-flex items-center gap-3 rounded-full border border-gray-800 bg-gray-900/60 px-4 py-2">
+        <div className="panel-gradient-subtle inline-flex items-center gap-3 rounded-full px-4 py-2">
           <svg className="h-5 w-5 animate-spin text-accent" viewBox="0 0 24 24" fill="none">
             <circle
               className="opacity-20"
@@ -74,7 +74,7 @@ export default function PluginsInstalled() {
               d="M4 12a8 8 0 018-8V2.5C6.2 2.5 2.5 6.2 2.5 12H4z"
             />
           </svg>
-          <span className="text-sm text-gray-300">loading plugins..</span>
+          <span className="text-sm text-muted">loading plugins..</span>
         </div>
       </div>
     );
@@ -84,66 +84,66 @@ export default function PluginsInstalled() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">Installed Plugins</h1>
-          <p className="text-sm text-gray-400">
+          <h1 className="text-2xl font-bold text-text">Installed Plugins</h1>
+          <p className="text-sm text-muted">
             Manage system plugins and dbt adapters.
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
+        <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-4 text-sm text-rose-300">
           {error}
         </div>
       )}
 
       {/* Adapter Suggestions Section */}
-      <div className="bg-blue-50 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">dbt Adapters</h2>
-          <p className="text-sm text-gray-500">Adapters required by your profiles or installed on the system.</p>
+      <div className="panel-gradient rounded-lg">
+        <div className="panel-divider border-b px-6 py-4">
+          <h2 className="text-lg font-medium text-text">dbt Adapters</h2>
+          <p className="text-sm text-muted">Adapters required by your profiles or installed on the system.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="panel-table overflow-x-auto">
+          <table className="min-w-full divide-y divide-border">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Package</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Version</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-blue-50 divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {adapters.map((adapter) => (
                 <tr key={adapter.package}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{adapter.type}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{adapter.package}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm capitalize text-text">{adapter.type}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">{adapter.package}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {adapter.installed ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      <span className="inline-flex rounded-full border border-emerald-400/35 bg-emerald-500/14 px-2 text-xs font-semibold leading-5 text-emerald-300">
                         Installed
                       </span>
                     ) : adapter.required_by_profile ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      <span className="inline-flex rounded-full border border-amber-400/35 bg-amber-500/14 px-2 text-xs font-semibold leading-5 text-amber-300">
                         Missing
                       </span>
                     ) : (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                      <span className="inline-flex rounded-full border border-border bg-surface-muted/60 px-2 text-xs font-semibold leading-5 text-muted">
                         Available
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{adapter.current_version || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">{adapter.current_version || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     {processingPackage === adapter.package ? (
-                      <span className="text-gray-500">Processing...</span>
+                      <span className="text-muted">Processing...</span>
                     ) : (
                       <>
                         {!adapter.installed && (
                           <button
                             onClick={() => handleInstall(adapter.package)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-primary hover:text-primary-hover"
                           >
                             Install
                           </button>
@@ -162,43 +162,43 @@ export default function PluginsInstalled() {
                 </tr>
               ))}
               {adapters.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">No adapters found or required.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-4 text-center text-muted">No adapters found or required.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="bg-blue-50 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">System Plugins</h2>
+      <div className="panel-gradient rounded-lg">
+        <div className="panel-divider border-b px-6 py-4">
+          <h2 className="text-lg font-medium text-text">System Plugins</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="panel-table overflow-x-auto">
+          <table className="min-w-full divide-y divide-border">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Version</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Description</th>
               </tr>
             </thead>
-            <tbody className="bg-blue-50 divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {plugins.map((plugin) => (
                 <tr key={plugin.name}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{plugin.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{plugin.version}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">{plugin.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">{plugin.version}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${plugin.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${plugin.enabled ? 'border border-emerald-400/35 bg-emerald-500/14 text-emerald-300' : 'border border-rose-400/35 bg-rose-500/14 text-rose-300'
                       }`}>
                       {plugin.enabled ? 'Enabled' : 'Disabled'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-sm truncate">{plugin.description}</td>
+                  <td className="max-w-sm truncate px-6 py-4 text-sm text-muted">{plugin.description}</td>
                 </tr>
               ))}
               {plugins.length === 0 && (
-                <tr><td colSpan={4} className="px-6 py-4 text-center text-gray-500">No system plugins found.</td></tr>
+                <tr><td colSpan={4} className="px-6 py-4 text-center text-muted">No system plugins found.</td></tr>
               )}
             </tbody>
           </table>

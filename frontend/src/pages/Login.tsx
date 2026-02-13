@@ -25,30 +25,30 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
-      <div className="bg-panel border border-gray-800 rounded-lg p-8 w-full max-w-md shadow-lg">
-        <h1 className="text-2xl font-semibold text-white mb-6">Sign in</h1>
+    <div className="app-shell-gradient flex min-h-screen items-center justify-center">
+      <div className="panel-gradient w-full max-w-md rounded-lg p-8">
+        <h1 className="mb-6 text-2xl font-semibold text-text">Sign in</h1>
         {error && (
-          <div className="mb-4 rounded bg-red-900/40 border border-red-500/60 px-4 py-2 text-sm text-red-100">
+          <div className="mb-4 rounded border border-rose-400/45 bg-rose-500/12 px-4 py-2 text-sm text-rose-300">
             {error}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Username</label>
+            <label className="mb-1 block text-sm text-muted">Username</label>
             <input
               type="text"
-              className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+              className="panel-input w-full rounded-md px-3 py-2 text-sm"
               value={username}
               onChange={e => setUsername(e.target.value)}
               autoComplete="username"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Password</label>
+            <label className="mb-1 block text-sm text-muted">Password</label>
             <input
               type="password"
-              className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+              className="panel-input w-full rounded-md px-3 py-2 text-sm"
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -57,7 +57,7 @@ const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-4 inline-flex justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-4 inline-flex w-full justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>

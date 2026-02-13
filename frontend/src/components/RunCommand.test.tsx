@@ -75,6 +75,13 @@ vi.mock('../context/AuthContext', () => ({
     ])
     mockedExecutionService.startRun.mockResolvedValue({ run_id: '123', status: 'succeeded' })
     mockedExecutionService.getRunStatus.mockResolvedValue({ run_id: '123', status: 'succeeded' })
+    mockedExecutionService.checkPackages.mockResolvedValue({
+      has_missing: false,
+      packages_required: [],
+      packages_installed: [],
+      missing_packages: [],
+      packages_yml_exists: false,
+    })
     mockedArtifactService.getSeedStatus.mockResolvedValue({
       seed_present: false,
       seed_dependency_detected: false,
@@ -180,12 +187,12 @@ vi.mock('../context/AuthContext', () => ({
     expect(runRequest.run_row_lineage).toBe(true)
   })
 
-  it('uses the purple background styling on the command panel', () => {
+  it('uses gradient panel styling on the command panel', () => {
     const { container } = render(<RunCommand />)
 
     const panel = container.firstElementChild as HTMLElement | null
     expect(panel).not.toBeNull()
-    expect(panel).toHaveClass('bg-blue-50')
+    expect(panel).toHaveClass('panel-gradient')
   })
 
   describe('Package Checking', () => {
@@ -233,7 +240,7 @@ vi.mock('../context/AuthContext', () => ({
       expect(onRunStarted).toHaveBeenCalledWith('123')
     })
 
-    it('does not check packages for seed command', async () => {
+    it('blocks seed command when required packages are missing', async () => {
       mockedExecutionService.checkPackages.mockResolvedValue({
         has_missing: true,
         packages_required: ['dbt-utils'],
@@ -249,7 +256,8 @@ vi.mock('../context/AuthContext', () => ({
 
       await waitFor(() => {
         expect(mockedExecutionService.checkPackages).toHaveBeenCalled()
-        expect(mockedExecutionService.startRun).toHaveBeenCalled()
+        expect(screen.queryByText('Missing dbt Packages')).toBeInTheDocument()
+        expect(mockedExecutionService.startRun).not.toHaveBeenCalled()
       })
     })
 

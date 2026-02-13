@@ -9,10 +9,10 @@ export function GitChanges({ status }: GitChangesProps) {
   if (!status) {
     return (
       <div className="text-center py-6">
-        <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="mb-3 mx-auto h-12 w-12 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <div className="text-gray-500 text-sm">No repository status available</div>
+        <div className="text-muted text-sm">No repository status available</div>
       </div>
     )
   }
@@ -25,7 +25,7 @@ export function GitChanges({ status }: GitChangesProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <div className="text-gray-400 text-sm">Working tree clean</div>
+        <div className="text-muted text-sm">Working tree clean</div>
       </div>
     )
   }
@@ -36,7 +36,7 @@ export function GitChanges({ status }: GitChangesProps) {
     if (lower === 'modified' || lower === 'm') return 'text-blue-400'
     if (lower === 'deleted' || lower === 'd') return 'text-red-400'
     if (lower === 'renamed' || lower === 'r') return 'text-yellow-400'
-    return 'text-gray-400'
+    return 'text-muted'
   }
 
   const getChangeIcon = (type: string) => {
@@ -75,19 +75,19 @@ export function GitChanges({ status }: GitChangesProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-400">Changes</span>
-        <span className="text-gray-200">{status.changes.length} file{status.changes.length !== 1 ? 's' : ''}</span>
+        <span className="text-muted">Changes</span>
+        <span className="text-text">{status.changes.length} file{status.changes.length !== 1 ? 's' : ''}</span>
       </div>
       <div className="space-y-1.5 max-h-64 overflow-auto">
         {status.changes.map((change, index) => (
           <div
             key={`${change.path}-${change.change_type}-${index}`}
-            className="flex items-center gap-2 px-3 py-2 bg-black/20 border border-gray-800 rounded hover:border-gray-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 panel-gradient-subtle border border-border rounded hover:border-border transition-colors"
           >
             <div className={getChangeColor(change.change_type)}>
               {getChangeIcon(change.change_type)}
             </div>
-            <code className="flex-1 text-xs text-gray-200 font-mono truncate">
+            <code className="flex-1 text-xs text-text font-mono truncate">
               {change.path}
             </code>
             <span className={`text-xs font-medium uppercase ${getChangeColor(change.change_type)}`}>

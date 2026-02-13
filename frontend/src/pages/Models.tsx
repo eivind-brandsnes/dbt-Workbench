@@ -48,9 +48,9 @@ function ModelsPage() {
   return (
     <div className="space-y-4" data-testid="models-list-container">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Models</h1>
+        <h1 className="text-2xl font-semibold text-text">Models</h1>
         <input
-          className="bg-gray-900 border border-gray-800 rounded-md px-3 py-2 text-sm text-gray-200"
+          className="panel-input rounded-md px-3 py-2 text-sm"
           placeholder="Search models"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

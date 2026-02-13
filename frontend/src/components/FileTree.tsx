@@ -143,21 +143,21 @@ export const FileTree = ({
           value={filterQuery}
           onChange={(event) => setFilterQuery(event.target.value)}
           placeholder="Filter files"
-          className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-gray-100"
+          className="panel-input flex-1 rounded px-2 py-1 text-xs"
           aria-label="Filter files"
         />
         <button
           type="button"
           onClick={expandAll}
-          className="text-[11px] text-gray-300 hover:text-white"
+          className="text-[11px] text-muted hover:text-text"
         >
           Expand all
         </button>
-        <span className="text-gray-600">/</span>
+        <span className="text-muted">/</span>
         <button
           type="button"
           onClick={collapseAll}
-          className="text-[11px] text-gray-300 hover:text-white"
+          className="text-[11px] text-muted hover:text-text"
         >
           Collapse all
         </button>
@@ -211,22 +211,22 @@ export const FileTree = ({
                   focusRow(index - 1)
                 }
               }}
-              className={`w-full text-left px-2 py-1 rounded border border-gray-800 hover:bg-gray-800 text-xs text-gray-200 flex items-center gap-2 ${
-                isSelected ? 'bg-gray-800 text-white border-gray-700' : 'bg-gray-900'
+              className={`w-full text-left px-2 py-1 rounded border border-border hover:bg-panel/70 text-xs text-text flex items-center gap-2 ${
+                isSelected ? 'bg-panel/75 text-text border-border' : 'bg-surface-muted/55'
               }`}
               style={{ paddingLeft: `${depth * 16 + 8}px` }}
             >
-              <span className="text-gray-400 w-4 inline-flex justify-center">{chevron}</span>
+              <span className="text-muted w-4 inline-flex justify-center">{chevron}</span>
               <span className="flex-1 truncate">
                 {node.type === 'file' && node.category ? (
-                  <span className="font-mono text-[10px] text-gray-500 mr-1">[{node.category}]</span>
+                  <span className="font-mono text-[10px] text-muted mr-1">[{node.category}]</span>
                 ) : null}
                 {highlightMatch(node.name, filterQuery)}
               </span>
             </button>
           )
         })}
-        {rows.length === 0 && <div className="text-xs text-gray-500">{emptyMessage}</div>}
+        {rows.length === 0 && <div className="text-xs text-muted">{emptyMessage}</div>}
       </div>
     </div>
   )

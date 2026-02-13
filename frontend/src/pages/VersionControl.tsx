@@ -333,8 +333,8 @@ export default function VersionControlPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Projects & Version Control</h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <h1 className="text-2xl font-bold text-text">Projects & Version Control</h1>
+          <p className="text-sm text-muted mt-1">
             Manage projects, git operations, and version control
           </p>
         </div>
@@ -349,17 +349,17 @@ export default function VersionControlPage() {
       </div>
 
       {showCloneForm && (
-        <div className="bg-panel border border-gray-800 rounded-lg p-6">
+        <div className="panel-gradient rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Create or connect a project</h2>
-              <p className="text-sm text-gray-400 mt-1">
+              <h2 className="text-lg font-semibold text-text">Create or connect a project</h2>
+              <p className="text-sm text-muted mt-1">
                 Start with a local git repo or link a remote repository
               </p>
             </div>
             <button
               onClick={() => setShowCloneForm(false)}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-muted hover:text-text transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -384,21 +384,21 @@ export default function VersionControlPage() {
               <input
                 id="local-only"
                 type="checkbox"
-                className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-accent focus:ring-accent"
+                className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent"
                 checked={isLocalOnly}
                 onChange={(e) => setIsLocalOnly(e.target.checked)}
               />
-              <label htmlFor="local-only" className="text-sm text-gray-300">
+              <label htmlFor="local-only" className="text-sm text-muted">
                 Create a local-only project (no remote)
               </label>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Remote URL</label>
+                <label className="block text-xs text-muted mb-1.5">Remote URL</label>
                 <input
                   type="url"
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                  className="panel-input w-full rounded px-3 py-2 text-sm"
                   value={remoteUrl}
                   disabled={isLocalOnly}
                   onChange={(e) => {
@@ -420,10 +420,10 @@ export default function VersionControlPage() {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Project Name</label>
+                <label className="block text-xs text-muted mb-1.5">Project Name</label>
                 <input
                   type="text"
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                  className="panel-input w-full rounded px-3 py-2 text-sm"
                   value={workspaceName}
                   onChange={(e) => {
                     const newName = e.target.value
@@ -439,10 +439,10 @@ export default function VersionControlPage() {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Branch</label>
+                <label className="block text-xs text-muted mb-1.5">Branch</label>
                 <input
                   type="text"
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                  className="panel-input w-full rounded px-3 py-2 text-sm"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   placeholder="main"
@@ -450,10 +450,10 @@ export default function VersionControlPage() {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Project Root</label>
+                <label className="block text-xs text-muted mb-1.5">Project Root</label>
                 <input
                   type="text"
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                  className="panel-input w-full rounded px-3 py-2 text-sm"
                   value={projectRoot}
                   onChange={(e) => {
                     setProjectRoot(e.target.value)
@@ -468,17 +468,17 @@ export default function VersionControlPage() {
               <button
                 type="button"
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                className="text-xs text-muted transition-colors hover:text-text"
               >
                 {showAdvanced ? 'Hide' : 'Show'} advanced options
               </button>
 
               {showAdvanced && (
                 <div className="mt-3">
-                  <label className="block text-xs text-gray-400 mb-1.5">Provider (optional)</label>
+                  <label className="block text-xs text-muted mb-1.5">Provider (optional)</label>
                   <input
                     type="text"
-                    className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                    className="panel-input w-full rounded px-3 py-2 text-sm"
                     value={provider}
                     onChange={(e) => setProvider(e.target.value)}
                     placeholder="github | gitlab | local"
@@ -500,12 +500,12 @@ export default function VersionControlPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-semibold text-white mb-4">Projects</h2>
-              <p className="text-sm text-gray-400 mb-4">One project per git repository</p>
+              <h2 className="text-lg font-semibold text-text mb-4">Projects</h2>
+              <p className="text-sm text-muted mb-4">One project per git repository</p>
 
               {projectsLoading && (
-                <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
-                  <div className="text-gray-400 text-sm">Loading projects...</div>
+                <div className="panel-gradient-subtle rounded-lg p-8 text-center">
+                  <div className="text-muted text-sm">Loading projects...</div>
                 </div>
               )}
 
@@ -527,12 +527,12 @@ export default function VersionControlPage() {
                   ))}
 
                   {!projects.length && (
-                    <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
+                    <div className="panel-gradient-subtle rounded-lg p-8 text-center">
                       <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
-                      <div className="text-gray-400 text-sm mb-2">No projects yet</div>
-                      <p className="text-xs text-gray-500">Create a project to get started with version control</p>
+                      <div className="text-muted text-sm mb-2">No projects yet</div>
+                      <p className="text-xs text-muted">Create a project to get started with version control</p>
                     </div>
                   )}
                 </div>
@@ -540,8 +540,8 @@ export default function VersionControlPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-white mb-4">Working Changes</h2>
-              <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
+              <h2 className="text-lg font-semibold text-text mb-4">Working Changes</h2>
+              <div className="panel-gradient-subtle rounded-lg p-4">
                 <GitChanges status={status} />
               </div>
             </div>
@@ -571,8 +571,8 @@ export default function VersionControlPage() {
               />
 
               <div>
-                <h2 className="text-lg font-semibold text-white mb-4">Recent Commits</h2>
-                <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
+                <h2 className="text-lg font-semibold text-text mb-4">Recent Commits</h2>
+                <div className="panel-gradient-subtle rounded-lg p-4">
                   <CommitTimeline history={history} maxEntries={5} />
                 </div>
               </div>
@@ -582,19 +582,19 @@ export default function VersionControlPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <h2 className="text-lg font-semibold text-white mb-4">Project Files</h2>
-            <p className="text-sm text-gray-400 mb-4">Browse and manage dbt files</p>
+            <h2 className="text-lg font-semibold text-text mb-4">Project Files</h2>
+            <p className="text-sm text-muted mb-4">Browse and manage dbt files</p>
 
             {repoMissing ? (
-              <div className="bg-black/20 border border-gray-800 rounded-lg p-8 text-center">
+              <div className="panel-gradient-subtle rounded-lg p-8 text-center">
                 <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <div className="text-gray-400 text-sm">Connect a repository to browse files</div>
+                <div className="text-muted text-sm">Connect a repository to browse files</div>
               </div>
             ) : (
               <>
-                <div className="bg-black/20 border border-gray-800 rounded-lg p-4">
+                <div className="panel-gradient-subtle rounded-lg p-4">
                   <FileTree
                     nodes={files}
                     onSelect={loadFile}
@@ -604,25 +604,25 @@ export default function VersionControlPage() {
                   />
                 </div>
 
-                <div className="mt-4 bg-black/20 border border-gray-800 rounded-lg p-4">
-                  <h3 className="text-white font-semibold mb-3">Create File</h3>
+                <div className="mt-4 panel-gradient-subtle rounded-lg p-4">
+                  <h3 className="text-text font-semibold mb-3">Create File</h3>
                   <form className="space-y-3" onSubmit={handleCreateFile}>
                     <input
                       type="text"
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                      className="panel-input w-full rounded px-3 py-2 text-sm"
                       placeholder="models/new_file.sql"
                       value={newFilePath}
                       onChange={(e) => setNewFilePath(e.target.value)}
                     />
                     <textarea
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-xs font-mono text-gray-100 min-h-[120px] resize-y focus:border-accent/60 focus:outline-none"
+                      className="panel-input min-h-[120px] w-full resize-y rounded px-3 py-2 text-xs font-mono"
                       placeholder="File contents"
                       value={newFileContent}
                       onChange={(e) => setNewFileContent(e.target.value)}
                     />
                     <input
                       type="text"
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-100 focus:border-accent/60 focus:outline-none"
+                      className="panel-input w-full rounded px-3 py-2 text-sm"
                       placeholder="Commit message (optional)"
                       value={newFileMessage}
                       onChange={(e) => setNewFileMessage(e.target.value)}

@@ -98,6 +98,17 @@ const rgbToHex = (r: number, g: number, b: number) => {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }
 
+const mixHex = (base: string, tint: string, tintWeight: number) => {
+  const weight = clamp(tintWeight, 0, 1)
+  const baseRgb = hexToRgb(base)
+  const tintRgb = hexToRgb(tint)
+  return rgbToHex(
+    baseRgb.r + (tintRgb.r - baseRgb.r) * weight,
+    baseRgb.g + (tintRgb.g - baseRgb.g) * weight,
+    baseRgb.b + (tintRgb.b - baseRgb.b) * weight,
+  )
+}
+
 const rgbToHsl = (r: number, g: number, b: number) => {
   const rNorm = r / 255
   const gNorm = g / 255
@@ -448,6 +459,16 @@ export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolv
   const primaryScale = buildScale(colors.primary)
   const secondaryScale = buildScale(colors.secondary)
 
+  const shellBaseTop = mixHex(colors.background, colors.primary, mode === 'dark' ? 0.16 : 0.06)
+  const shellBaseBottom = mixHex(colors.background, colors.secondary, mode === 'dark' ? 0.09 : 0.04)
+  const shellGlowPrimary = mixHex(colors.primary, colors.surface, mode === 'dark' ? 0.08 : 0.2)
+  const shellGlowSecondary = mixHex(colors.secondary, colors.surface, mode === 'dark' ? 0.08 : 0.2)
+  const panelTop = mixHex(colors.surface, colors.primary, mode === 'dark' ? 0.14 : 0.06)
+  const panelMid = colors.surface
+  const panelBottom = mixHex(colors.surface, colors.secondary, mode === 'dark' ? 0.08 : 0.04)
+  const panelBorderStrong = mixHex(derived.border, colors.primary, mode === 'dark' ? 0.42 : 0.24)
+  const panelBorderSoft = mixHex(derived.border, colors.surface, mode === 'dark' ? 0.18 : 0.1)
+
   const toCss = (hex: string) => {
     const { h, s, l } = hexToHsl(hex)
     return hslToCss(h, s, l)
@@ -472,6 +493,15 @@ export const buildThemeMode = (mode: ThemeMode, input: ThemeColors): ThemeResolv
     '--color-text-muted': toCss(derived.text_muted),
     '--color-border': toCss(derived.border),
     '--color-ring': toCss(derived.ring),
+    '--fx-shell-base-top': toCss(shellBaseTop),
+    '--fx-shell-base-bottom': toCss(shellBaseBottom),
+    '--fx-shell-glow-primary': toCss(shellGlowPrimary),
+    '--fx-shell-glow-secondary': toCss(shellGlowSecondary),
+    '--fx-panel-top': toCss(panelTop),
+    '--fx-panel-mid': toCss(panelMid),
+    '--fx-panel-bottom': toCss(panelBottom),
+    '--fx-panel-border-strong': toCss(panelBorderStrong),
+    '--fx-panel-border-soft': toCss(panelBorderSoft),
   }
 
   Object.entries(neutralScale).forEach(([key, value]) => {

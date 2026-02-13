@@ -86,7 +86,7 @@ describe('EnvironmentsPage profile management', () => {
   it('shows profile cards with targets', async () => {
     render(<EnvironmentsPage />)
 
-    expect(await screen.findByText('Profiles')).toBeInTheDocument()
+    expect(await screen.findByText('Default dbt Project')).toBeInTheDocument()
     const profileLabels = await screen.findAllByText('default')
     expect(profileLabels.length).toBeGreaterThan(0)
     expect(screen.getByText('1 target')).toBeInTheDocument()
@@ -141,13 +141,13 @@ describe('EnvironmentsPage profile management', () => {
     expect(mockedProfileService.update).not.toHaveBeenCalled()
   })
 
-  it('renders the profiles panel with the purple background', async () => {
+  it('renders the profiles panel with gradient panel styling', async () => {
     render(<EnvironmentsPage />)
 
-    const heading = await screen.findByText('Profiles')
+    const heading = await screen.findByText('Default dbt Project')
     const panel = heading.closest('div')?.parentElement?.parentElement as HTMLElement | null
 
     expect(panel).not.toBeNull()
-    expect(panel).toHaveClass('bg-blue-50')
+    expect(panel).toHaveClass('panel-gradient')
   })
 })

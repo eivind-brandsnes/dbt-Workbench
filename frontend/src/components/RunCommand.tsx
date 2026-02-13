@@ -203,13 +203,13 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
   ];
 
   return (
-    <div className="bg-blue-50 rounded-lg shadow text-gray-700 p-6">
-      <h2 className="text-xl font-semibold mb-4">Run dbt Command</h2>
+    <div className="panel-gradient rounded-lg p-6 text-text">
+      <h2 className="mb-4 text-xl font-semibold text-text">Run dbt Command</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="mb-2 block text-sm font-medium text-muted">
             Description (optional)
           </label>
           <input
@@ -217,14 +217,14 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description of this run"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="panel-input w-full rounded-md px-3 py-2 text-sm"
           />
         </div>
 
         {/* Parameters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-muted">
               Select Models
             </label>
             <Autocomplete
@@ -233,13 +233,12 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={setSelectModels}
               placeholder="e.g., my_model"
               strict={true}
-              className="text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="mt-1 text-xs text-gray-500">Only configured models allowed.</p>
+            <p className="mt-1 text-xs text-muted">Only configured models allowed.</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-muted">
               Exclude Models
             </label>
             <Autocomplete
@@ -248,13 +247,12 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={setExcludeModels}
               placeholder="e.g., my_model"
               strict={true}
-              className="text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="mt-1 text-xs text-gray-500">Only configured models allowed.</p>
+            <p className="mt-1 text-xs text-muted">Only configured models allowed.</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-muted">
               Target
             </label>
             <Autocomplete
@@ -266,9 +264,8 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               }}
               placeholder="e.g., dev"
               strict={true}
-              className="text-white bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="mt-1 text-xs text-gray-500">Must match a scheduled environment target.</p>
+            <p className="mt-1 text-xs text-muted">Must match a scheduled environment target.</p>
           </div>
         </div>
 
@@ -281,7 +278,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={(e) => setFullRefresh(e.target.checked)}
               className="mr-2"
             />
-            <span className="text-sm text-gray-700">Full Refresh</span>
+            <span className="text-sm text-muted">Full Refresh</span>
           </label>
 
           <label className="flex items-center">
@@ -291,7 +288,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={(e) => setFailFast(e.target.checked)}
               className="mr-2"
             />
-            <span className="text-sm text-gray-700">Fail Fast</span>
+            <span className="text-sm text-muted">Fail Fast</span>
           </label>
 
           <label className="flex items-center">
@@ -301,7 +298,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={(e) => setStoreFailures(e.target.checked)}
               className="mr-2"
             />
-            <span className="text-sm text-gray-700">Store Failures (dbt test only)</span>
+            <span className="text-sm text-muted">Store Failures (dbt test only)</span>
           </label>
 
           <label className="flex items-center">
@@ -311,7 +308,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               onChange={(e) => setNoCompile(e.target.checked)}
               className="mr-2"
             />
-            <span className="text-sm text-gray-700">No Compile (dbt docs generate only)</span>
+            <span className="text-sm text-muted">No Compile (dbt docs generate only)</span>
           </label>
 
           <label className="flex items-center">
@@ -322,20 +319,20 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               className="mr-2"
               data-testid="run-row-lineage"
             />
-            <span className="text-sm text-gray-700">Run Row Lineage (dbt-rowlineage)</span>
+            <span className="text-sm text-muted">Run Row Lineage (dbt-rowlineage)</span>
           </label>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-3">
+            <p className="text-sm text-rose-300">{error}</p>
           </div>
         )}
 
         {warning && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-            <p className="text-sm text-yellow-700">{warning}</p>
+          <div className="rounded-md border border-amber-400/40 bg-amber-500/12 p-3">
+            <p className="text-sm text-amber-300">{warning}</p>
           </div>
         )}
 
@@ -348,7 +345,7 @@ export const RunCommand: React.FC<RunCommandProps> = ({ onRunStarted }) => {
               data-testid={`${cmd.id}-execute`}
               onClick={() => void handleSubmit(undefined, cmd.id)}
               disabled={isLoading}
-              className="w-full flex items-center justify-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
               aria-busy={isLoading && pendingCommand === cmd.id}
             >
               {isLoading && pendingCommand === cmd.id ? (

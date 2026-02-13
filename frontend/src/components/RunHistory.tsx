@@ -47,12 +47,12 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
 
   if (isLoading && !history) {
     return (
-      <div className="bg-blue-50 rounded-lg shadow p-6">
+      <div className="panel-gradient rounded-lg p-6">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="mb-4 h-4 w-1/4 rounded bg-surface-muted"></div>
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              <div key={i} className="h-4 rounded bg-surface-muted"></div>
             ))}
           </div>
         </div>
@@ -62,12 +62,12 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
 
   if (error) {
     return (
-      <div className="bg-blue-50 rounded-lg shadow p-6">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-600">{error}</p>
+      <div className="panel-gradient rounded-lg p-6">
+        <div className="rounded-md border border-rose-400/40 bg-rose-500/12 p-4">
+          <p className="text-rose-300">{error}</p>
           <button
             onClick={() => fetchHistory(currentPage)}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+            className="mt-2 text-sm text-rose-200 underline hover:text-rose-100"
           >
             Try again
           </button>
@@ -77,80 +77,80 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
   }
 
   return (
-    <div className="bg-blue-50 rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className="panel-gradient rounded-lg">
+      <div className="panel-divider border-b px-6 py-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-700">Run History</h2>
+          <h2 className="text-xl font-semibold text-text">Run History</h2>
           <button
             onClick={() => fetchHistory(currentPage)}
-            className="text-sm text-blue-600 hover:text-blue-800"
+            className="text-sm text-primary hover:text-primary-hover"
           >
             Refresh
           </button>
         </div>
         {history && (
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-muted">
             {history.total_count} total runs
           </p>
         )}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="panel-table overflow-x-auto">
+        <table className="min-w-full divide-y divide-border">
+          <thead>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 Command
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 Started
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 Duration
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 Description
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-blue-50 divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {history?.runs.map((run) => (
-              <tr key={run.run_id} className="hover:bg-gray-50">
+              <tr key={run.run_id} className="hover:bg-panel/70">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-text">
                     dbt {run.command}
                   </div>
-                  <div className="text-xs text-gray-500 font-mono">
+                  <div className="font-mono text-xs text-muted">
                     {run.run_id.substring(0, 8)}...
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <StatusBadge status={run.status} />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-text">
                   {formatDate(run.start_time)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-text">
                   {formatDuration(run.duration_seconds)}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                <td className="max-w-xs truncate px-6 py-4 text-sm text-text">
                   {run.description || '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => onRunSelect?.(run.run_id)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
+                    className="mr-3 text-primary hover:text-primary-hover"
                   >
                     View
                   </button>
                   {run.artifacts_available && (
-                    <span className="text-green-600 text-xs">
+                    <span className="text-xs text-emerald-300">
                       Artifacts
                     </span>
                   )}
@@ -163,23 +163,23 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div className="panel-divider border-t px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-muted">
               Page {currentPage} of {totalPages}
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+                className="panel-gradient-subtle rounded px-3 py-1 text-sm text-text hover:bg-panel/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+                className="panel-gradient-subtle rounded px-3 py-1 text-sm text-text hover:bg-panel/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next
               </button>
@@ -190,7 +190,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ onRunSelect, refreshTrig
 
       {history?.runs.length === 0 && (
         <div className="px-6 py-8 text-center">
-          <p className="text-gray-500">No runs found</p>
+          <p className="text-muted">No runs found</p>
         </div>
       )}
     </div>

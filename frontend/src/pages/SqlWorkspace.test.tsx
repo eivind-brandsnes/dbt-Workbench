@@ -37,6 +37,17 @@ vi.mock('@/context/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
+vi.mock('@/context/AiContext', () => ({
+  useAi: () => ({
+    openPanel: vi.fn(),
+    settings: {
+      enabled: true,
+      ai_system_enabled: true,
+    },
+  }),
+  AiProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 vi.mock('@/services/sqlWorkspaceService', () => ({
   SqlWorkspaceService: {
     executeQuery: vi.fn(),

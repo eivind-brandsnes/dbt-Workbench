@@ -61,10 +61,10 @@ export const RefreshIndicator: React.FC<RefreshIndicatorProps> = ({ onRefreshNee
   return (
     <div className="fixed top-4 right-4 z-50">
       <div className={`
-        px-4 py-2 rounded-lg shadow-lg transition-all duration-300 transform
+        px-4 py-2 rounded-lg shadow-lg transition-all duration-300 transform border
         ${isRefreshing 
-          ? 'bg-green-500 text-white scale-100' 
-          : 'bg-blue-500 text-white scale-105 animate-pulse'
+          ? 'panel-gradient-subtle border-border text-text scale-100' 
+          : 'bg-primary border-primary text-primary-foreground scale-105 animate-pulse'
         }
       `}>
         <div className="flex items-center space-x-2">

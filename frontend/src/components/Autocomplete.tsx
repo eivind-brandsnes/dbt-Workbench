@@ -68,16 +68,16 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
                 onFocus={() => setIsOpen(true)}
                 onBlur={handleBlur}
                 placeholder={placeholder}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="panel-input w-full rounded-md px-3 py-2 text-sm"
             />
             {isOpen && filteredOptions.length > 0 && (
-                <ul className="absolute z-10 w-full mt-1 bg-blue-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                <ul className="panel-gradient-subtle absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md">
                     {filteredOptions.map((option) => (
                         <li
                             key={option}
                             // onMouseDown fires before onBlur
                             onMouseDown={() => handleSelectOption(option)}
-                            className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm text-gray-700"
+                            className="cursor-pointer px-3 py-2 text-sm text-text hover:bg-panel/70"
                         >
                             {option}
                         </li>

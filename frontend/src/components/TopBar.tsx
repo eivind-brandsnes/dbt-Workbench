@@ -21,14 +21,14 @@ export function TopBar({ projectName, environment }: TopBarProps) {
   const displayEnv = environment || (user ? `${user.role} · ${user.username}` : 'Local')
 
   return (
-    <header className="flex items-center justify-between border-b border-gray-800 px-6 py-4 bg-panel sticky top-0 z-10">
+    <header className="panel-gradient-subtle panel-divider sticky top-0 z-10 flex items-center justify-between border-b px-6 py-4">
       <div>
-        <div className="text-sm uppercase text-gray-400">Workspace</div>
+        <div className="text-sm uppercase text-muted">Workspace</div>
         <div className="flex items-center space-x-3">
-          <div className="text-lg font-semibold text-white">{displayProject}</div>
+          <div className="text-lg font-semibold text-text">{displayProject}</div>
           {workspaces.length > 1 && (
             <select
-              className="bg-gray-900 border border-gray-700 text-xs text-gray-200 rounded px-2 py-1"
+              className="panel-input rounded px-2 py-1 text-xs"
               value={selection}
               onChange={async e => {
                 const id = Number(e.target.value)
@@ -55,20 +55,20 @@ export function TopBar({ projectName, environment }: TopBarProps) {
           <button
             type="button"
             onClick={() => openPanel()}
-            className="text-xs text-gray-300 hover:text-white border border-gray-700 px-3 py-1 rounded-md"
+            className="rounded-md border border-border px-3 py-1 text-xs text-muted hover:bg-panel/80 hover:text-text"
             title="Open AI Copilot"
           >
             AI Copilot
           </button>
         )}
-        <div className="text-sm text-gray-300 bg-gray-800 px-3 py-1 rounded-full">
+        <div className="panel-gradient-subtle rounded-full px-3 py-1 text-sm text-muted">
           {displayEnv}
         </div>
         {isAuthEnabled && user && (
           <button
             type="button"
             onClick={logout}
-            className="text-xs text-gray-300 hover:text-white border border-gray-700 px-3 py-1 rounded-md"
+            className="rounded-md border border-border px-3 py-1 text-xs text-muted hover:bg-panel/80 hover:text-text"
           >
             Sign out
           </button>

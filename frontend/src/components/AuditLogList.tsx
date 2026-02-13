@@ -64,10 +64,10 @@ export function AuditLogList({ records, maxEntries }: AuditLogListProps) {
   if (records.length === 0) {
     return (
       <div className="text-center py-6">
-        <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="mb-3 mx-auto h-12 w-12 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
-        <div className="text-gray-500 text-sm">No activity recorded yet</div>
+        <div className="text-muted text-sm">No activity recorded yet</div>
       </div>
     )
   }
@@ -75,7 +75,7 @@ export function AuditLogList({ records, maxEntries }: AuditLogListProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-white font-semibold">Activity Log</h3>
+        <h3 className="text-text font-semibold">Activity Log</h3>
         <div className="flex gap-2">
           {(['all', 'commit', 'file', 'workspace'] as FilterType[]).map((type) => (
             <button
@@ -84,7 +84,7 @@ export function AuditLogList({ records, maxEntries }: AuditLogListProps) {
               className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                 filter === type
                   ? 'bg-accent/20 text-accent'
-                  : 'text-gray-400 hover:text-gray-200'
+                  : 'text-muted hover:text-text'
               }`}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -97,7 +97,7 @@ export function AuditLogList({ records, maxEntries }: AuditLogListProps) {
         {filteredRecords.map((record) => (
           <div
             key={record.id}
-            className="bg-black/20 border border-gray-800 rounded-lg p-3 hover:border-gray-700 transition-colors"
+            className="panel-gradient-subtle border border-border rounded-lg p-3 hover:border-border transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -105,19 +105,19 @@ export function AuditLogList({ records, maxEntries }: AuditLogListProps) {
                   {getActionIcon(record.action)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-white text-sm font-medium truncate">
+                  <div className="text-text text-sm font-medium truncate">
                     {record.action}
                   </div>
-                  <div className="text-gray-400 text-xs truncate">{record.resource}</div>
+                  <div className="text-muted text-xs truncate">{record.resource}</div>
                 </div>
               </div>
-              <div className="text-xs text-gray-500 shrink-0">
+              <div className="text-xs text-muted shrink-0">
                 {formatDate(record.created_at)}
               </div>
             </div>
             {record.commit_hash && (
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs text-gray-500">Commit:</span>
+                <span className="text-xs text-muted">Commit:</span>
                 <code className="text-xs text-accent font-mono">
                   {record.commit_hash.substring(0, 7)}
                 </code>
@@ -127,7 +127,7 @@ export function AuditLogList({ records, maxEntries }: AuditLogListProps) {
         ))}
         {filteredRecords.length === 0 && (
           <div className="text-center py-6">
-            <div className="text-gray-500 text-sm">No matching activity</div>
+            <div className="text-muted text-sm">No matching activity</div>
           </div>
         )}
       </div>

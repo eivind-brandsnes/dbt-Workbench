@@ -801,17 +801,17 @@ function LineagePage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Lineage</h1>
-          <p className="text-sm text-gray-400">Navigate model, column, and row lineage with grouping, collapse, and impact analysis.</p>
+          <p className="text-sm text-muted">Navigate model, column, and row lineage with grouping, collapse, and impact analysis.</p>
         </div>
         <div className="flex flex-wrap gap-3 items-center justify-end">
           <button
             type="button"
             onClick={handleAiLineageExplain}
-            className="rounded border border-border px-3 py-2 text-sm text-text hover:bg-panel"
+            className="panel-gradient-subtle rounded border border-border px-3 py-2 text-sm text-text hover:bg-panel/70"
           >
             AI Explain Lineage
           </button>
-          <div className="flex rounded-md border border-gray-700 overflow-hidden shrink-0">
+          <div className="flex rounded-md border border-border overflow-hidden shrink-0">
             {([
               { id: 'model', label: 'Model' },
               { id: 'column', label: 'Column' },
@@ -823,8 +823,8 @@ function LineagePage() {
                   key={mode.id}
                   onClick={() => handleViewModeChange(mode.id)}
                   className={`px-3 py-2 text-sm ${
-                    idx > 0 ? 'border-l border-gray-700' : ''
-                  } ${active ? 'bg-accent text-white' : 'bg-panel text-gray-200 hover:bg-gray-800'}`}
+                    idx > 0 ? 'border-l border-border' : ''
+                  } ${active ? 'bg-accent text-text' : 'panel-gradient-subtle text-text hover:bg-panel/70'}`}
                 >
                   {mode.label}
                 </button>
@@ -838,7 +838,7 @@ function LineagePage() {
                 <select
                   value={columnLens}
                   onChange={(e) => setColumnLens(e.target.value as ColumnLens)}
-                  className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+                  className="panel-gradient-subtle border border-border rounded px-3 py-2 text-sm"
                 >
                   <option value="lineage">Column lineage</option>
                   <option value="evolution">Column evolution</option>
@@ -847,7 +847,7 @@ function LineagePage() {
               <select
                 value={groupMode}
                 onChange={(e) => setGroupMode(e.target.value as GroupingMode)}
-                className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+                className="panel-gradient-subtle border border-border rounded px-3 py-2 text-sm"
               >
                 <option value="none">No grouping</option>
                 <option value="schema">Schema</option>
@@ -864,7 +864,7 @@ function LineagePage() {
                   fetchGraph(value)
                 }}
                 placeholder="Max depth"
-                className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm w-28"
+                className="panel-gradient-subtle border border-border rounded px-3 py-2 text-sm w-28"
               />
             </>
           )}
@@ -901,12 +901,12 @@ function LineagePage() {
               fetchGraph(maxDepth)
               if (config.load_column_lineage_by_default) fetchColumnGraph()
             }}
-            className="bg-accent text-white px-4 py-2 rounded text-sm"
+            className="bg-accent text-text px-4 py-2 rounded text-sm"
           >
             {viewMode === 'row' ? 'Refresh row lineage' : 'Refresh'}
           </button>
           {viewMode === 'column' && (
-            <button onClick={deselectColumnView} className="bg-gray-700 text-white px-4 py-2 rounded text-sm border border-gray-500">
+            <button onClick={deselectColumnView} className="bg-surface-muted text-text px-4 py-2 rounded text-sm border border-border">
               Return to models
             </button>
           )}
@@ -914,19 +914,19 @@ function LineagePage() {
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-9 bg-panel border border-gray-800 rounded-lg p-4 space-y-4">
+        <div className="col-span-9 panel-gradient rounded-lg p-4 space-y-4">
           {viewMode === 'row' && (
             <div className="space-y-3">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="flex flex-col gap-1 min-w-[180px]">
-                  <label className="text-xs text-gray-400">Environment</label>
+                  <label className="text-xs text-muted">Environment</label>
                   <select
                     value={rowEnvironmentId}
                     onChange={(e) => {
                       const value = e.target.value ? Number(e.target.value) : ''
                       setRowEnvironmentId(value)
                     }}
-                    className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+                    className="panel-gradient-subtle border border-border rounded px-3 py-2 text-sm"
                     data-testid="row-lineage-environment-select"
                   >
                     <option value="">Default</option>
@@ -940,7 +940,7 @@ function LineagePage() {
                 </div>
 
                 <div className="flex flex-col gap-1 min-w-[260px]">
-                  <label className="text-xs text-gray-400">Model</label>
+                  <label className="text-xs text-muted">Model</label>
                   <select
                     value={rowSelectedModelUniqueId}
                     onChange={(e) => {
@@ -950,7 +950,7 @@ function LineagePage() {
                       setRowSelectedNodeId(null)
                       setRowError(null)
                     }}
-                    className="bg-panel border border-gray-700 rounded px-3 py-2 text-sm"
+                    className="panel-gradient-subtle border border-border rounded px-3 py-2 text-sm"
                     disabled={rowStatusLoading || rowModelsLoading}
                     data-testid="row-lineage-model-select"
                   >
@@ -974,20 +974,20 @@ function LineagePage() {
                 <button
                   onClick={handleLoadRows}
                   disabled={!rowAvailable || !rowSelectedModelUniqueId || rowPreviewLoading}
-                  className="bg-accent text-white px-4 py-2 rounded text-sm disabled:opacity-60"
+                  className="bg-accent text-text px-4 py-2 rounded text-sm disabled:opacity-60"
                   data-testid="row-lineage-load-rows"
                 >
                   {rowPreviewLoading ? 'Loading rows...' : 'Load rows'}
                 </button>
               </div>
 
-              {rowStatusLoading && <div className="text-xs text-gray-400">Loading row lineage status...</div>}
+              {rowStatusLoading && <div className="text-xs text-muted">Loading row lineage status...</div>}
 
               {rowStatus && !rowStatusLoading && !rowAvailable && (
                 <div className="rounded-lg border border-amber-700/60 bg-amber-950/40 p-4 text-sm text-amber-100 space-y-2">
                   <div className="font-semibold">Row lineage mappings not found at {rowMappingPath}</div>
                   <div className="text-amber-200">Enable dbt-rowlineage export:</div>
-                  <pre className="text-xs bg-black/30 border border-amber-800/60 rounded p-3 overflow-auto">
+                  <pre className="text-xs panel-gradient-subtle border border-amber-800/60 rounded p-3 overflow-auto">
 {`vars:
   rowlineage_enabled: true
   rowlineage_export_format: jsonl
@@ -1019,9 +1019,9 @@ function LineagePage() {
               {rowAvailable && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-white">Sample Rows</h3>
+                    <h3 className="text-sm font-semibold text-text">Sample Rows</h3>
                     {rowPreview && (
-                      <div className="text-[11px] text-gray-400">
+                      <div className="text-[11px] text-muted">
                         {rowPreview.relation_name}
                       </div>
                     )}
@@ -1030,10 +1030,10 @@ function LineagePage() {
                     rowPreview.rows.length > 0 ? (
                       <Table columns={rowTableColumns} data={rowPreview.rows} onRowClick={handleRowClick} />
                     ) : (
-                      <div className="text-xs text-gray-400">No rows returned for this model.</div>
+                      <div className="text-xs text-muted">No rows returned for this model.</div>
                     )
                   ) : (
-                    <div className="text-xs text-gray-400">Load rows to explore row-level lineage.</div>
+                    <div className="text-xs text-muted">Load rows to explore row-level lineage.</div>
                   )}
                 </div>
               )}
@@ -1042,39 +1042,39 @@ function LineagePage() {
 
           {(viewMode !== 'row' || rowAvailable) &&
             (!hasData ? (
-              <div className="text-gray-400">{emptyGraphMessage}</div>
+              <div className="text-muted">{emptyGraphMessage}</div>
             ) : (
               <div
                 ref={graphContainerRef}
-                className={`relative rounded-lg overflow-hidden border border-gray-800/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 ${
+                className={`relative rounded-lg overflow-hidden border border-border/60 bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 ${
                   isFullscreen ? 'h-full w-full' : 'h-[720px]'
                 }`}
                 data-testid="lineage-graph-container"
               >
-                <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900/80 px-2 py-1 text-[11px] text-gray-200 backdrop-blur">
+                <div className="panel-gradient-subtle absolute right-3 top-3 z-10 flex items-center gap-2 rounded-md border border-border px-2 py-1 text-[11px] text-text backdrop-blur">
                   <button
                     onClick={() => adjustZoom(1.2)}
-                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
                     aria-label="Zoom in"
                   >
                     +
                   </button>
                   <button
                     onClick={() => adjustZoom(1 / 1.2)}
-                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
                     aria-label="Zoom out"
                   >
                     -
                   </button>
                   <button
                     onClick={resetZoom}
-                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
                   >
                     Reset
                   </button>
                   <button
                     onClick={toggleFullscreen}
-                    className="rounded border border-gray-600 px-2 py-1 hover:bg-gray-800"
+                    className="rounded border border-border px-2 py-1 hover:bg-panel/70"
                   >
                     {isFullscreen ? 'Exit full screen' : 'Full screen'}
                   </button>
@@ -1084,7 +1084,7 @@ function LineagePage() {
                   width="100%"
                   height={isFullscreen ? '100%' : canvas.height}
                   viewBox={`0 0 ${layout.size.width} ${layout.size.height}`}
-                  className="w-full h-full text-gray-200 cursor-grab active:cursor-grabbing"
+                  className="w-full h-full text-text cursor-grab active:cursor-grabbing"
                   style={{ touchAction: 'none' }}
                 >
                   <defs>
@@ -1112,7 +1112,7 @@ function LineagePage() {
                     fill="url(#lineage-grid)"
                     rx={16}
                     ry={16}
-                    className="text-gray-800"
+                    className="text-border"
                   />
                   <g transform={transform.toString()}>
                     {layout.edges.map((edge) => {
@@ -1194,37 +1194,37 @@ function LineagePage() {
         <div className="col-span-3 space-y-4">
           {viewMode !== 'row' ? (
             <>
-          <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
+          <div className="panel-gradient rounded-lg p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white">Grouping</h3>
-              <span className="text-[11px] text-gray-400">Mode: {groupMode}</span>
+              <h3 className="text-sm font-semibold text-text">Grouping</h3>
+              <span className="text-[11px] text-muted">Mode: {groupMode}</span>
             </div>
             <div className="space-y-2 max-h-48 overflow-auto pr-1">
               {visibleGroups.map((group) => {
                 const groupId = `group:${group.id}`
                 const collapsed = collapsedGroups.has(groupId)
                 return (
-                  <div key={group.id} className="flex items-center justify-between text-sm text-gray-200">
+                  <div key={group.id} className="flex items-center justify-between text-sm text-text">
                     <div>
                       <div className="font-medium">{group.label}</div>
-                      <div className="text-[11px] text-gray-400">{group.members.length} nodes</div>
+                      <div className="text-[11px] text-muted">{group.members.length} nodes</div>
                     </div>
                     <button
                       onClick={() => toggleGroup(groupId)}
-                      className="text-xs px-2 py-1 border border-gray-600 rounded"
+                      className="text-xs px-2 py-1 border border-border rounded"
                     >
                       {collapsed ? 'Expand' : 'Collapse'}
                     </button>
                   </div>
                 )
               })}
-              {visibleGroups.length === 0 && <div className="text-xs text-gray-400">No groups available for this mode.</div>}
+              {visibleGroups.length === 0 && <div className="text-xs text-muted">No groups available for this mode.</div>}
             </div>
           </div>
 
-          <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
+          <div className="panel-gradient rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white">Selection</h3>
+              <h3 className="text-sm font-semibold text-text">Selection</h3>
               {selectedNode && (
                 <button
                   onClick={() => navigate(`/models/${selectedNode}`)}
@@ -1236,15 +1236,15 @@ function LineagePage() {
             </div>
             {selectedNode && modelDetail && (
               <div className="space-y-2">
-                <div className="text-gray-200 text-sm font-medium">{modelDetail.model_id}</div>
-                <div className="text-[11px] text-gray-400">Parents: {modelDetail.parents.length} | Children: {modelDetail.children.length}</div>
+                <div className="text-text text-sm font-medium">{modelDetail.model_id}</div>
+                <div className="text-[11px] text-muted">Parents: {modelDetail.parents.length} | Children: {modelDetail.children.length}</div>
                 <div className="flex flex-wrap gap-1">
                   {(modelDetail.tags || []).map((tag) => (
-                    <span key={tag} className="text-[10px] bg-gray-700 px-2 py-1 rounded-full text-gray-200">{tag}</span>
+                    <span key={tag} className="text-[10px] bg-surface-muted px-2 py-1 rounded-full text-text">{tag}</span>
                   ))}
                 </div>
                 <div className="space-y-1">
-                  <div className="text-xs text-gray-300 font-semibold">Columns</div>
+                  <div className="text-xs text-muted font-semibold">Columns</div>
                   <div className="max-h-32 overflow-auto space-y-1">
                     {Object.entries(modelDetail.columns || {}).map(([col, meta]) => {
                       const columnId = `${modelDetail.model_id}.${col}`
@@ -1252,54 +1252,54 @@ function LineagePage() {
                         <button
                           key={col}
                           onClick={() => selectColumnNode(columnId)}
-                          className="w-full text-left text-[11px] px-2 py-1 bg-gray-800 rounded hover:bg-gray-700"
+                          className="w-full text-left text-[11px] px-2 py-1 bg-panel/70 rounded hover:bg-surface-muted"
                         >
-                          <div className="text-gray-100">{col}</div>
-                          {meta.description && <div className="text-gray-400 truncate">{meta.description}</div>}
+                          <div className="text-text">{col}</div>
+                          {meta.description && <div className="text-muted truncate">{meta.description}</div>}
                         </button>
                       )
                     })}
-                    {Object.keys(modelDetail.columns || {}).length === 0 && <div className="text-[11px] text-gray-500">No columns.</div>}
+                    {Object.keys(modelDetail.columns || {}).length === 0 && <div className="text-[11px] text-muted">No columns.</div>}
                   </div>
                 </div>
                 <button
                   onClick={() => collapseSubtree(selectedNode)}
-                  className="text-xs px-3 py-1 bg-gray-700 border border-gray-600 rounded"
+                  className="text-xs px-3 py-1 bg-surface-muted border border-border rounded"
                 >
                   Toggle collapse subtree
                 </button>
               </div>
             )}
             {selectedColumn && (
-              <div className="space-y-1 text-sm text-gray-200">
+              <div className="space-y-1 text-sm text-text">
                 <div className="font-semibold">{selectedColumn}</div>
-                <div className="text-[11px] text-gray-400">Upstream: {impact.upstream.length} | Downstream: {impact.downstream.length}</div>
+                <div className="text-[11px] text-muted">Upstream: {impact.upstream.length} | Downstream: {impact.downstream.length}</div>
               </div>
             )}
-            {!selectedNode && !selectedColumn && <div className="text-xs text-gray-400">Select a node to view details.</div>}
+            {!selectedNode && !selectedColumn && <div className="text-xs text-muted">Select a node to view details.</div>}
           </div>
 
           {viewMode === 'column' && columnLens === 'evolution' && (
-            <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
+            <div className="panel-gradient rounded-lg p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">Column Evolution</h3>
+                <h3 className="text-sm font-semibold text-text">Column Evolution</h3>
                 {columnEvolution?.summary && (
-                  <span className="text-[11px] text-gray-400">
+                  <span className="text-[11px] text-muted">
                     {columnEvolution.summary.added + columnEvolution.summary.changed + columnEvolution.summary.removed} changes
                   </span>
                 )}
               </div>
-              {columnEvolutionLoading && <div className="text-xs text-gray-400">Loading column evolution...</div>}
+              {columnEvolutionLoading && <div className="text-xs text-muted">Loading column evolution...</div>}
               {columnEvolutionError && (
                 <div className="text-xs text-red-300">{columnEvolutionError}</div>
               )}
               {!columnEvolutionLoading && !columnEvolutionError && columnEvolution && !columnEvolution.available && (
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-muted">
                   {columnEvolution.message || 'Column evolution is not available yet.'}
                 </div>
               )}
               {!columnEvolutionLoading && columnEvolution?.available && columnEvolution.summary && (
-                <div className="space-y-2 text-xs text-gray-200">
+                <div className="space-y-2 text-xs text-text">
                   <div className="flex flex-wrap gap-2 text-[11px]">
                     <span className="rounded bg-emerald-900/40 border border-emerald-700/50 px-2 py-1 text-emerald-200">
                       Added {columnEvolution.summary.added}
@@ -1311,7 +1311,7 @@ function LineagePage() {
                       Removed {columnEvolution.summary.removed}
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-400">
+                  <div className="text-[11px] text-muted">
                     Compared manifest v{columnEvolution.baseline_version?.version ?? '?'} → v{columnEvolution.current_version?.version ?? '?'}
                   </div>
                   <div className="space-y-2 max-h-56 overflow-auto pr-1">
@@ -1364,7 +1364,7 @@ function LineagePage() {
                     {columnEvolutionAdded.length === 0 &&
                       columnEvolutionChanged.length === 0 &&
                       columnEvolutionRemoved.length === 0 && (
-                        <div className="text-xs text-gray-400">No column changes detected.</div>
+                        <div className="text-xs text-muted">No column changes detected.</div>
                       )}
                   </div>
                 </div>
@@ -1372,25 +1372,25 @@ function LineagePage() {
             </div>
           )}
 
-          <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
-            <h3 className="text-sm font-semibold text-white">Impact</h3>
+          <div className="panel-gradient rounded-lg p-3 space-y-2">
+            <h3 className="text-sm font-semibold text-text">Impact</h3>
             {impact.upstream.length + impact.downstream.length === 0 ? (
-              <div className="text-xs text-gray-400">No impact highlighted.</div>
+              <div className="text-xs text-muted">No impact highlighted.</div>
             ) : (
-              <div className="text-xs text-gray-200 space-y-2">
+              <div className="text-xs text-text space-y-2">
                 <div>
-                  <div className="font-semibold text-gray-300">Upstream</div>
+                  <div className="font-semibold text-muted">Upstream</div>
                   <div className="flex flex-wrap gap-1">
                     {impact.upstream.map((item) => (
-                      <span key={item} className="bg-gray-700 px-2 py-1 rounded text-[11px]">{item}</span>
+                      <span key={item} className="bg-surface-muted px-2 py-1 rounded text-[11px]">{item}</span>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-300">Downstream</div>
+                  <div className="font-semibold text-muted">Downstream</div>
                   <div className="flex flex-wrap gap-1">
                     {impact.downstream.map((item) => (
-                      <span key={item} className="bg-gray-700 px-2 py-1 rounded text-[11px]">{item}</span>
+                      <span key={item} className="bg-surface-muted px-2 py-1 rounded text-[11px]">{item}</span>
                     ))}
                   </div>
                 </div>
@@ -1400,35 +1400,35 @@ function LineagePage() {
             </>
           ) : (
             <>
-              <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-3">
+              <div className="panel-gradient rounded-lg p-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white">Row Details</h3>
+                  <h3 className="text-sm font-semibold text-text">Row Details</h3>
                   {rowTrace?.truncated && <span className="text-[11px] text-amber-300">Truncated</span>}
                 </div>
-                {rowTraceLoading && <div className="text-xs text-gray-400">Loading row lineage...</div>}
+                {rowTraceLoading && <div className="text-xs text-muted">Loading row lineage...</div>}
                 {!rowTraceLoading && !rowTrace && (
-                  <div className="text-xs text-gray-400">Load rows and select one to inspect details.</div>
+                  <div className="text-xs text-muted">Load rows and select one to inspect details.</div>
                 )}
                 {!rowTraceLoading && rowTrace && (
                   <div className="space-y-2">
-                    <div className="text-gray-200 text-sm font-medium">{selectedRowModelName || rowTrace.target.model_name}</div>
-                    <div className="text-[11px] text-gray-400 break-all">{selectedRowTraceId || rowTrace.target.trace_id}</div>
-                    {selectedRowRelationName && <div className="text-[11px] text-gray-400">{selectedRowRelationName}</div>}
+                    <div className="text-text text-sm font-medium">{selectedRowModelName || rowTrace.target.model_name}</div>
+                    <div className="text-[11px] text-muted break-all">{selectedRowTraceId || rowTrace.target.trace_id}</div>
+                    {selectedRowRelationName && <div className="text-[11px] text-muted">{selectedRowRelationName}</div>}
                     {rowTrace.truncated && (
                       <div className="text-[11px] text-amber-300">Traversal truncated at max hops.</div>
                     )}
                     <div className="space-y-1">
-                      <div className="text-xs text-gray-300 font-semibold">Row data</div>
+                      <div className="text-xs text-muted font-semibold">Row data</div>
                       {selectedRowEntries.length > 0 ? (
-                        <div className="max-h-64 overflow-auto border border-gray-800 rounded">
+                        <div className="max-h-64 overflow-auto border border-border rounded">
                           <table className="w-full text-xs">
                             <tbody>
                               {selectedRowEntries.map(([key, value]) => {
                                 const formatted = formatValueForDetails(value)
                                 return (
-                                  <tr key={key} className="border-b border-gray-800 last:border-b-0">
-                                    <td className="px-2 py-1 text-gray-300 align-top w-1/3 break-all">{key}</td>
-                                    <td className="px-2 py-1 text-gray-100 align-top">
+                                  <tr key={key} className="border-b border-border last:border-b-0">
+                                    <td className="px-2 py-1 text-muted align-top w-1/3 break-all">{key}</td>
+                                    <td className="px-2 py-1 text-text align-top">
                                       {formatted.complex ? (
                                         <pre className="whitespace-pre-wrap break-words">{formatted.text}</pre>
                                       ) : (
@@ -1442,35 +1442,35 @@ function LineagePage() {
                           </table>
                         </div>
                       ) : (
-                        <div className="text-[11px] text-gray-400">No row data available.</div>
+                        <div className="text-[11px] text-muted">No row data available.</div>
                       )}
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="bg-panel border border-gray-800 rounded-lg p-3 space-y-2">
+              <div className="panel-gradient rounded-lg p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white">Hop History</h3>
-                  {rowTrace && <span className="text-[11px] text-gray-400">{rowTrace.hops.length} hops</span>}
+                  <h3 className="text-sm font-semibold text-text">Hop History</h3>
+                  {rowTrace && <span className="text-[11px] text-muted">{rowTrace.hops.length} hops</span>}
                 </div>
-                {!rowTrace && <div className="text-xs text-gray-400">Select a row to view upstream hops.</div>}
+                {!rowTrace && <div className="text-xs text-muted">Select a row to view upstream hops.</div>}
                 {rowTrace && rowTrace.hops.length === 0 && (
-                  <div className="text-xs text-gray-400">No upstream hops found for this row.</div>
+                  <div className="text-xs text-muted">No upstream hops found for this row.</div>
                 )}
                 {rowTrace && rowTrace.hops.length > 0 && (
                   <div className="space-y-2 max-h-[520px] overflow-auto pr-1">
                     {rowTrace.hops.map((hop, idx) => (
-                      <div key={`${hop.source_model}-${hop.source_trace_id}-${idx}`} className="rounded border border-gray-800 bg-gray-900/40 p-3 space-y-1">
-                        <div className="text-sm text-gray-100 font-medium">
+                      <div key={`${hop.source_model}-${hop.source_trace_id}-${idx}`} className="rounded border border-border panel-gradient-subtle p-3 space-y-1">
+                        <div className="text-sm text-text font-medium">
                           {hop.source_model}
                           {' -> '}
                           {hop.target_model}
                         </div>
-                        {hop.executed_at && <div className="text-[11px] text-gray-400">{hop.executed_at}</div>}
-                        <details className="text-xs text-gray-200">
-                          <summary className="cursor-pointer text-gray-300">Compiled SQL</summary>
-                          <pre className="mt-1 rounded border border-gray-800 bg-black/40 p-2 whitespace-pre-wrap break-words">
+                        {hop.executed_at && <div className="text-[11px] text-muted">{hop.executed_at}</div>}
+                        <details className="text-xs text-text">
+                          <summary className="cursor-pointer text-muted">Compiled SQL</summary>
+                          <pre className="mt-1 rounded border border-border panel-gradient-subtle p-2 whitespace-pre-wrap break-words">
                             {hop.compiled_sql || 'No compiled SQL available.'}
                           </pre>
                         </details>
