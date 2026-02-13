@@ -87,13 +87,9 @@ function SqlWorkspacePage() {
   const modelOptions = state.selectedModelOptions.map((model) => ({ id: model.id, name: model.name }))
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div>
-        <h1 className="text-2xl font-semibold text-text">SQL Workspace</h1>
-        <p className="text-sm text-muted">
-          DBeaver-style SQL workbench with dbt model execution, compiled SQL visibility, history, and profiling.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-1">
           <button
             type="button"
             className="panel-gradient-subtle rounded border border-border px-2 py-1 text-xs text-text hover:bg-panel/70"
