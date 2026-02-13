@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { BottomDock } from './sql-workspace/BottomDock'
 import { EditorPane } from './sql-workspace/EditorPane'
@@ -20,6 +20,8 @@ function SqlWorkspacePage() {
 
   const [isMobile, setIsMobile] = useState<boolean>(getIsMobile)
   const [mobileNavigatorOpen, setMobileNavigatorOpen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const workbenchRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
@@ -40,6 +42,27 @@ function SqlWorkspacePage() {
     }
     media.addListener(sync)
     return () => media.removeListener(sync)
+  }, [])
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === workbenchRef.current)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  const toggleFullscreen = useCallback(() => {
+    const target = workbenchRef.current
+    if (!target) return
+
+    if (document.fullscreenElement === target) {
+      document.exitFullscreen?.().catch(() => undefined)
+      return
+    }
+
+    target.requestFullscreen?.().catch(() => undefined)
   }, [])
 
   const split = useSplitLayout({
@@ -121,7 +144,12 @@ function SqlWorkspacePage() {
         </div>
       </div>
 
-      <div className="sqlwb-root panel-gradient">
+      <div
+        ref={workbenchRef}
+        className="sqlwb-root panel-gradient"
+        data-testid="sql-workbench-root"
+        data-fullscreen={isFullscreen ? 'true' : 'false'}
+      >
         <WorkbenchToolbar
           environmentId={state.environmentId}
           environments={state.environments.map((env) => ({ id: env.id, name: env.name }))}
@@ -136,6 +164,8 @@ function SqlWorkspacePage() {
           onNewTab={() => state.openTab({ mode: 'sql', forceNew: true })}
           onFocusEditor={split.focusEditor}
           onResetLayout={split.resetLayout}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
           isRunning={state.isRunning}
           canSave={canSaveFile}
           canRun={canRun}

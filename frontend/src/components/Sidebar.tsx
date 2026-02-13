@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom'
-import { type ReactNode, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 type Role = 'viewer' | 'developer' | 'admin'
@@ -155,7 +155,33 @@ const BrandMark = ({ size = 20 }: { size?: number }) => (
 
 export function Sidebar() {
   const { user, isAuthEnabled } = useAuth()
-  const [collapsed, setCollapsed] = useState(false)
+  const { pathname } = useLocation()
+  const isSqlRoute = pathname === '/sql' || pathname.startsWith('/sql/')
+  const [collapsed, setCollapsed] = useState(() => isSqlRoute)
+  const wasSqlRouteRef = useRef(isSqlRoute)
+  const nonSqlCollapsedRef = useRef(false)
+
+  useEffect(() => {
+    const wasSqlRoute = wasSqlRouteRef.current
+    if (!isSqlRoute && !wasSqlRoute) {
+      nonSqlCollapsedRef.current = collapsed
+    }
+  }, [collapsed, isSqlRoute])
+
+  useEffect(() => {
+    const wasSqlRoute = wasSqlRouteRef.current
+
+    if (!wasSqlRoute && isSqlRoute) {
+      nonSqlCollapsedRef.current = collapsed
+      setCollapsed(true)
+    } else if (wasSqlRoute && !isSqlRoute) {
+      setCollapsed(nonSqlCollapsedRef.current)
+    }
+
+    wasSqlRouteRef.current = isSqlRoute
+  }, [collapsed, isSqlRoute])
+
+  const toggleCollapsed = () => setCollapsed((prev) => !prev)
 
   const role: Role = (user?.role as Role) || 'admin'
   const allowedItems = baseNavItems.filter((item) => {
@@ -171,11 +197,12 @@ export function Sidebar() {
         collapsed ? 'w-20 px-3 py-4' : 'w-64 px-4 py-6'
       }`}
       data-testid="sidebar"
+      data-collapsed={collapsed ? 'true' : 'false'}
     >
       <div className="flex items-center justify-between mb-8">
         <button
           type="button"
-          onClick={() => setCollapsed((prev) => !prev)}
+          onClick={toggleCollapsed}
           className="flex items-center gap-3 focus:outline-none"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -195,7 +222,7 @@ export function Sidebar() {
 
         <button
           type="button"
-          onClick={() => setCollapsed((prev) => !prev)}
+          onClick={toggleCollapsed}
           className="hidden md:inline-flex items-center justify-center h-8 w-8 rounded-md border border-border text-muted hover:bg-panel/70 hover:text-text"
           aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
         >

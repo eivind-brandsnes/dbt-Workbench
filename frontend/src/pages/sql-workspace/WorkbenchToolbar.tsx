@@ -19,6 +19,8 @@ interface WorkbenchToolbarProps {
   onNewTab: () => void
   onFocusEditor: () => void
   onResetLayout: () => void
+  isFullscreen: boolean
+  onToggleFullscreen: () => void
   isRunning: boolean
   canSave: boolean
   canRun: boolean
@@ -42,6 +44,8 @@ export const WorkbenchToolbar = ({
   onNewTab,
   onFocusEditor,
   onResetLayout,
+  isFullscreen,
+  onToggleFullscreen,
   isRunning,
   canSave,
   canRun,
@@ -166,6 +170,14 @@ export const WorkbenchToolbar = ({
           onClick={onResetLayout}
         >
           Reset Layout
+        </button>
+        <button
+          type="button"
+          className="sqlwb-btn sqlwb-btn-ghost"
+          onClick={onToggleFullscreen}
+          aria-pressed={isFullscreen}
+        >
+          {isFullscreen ? 'Exit Full Screen' : 'Enter Full Screen'}
         </button>
       </div>
     </div>

@@ -25,6 +25,15 @@
   overflow: hidden;
 }
 
+.sqlwb-root:fullscreen,
+.sqlwb-root:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
+  border: 0;
+}
+
 .sqlwb-toolbar {
   display: flex;
   justify-content: space-between;

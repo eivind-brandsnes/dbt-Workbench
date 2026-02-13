@@ -78,6 +78,9 @@ vi.mock('@/services/gitService', () => ({
 const mockedSqlService = vi.mocked(SqlWorkspaceService)
 const mockedScheduler = vi.mocked(SchedulerService)
 const mockedGit = vi.mocked(GitService)
+const requestFullscreenMock = vi.fn()
+const exitFullscreenMock = vi.fn()
+let fullscreenElement: Element | null = null
 
 const renderPage = () =>
   render(
@@ -89,6 +92,31 @@ const renderPage = () =>
 describe('SqlWorkspacePage editor controls', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    fullscreenElement = null
+
+    requestFullscreenMock.mockImplementation(function (this: Element) {
+      fullscreenElement = this
+      document.dispatchEvent(new Event('fullscreenchange'))
+      return Promise.resolve()
+    })
+    exitFullscreenMock.mockImplementation(() => {
+      fullscreenElement = null
+      document.dispatchEvent(new Event('fullscreenchange'))
+      return Promise.resolve()
+    })
+
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => fullscreenElement,
+    })
+    Object.defineProperty(Element.prototype, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreenMock,
+    })
+    Object.defineProperty(document, 'exitFullscreen', {
+      configurable: true,
+      value: exitFullscreenMock,
+    })
 
     const now = new Date().toISOString()
     mockedScheduler.listEnvironments.mockResolvedValue([
@@ -266,5 +294,24 @@ describe('SqlWorkspacePage editor controls', () => {
       ).toBeInTheDocument(),
     )
     expect(mockedSqlService.executeModel).not.toHaveBeenCalled()
+  })
+
+  it('toggles SQL workbench fullscreen from toolbar control', async () => {
+    renderPage()
+
+    await waitFor(() => expect(mockedSqlService.getMetadata).toHaveBeenCalled())
+
+    const enterButton = await screen.findByRole('button', { name: /enter full screen/i })
+    fireEvent.click(enterButton)
+
+    await waitFor(() => expect(requestFullscreenMock).toHaveBeenCalledTimes(1))
+    expect(await screen.findByRole('button', { name: /exit full screen/i })).toBeInTheDocument()
+    expect(screen.getByTestId('sql-workbench-root')).toHaveAttribute('data-fullscreen', 'true')
+
+    fireEvent.click(screen.getByRole('button', { name: /exit full screen/i }))
+
+    await waitFor(() => expect(exitFullscreenMock).toHaveBeenCalledTimes(1))
+    expect(await screen.findByRole('button', { name: /enter full screen/i })).toBeInTheDocument()
+    expect(screen.getByTestId('sql-workbench-root')).toHaveAttribute('data-fullscreen', 'false')
   })
 })
