@@ -136,3 +136,97 @@ def test_impact_analysis_returns_complete_paths(tmp_path: Path):
 
     column_impact = service.get_column_impact("model.example.c.id").impact
     assert "model.example.b.id" in column_impact.upstream
+
+
+def test_lineage_surfaces_exclude_test_resources(tmp_path: Path):
+    manifest = {
+        "nodes": {
+            "model.example.parent": {
+                "resource_type": "model",
+                "name": "parent",
+                "alias": "parent",
+                "database": "db",
+                "schema": "analytics",
+                "depends_on": {"nodes": []},
+                "columns": {"id": {"name": "id"}},
+            },
+            "model.example.child": {
+                "resource_type": "model",
+                "name": "child",
+                "alias": "child",
+                "database": "db",
+                "schema": "analytics",
+                "depends_on": {"nodes": ["model.example.parent"]},
+                "columns": {"id": {"name": "id"}},
+            },
+            "test.example.not_null_parent_id": {
+                "resource_type": "test",
+                "name": "not_null_parent_id",
+                "alias": "not_null_parent_id",
+                "database": "db",
+                "schema": "analytics_dbt_test__audit",
+                "depends_on": {"nodes": ["model.example.parent"]},
+                "columns": {"id": {"name": "id"}},
+            },
+        }
+    }
+    catalog = {
+        "nodes": {
+            "model.example.parent": {"columns": {"id": {"name": "id", "type": "integer"}}},
+            "model.example.child": {"columns": {"id": {"name": "id", "type": "integer"}}},
+            "test.example.not_null_parent_id": {"columns": {"id": {"name": "id", "type": "integer"}}},
+        }
+    }
+    service = create_service(tmp_path, manifest, catalog)
+
+    model_graph = service.build_model_graph(max_depth=None)
+    assert all(node.type != "test" for node in model_graph.nodes)
+    assert all("test.example.not_null_parent_id" not in (edge.source, edge.target) for edge in model_graph.edges)
+    assert all("test.example.not_null_parent_id" not in group.members for group in model_graph.groups)
+
+    column_graph = service.build_column_graph()
+    assert all(not node.id.startswith("test.example.not_null_parent_id.") for node in column_graph.nodes)
+    assert all(
+        "test.example.not_null_parent_id" not in (edge.source, edge.target)
+        for edge in column_graph.edges
+    )
+
+    model_impact = service.get_model_impact("model.example.child").impact
+    assert "model.example.parent" in model_impact.upstream
+    assert all(not item.startswith("test.example.") for item in model_impact.upstream)
+
+
+def test_model_lineage_children_do_not_include_tests(tmp_path: Path):
+    manifest = {
+        "nodes": {
+            "model.example.parent": {
+                "resource_type": "model",
+                "name": "parent",
+                "alias": "parent",
+                "database": "db",
+                "schema": "analytics",
+                "depends_on": {"nodes": []},
+            },
+            "model.example.child": {
+                "resource_type": "model",
+                "name": "child",
+                "alias": "child",
+                "database": "db",
+                "schema": "analytics",
+                "depends_on": {"nodes": ["model.example.parent"]},
+            },
+            "test.example.accepted_values_parent_id": {
+                "resource_type": "test",
+                "name": "accepted_values_parent_id",
+                "alias": "accepted_values_parent_id",
+                "database": "db",
+                "schema": "analytics_dbt_test__audit",
+                "depends_on": {"nodes": ["model.example.parent"]},
+            },
+        }
+    }
+    catalog = {"nodes": {}}
+    service = create_service(tmp_path, manifest, catalog)
+
+    model_detail = service.get_model_lineage("model.example.parent")
+    assert model_detail.children == ["model.example.child"]

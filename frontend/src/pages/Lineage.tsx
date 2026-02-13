@@ -58,6 +58,8 @@ type LineageConfig = {
 
 const nodeSize = { width: 190, height: 84 }
 const canvas = { width: 1200, height: 720 }
+const nodeLabelLineMaxChars = 24
+const nodeMetaMaxChars = 28
 const emptyImpact: ImpactResponse = { upstream: [], downstream: [] }
 const normalizeImpact = (value?: Partial<ImpactResponse>): ImpactResponse => ({
   upstream: value?.upstream ?? [],
@@ -83,6 +85,81 @@ const getNodeColor = (node: LineageNode | ColumnNode): { fill: string; stroke: s
 
 const normalizeColumnId = (columnId: string) => columnId.replace(/\s+/g, '')
 const rowTableColumnLimit = 6
+
+const truncateWithEllipsis = (value: string, maxChars: number): string => {
+  if (value.length <= maxChars) return value
+  if (maxChars <= 3) return value.slice(0, maxChars)
+  return `${value.slice(0, maxChars - 3)}...`
+}
+
+const clampSvgTextLines = (value: string, maxLines: number, maxCharsPerLine: number): string[] => {
+  const normalized = String(value || '').replace(/\r/g, '')
+  const chunks = normalized
+    .split('\n')
+    .flatMap((lineText) => lineText.match(new RegExp(`.{1,${maxCharsPerLine}}`, 'g')) || [''])
+  if (chunks.length === 0) return ['']
+  if (chunks.length <= maxLines) return chunks
+
+  const visible = chunks.slice(0, maxLines)
+  if (maxCharsPerLine <= 3) {
+    visible[maxLines - 1] = '.'.repeat(Math.max(1, maxCharsPerLine))
+  } else {
+    const tail = visible[maxLines - 1]
+    visible[maxLines - 1] =
+      tail.length >= maxCharsPerLine ? `${tail.slice(0, maxCharsPerLine - 3)}...` : `${tail}...`
+  }
+  return visible
+}
+
+type ResolvedColumnSelection = {
+  columnId: string
+  modelId: string
+  column: string
+}
+
+const splitColumnId = (columnId: string): ResolvedColumnSelection => {
+  const normalizedId = normalizeColumnId(columnId)
+  const separatorIndex = normalizedId.lastIndexOf('.')
+  if (separatorIndex < 0) {
+    return { columnId: normalizedId, modelId: normalizedId, column: '' }
+  }
+  return {
+    columnId: normalizedId,
+    modelId: normalizedId.slice(0, separatorIndex),
+    column: normalizedId.slice(separatorIndex + 1),
+  }
+}
+
+const resolveColumnSelection = (input: string | Pick<ColumnNode, 'id' | 'model_id' | 'column'>): ResolvedColumnSelection => {
+  if (typeof input === 'string') {
+    return splitColumnId(input)
+  }
+
+  const normalizedId = normalizeColumnId(input.id)
+  const normalizedModelId = normalizeColumnId(input.model_id || '')
+  const normalizedColumn = normalizeColumnId(input.column || '')
+
+  if (normalizedModelId && normalizedColumn) {
+    return {
+      columnId: `${normalizedModelId}.${normalizedColumn}`,
+      modelId: normalizedModelId,
+      column: normalizedColumn,
+    }
+  }
+
+  if (normalizedModelId) {
+    const columnFromId = normalizedId.startsWith(`${normalizedModelId}.`)
+      ? normalizedId.slice(normalizedModelId.length + 1)
+      : splitColumnId(normalizedId).column
+    return {
+      columnId: columnFromId ? `${normalizedModelId}.${columnFromId}` : normalizedId,
+      modelId: normalizedModelId,
+      column: columnFromId,
+    }
+  }
+
+  return splitColumnId(normalizedId)
+}
 
 const formatValueForCell = (value: unknown): string => {
   if (value === null || value === undefined) return ''
@@ -478,6 +555,15 @@ function LineagePage() {
       ...impact.upstream.map((n) => normalize(n)),
       ...impact.downstream.map((n) => normalize(n)),
     ])
+    if (impact.upstream.length + impact.downstream.length === 0) {
+      const selected = normalize(selectedColumn)
+      columnGraph.edges.forEach((edge) => {
+        const source = normalize(edge.source)
+        const target = normalize(edge.target)
+        if (source === selected) focus.add(target)
+        if (target === selected) focus.add(source)
+      })
+    }
     const nodes = columnGraph.nodes.filter((node) => focus.has(normalize(node.id)))
     const edges = columnGraph.edges.filter(
       (edge) => focus.has(normalize(edge.source)) && focus.has(normalize(edge.target)),
@@ -617,16 +703,14 @@ function LineagePage() {
     api.get<ModelDetail>(`/lineage/model/${encodeURIComponent(nodeId)}`).then((res) => setModelDetail(res.data))
   }
 
-  const selectColumnNode = (columnId: string) => {
-    const normalized = normalizeColumnId(columnId)
-    const separatorIndex = normalized.indexOf('.')
-    const modelId = separatorIndex >= 0 ? normalized.slice(0, separatorIndex) : normalized
-    const column = separatorIndex >= 0 ? normalized.slice(separatorIndex + 1) : ''
+  const selectColumnNode = (columnRef: string | Pick<ColumnNode, 'id' | 'model_id' | 'column'>) => {
+    const resolved = resolveColumnSelection(columnRef)
     setViewMode('column')
     setSelectedNode(null)
-    setSelectedColumn(normalized)
+    setSelectedColumn(resolved.columnId)
+    const query = resolved.column ? `?column=${encodeURIComponent(resolved.column)}` : ''
     api
-      .get<ImpactResponse>(`/lineage/upstream/${encodeURIComponent(modelId)}?column=${encodeURIComponent(column)}`)
+      .get<ImpactResponse>(`/lineage/upstream/${encodeURIComponent(resolved.modelId)}${query}`)
       .then((res) => setImpact(normalizeImpact(res.data)))
       .catch(() => setImpact(emptyImpact))
   }
@@ -638,14 +722,15 @@ function LineagePage() {
     if (viewMode === 'model') {
       selectModelNode(node.id)
     } else if (viewMode === 'column') {
-      selectColumnNode(node.id)
+      const columnNode = node as PositionedNode<ColumnNode>
+      selectColumnNode({ id: columnNode.id, model_id: columnNode.model_id, column: columnNode.column })
     } else {
       setRowSelectedNodeId(node.id)
     }
   }
 
   const visibleGroups = useMemo(
-    () => groups.filter((g) => (groupMode === 'none' ? true : g.type === groupMode)),
+    () => (groupMode === 'none' ? [] : groups.filter((g) => g.type === groupMode)),
     [groupMode, groups],
   )
 
@@ -722,7 +807,8 @@ function LineagePage() {
       fetchColumnGraph()
     }
     if (mode === 'column' && !selectedColumn && columnGraph.nodes.length > 0) {
-      selectColumnNode(columnGraph.nodes[0].id)
+      const firstNode = columnGraph.nodes[0]
+      selectColumnNode({ id: firstNode.id, model_id: firstNode.model_id, column: firstNode.column })
     }
     if (mode === 'row' && !rowStatusLoading && !rowStatus) {
       loadRowStatus()
@@ -1134,7 +1220,9 @@ function LineagePage() {
                       const emphasized = highlightNodes.size === 0 || highlightNodes.has(node.id)
                       const faded = emphasized ? 1 : 0.35
                       const isCollapsed = (node as PositionedNode<LineageNode>).isGroup || (node as PositionedNode<LineageNode>).isSubtree
-                      const labelLines = String(node.label || '').split('\n')
+                      const labelLines = clampSvgTextLines(String(node.label || ''), 2, nodeLabelLineMaxChars)
+                      const schemaText = node.schema ? truncateWithEllipsis(String(node.schema), nodeMetaMaxChars) : null
+                      const typeText = node.type ? truncateWithEllipsis(String(node.type), nodeMetaMaxChars) : null
                       const labelOffset = Math.max(0, labelLines.length - 1) * 16
                       const schemaY = 46 + labelOffset
                       const typeY = 62 + labelOffset
@@ -1167,14 +1255,14 @@ function LineagePage() {
                               </tspan>
                             ))}
                           </text>
-                          {node.schema && (
+                          {schemaText && (
                             <text x={16} y={schemaY} className="text-[11px]" fill="#cbd5e1">
-                              {node.schema}
+                              {schemaText}
                             </text>
                           )}
-                          {node.type && (
+                          {typeText && (
                             <text x={16} y={typeY} className="text-[10px] uppercase" fill="#94a3b8">
-                              {node.type}
+                              {typeText}
                             </text>
                           )}
                           <title>{node.label}</title>
@@ -1196,25 +1284,35 @@ function LineagePage() {
               <span className="text-[11px] text-muted">Mode: {groupMode}</span>
             </div>
             <div className="space-y-2 max-h-48 overflow-auto pr-1">
-              {visibleGroups.map((group) => {
-                const groupId = `group:${group.id}`
-                const collapsed = collapsedGroups.has(groupId)
-                return (
-                  <div key={group.id} className="flex items-center justify-between text-sm text-text">
-                    <div>
-                      <div className="font-medium">{group.label}</div>
-                      <div className="text-[11px] text-muted">{group.members.length} nodes</div>
+              {groupMode === 'none' && (
+                <div className="text-xs text-muted">
+                  Grouping is disabled. Select Schema, Resource type, or Tags to enable collapse controls.
+                </div>
+              )}
+              {groupMode !== 'none' &&
+                visibleGroups.map((group) => {
+                  const groupId = `group:${group.id}`
+                  const collapsed = collapsedGroups.has(groupId)
+                  return (
+                    <div key={group.id} className="flex items-center justify-between gap-2 text-sm text-text">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate" title={group.label}>
+                          {group.label}
+                        </div>
+                        <div className="text-[11px] text-muted">{group.members.length} nodes</div>
+                      </div>
+                      <button
+                        onClick={() => toggleGroup(groupId)}
+                        className="text-xs px-2 py-1 border border-border rounded shrink-0"
+                      >
+                        {collapsed ? 'Expand' : 'Collapse'}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => toggleGroup(groupId)}
-                      className="text-xs px-2 py-1 border border-border rounded"
-                    >
-                      {collapsed ? 'Expand' : 'Collapse'}
-                    </button>
-                  </div>
-                )
-              })}
-              {visibleGroups.length === 0 && <div className="text-xs text-muted">No groups available for this mode.</div>}
+                  )
+                })}
+              {groupMode !== 'none' && visibleGroups.length === 0 && (
+                <div className="text-xs text-muted">No groups available for this mode.</div>
+              )}
             </div>
           </div>
 
@@ -1247,7 +1345,7 @@ function LineagePage() {
                       return (
                         <button
                           key={col}
-                          onClick={() => selectColumnNode(columnId)}
+                          onClick={() => selectColumnNode({ id: columnId, model_id: modelDetail.model_id, column: col })}
                           className="w-full text-left text-[11px] px-2 py-1 bg-panel/70 rounded hover:bg-surface-muted"
                         >
                           <div className="text-text">{col}</div>
@@ -1317,7 +1415,9 @@ function LineagePage() {
                         {columnEvolutionAdded.map((entry: ColumnEvolutionEntry) => (
                           <button
                             key={entry.column_id}
-                            onClick={() => selectColumnNode(entry.column_id)}
+                            onClick={() =>
+                              selectColumnNode({ id: entry.column_id, model_id: entry.model_id, column: entry.column })
+                            }
                             className="w-full text-left rounded bg-emerald-950/40 border border-emerald-800/40 px-2 py-1 text-[11px] hover:bg-emerald-900/40"
                           >
                             {entry.model_name}:{entry.column}
@@ -1331,7 +1431,9 @@ function LineagePage() {
                         {columnEvolutionChanged.map((entry: ColumnEvolutionChange) => (
                           <button
                             key={entry.column_id}
-                            onClick={() => selectColumnNode(entry.column_id)}
+                            onClick={() =>
+                              selectColumnNode({ id: entry.column_id, model_id: entry.model_id, column: entry.column })
+                            }
                             className="w-full text-left rounded bg-amber-950/40 border border-amber-800/40 px-2 py-1 text-[11px] hover:bg-amber-900/40"
                           >
                             <div>{entry.model_name}:{entry.column}</div>

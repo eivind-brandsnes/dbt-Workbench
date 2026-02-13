@@ -198,23 +198,28 @@ const sampleColumnEvolution = {
   changed: [],
 }
 
+const installGetMock = (overrides?: { graph?: any; columnGraph?: any }) => {
+  mockedGet.mockImplementation((url: string) => {
+    if (url.startsWith('/config')) return Promise.resolve({ data: { lineage: {}, row_lineage: { enabled: true } } })
+    if (url.startsWith('/lineage/graph')) return Promise.resolve({ data: overrides?.graph ?? sampleGraph })
+    if (url.startsWith('/lineage/columns/evolution')) return Promise.resolve({ data: sampleColumnEvolution })
+    if (url.startsWith('/lineage/columns')) return Promise.resolve({ data: overrides?.columnGraph ?? sampleColumnGraph })
+    if (url.startsWith('/lineage/upstream/model.two')) return Promise.resolve({ data: sampleImpact })
+    if (url.startsWith('/lineage/upstream/model.project.sales.orders')) return Promise.resolve({ data: sampleImpact })
+    if (url.startsWith('/lineage/model/model.two')) return Promise.resolve({ data: sampleModelDetail })
+    if (url.startsWith('/row-lineage/status')) return Promise.resolve({ data: sampleRowStatus })
+    if (url.startsWith('/row-lineage/models')) return Promise.resolve({ data: sampleRowModels })
+    if (url.startsWith('/schedules/environments')) return Promise.resolve({ data: sampleEnvironments })
+    if (url.startsWith('/row-lineage/trace/')) return Promise.resolve({ data: sampleRowTrace })
+    return Promise.resolve({ data: {} })
+  })
+}
+
 describe('LineagePage', () => {
   beforeEach(() => {
     mockedGet.mockReset()
     mockedPost.mockReset()
-    mockedGet.mockImplementation((url: string) => {
-      if (url.startsWith('/config')) return Promise.resolve({ data: { lineage: {}, row_lineage: { enabled: true } } })
-      if (url.startsWith('/lineage/graph')) return Promise.resolve({ data: sampleGraph })
-      if (url.startsWith('/lineage/columns/evolution')) return Promise.resolve({ data: sampleColumnEvolution })
-      if (url.startsWith('/lineage/columns')) return Promise.resolve({ data: sampleColumnGraph })
-      if (url.startsWith('/lineage/upstream/model.two')) return Promise.resolve({ data: sampleImpact })
-      if (url.startsWith('/lineage/model/model.two')) return Promise.resolve({ data: sampleModelDetail })
-      if (url.startsWith('/row-lineage/status')) return Promise.resolve({ data: sampleRowStatus })
-      if (url.startsWith('/row-lineage/models')) return Promise.resolve({ data: sampleRowModels })
-      if (url.startsWith('/schedules/environments')) return Promise.resolve({ data: sampleEnvironments })
-      if (url.startsWith('/row-lineage/trace/')) return Promise.resolve({ data: sampleRowTrace })
-      return Promise.resolve({ data: {} })
-    })
+    installGetMock()
     mockedPost.mockImplementation((url: string) => {
       if (url.startsWith('/row-lineage/preview')) return Promise.resolve({ data: sampleRowPreview })
       return Promise.resolve({ data: {} })
@@ -230,9 +235,10 @@ describe('LineagePage', () => {
 
     await waitFor(() => expect(mockedGet).toHaveBeenCalled())
 
-    expect(await screen.findByRole('heading', { name: 'Lineage' })).toBeInTheDocument()
     expect(document.querySelector('[data-node-id="model.one"]')).not.toBeNull()
     expect(screen.getByText('Grouping')).toBeInTheDocument()
+    expect(screen.getByText(/Grouping is disabled\./)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Collapse' })).not.toBeInTheDocument()
   })
 
   it('positions nodes with a deterministic layout', async () => {
@@ -300,6 +306,87 @@ describe('LineagePage', () => {
     expect(await screen.findByText('Column Evolution')).toBeInTheDocument()
     expect(screen.getByText('Added 1')).toBeInTheDocument()
     expect(screen.getByText('two:id')).toBeInTheDocument()
+  })
+
+  it('clamps long lineage node labels while preserving full title text', async () => {
+    const longLabel = 'orders_customer_dim_with_an_extremely_long_name_for_visual_overflow_checks'
+    const longLabelGraph = {
+      ...sampleGraph,
+      nodes: [
+        {
+          id: 'model.one',
+          label: longLabel,
+          type: 'model',
+          schema: 'dbt_workbench.public_dbt_test__audit_with_a_very_long_schema_name',
+        },
+        sampleGraph.nodes[1],
+      ],
+    }
+    installGetMock({ graph: longLabelGraph })
+
+    render(
+      <MemoryRouter>
+        <LineagePage />
+      </MemoryRouter>
+    )
+
+    const node = await screen.findByTestId('lineage-node-model.one')
+    const title = node.querySelector('title')
+    const labelSegments = Array.from(node.querySelectorAll('text tspan')).map((segment) => segment.textContent || '')
+
+    expect(labelSegments.length).toBeLessThanOrEqual(2)
+    expect(labelSegments.some((segment) => segment.includes('...'))).toBe(true)
+    expect(title?.textContent).toBe(longLabel)
+  })
+
+  it('uses full model id for multi-dot column identifiers', async () => {
+    installGetMock({
+      columnGraph: {
+        nodes: [
+          {
+            id: 'model.pkg.parent.customer_id',
+            column: 'customer_id',
+            model_id: 'model.pkg.parent',
+            label: 'parent:customer_id',
+            type: 'model',
+          },
+          {
+            id: 'model.project.sales.orders.customer_id',
+            column: 'customer_id',
+            model_id: 'model.project.sales.orders',
+            label: 'orders:customer_id',
+            type: 'model',
+          },
+        ],
+        edges: [
+          {
+            source: 'model.pkg.parent.customer_id',
+            target: 'model.project.sales.orders.customer_id',
+            source_column: 'customer_id',
+            target_column: 'customer_id',
+          },
+        ],
+      },
+    })
+
+    render(
+      <MemoryRouter>
+        <LineagePage />
+      </MemoryRouter>
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Column' }))
+    fireEvent.click(await screen.findByTestId('lineage-node-model.project.sales.orders.customer_id'))
+
+    await waitFor(() => {
+      expect(
+        mockedGet.mock.calls.some(
+          ([url]) =>
+            typeof url === 'string' &&
+            url.includes('/lineage/upstream/model.project.sales.orders?column=customer_id'),
+        ),
+      ).toBe(true)
+    })
   })
 
   it('supports row lineage mode with row preview and hop history', async () => {

@@ -29,6 +29,18 @@ class LineageService:
         nodes.update(manifest.get("sources", {}))
         return nodes
 
+    @staticmethod
+    def _is_lineage_node(node: Dict) -> bool:
+        return (node.get("resource_type") or "model") != "test"
+
+    def _lineage_nodes(self, manifest: Dict) -> Dict[str, Dict]:
+        merged = self._merged_nodes(manifest)
+        return {
+            unique_id: node
+            for unique_id, node in merged.items()
+            if self._is_lineage_node(node)
+        }
+
     def _catalog_nodes(self, catalog: Dict) -> Dict[str, Dict]:
         nodes = dict(catalog.get("nodes", {}))
         nodes.update(catalog.get("sources", {}))
@@ -148,7 +160,7 @@ class LineageService:
 
     def build_model_graph(self, max_depth: Optional[int] = None) -> dbt_schemas.LineageGraph:
         manifest, _ = self._load_artifacts()
-        manifest_nodes = self._merged_nodes(manifest)
+        manifest_nodes = self._lineage_nodes(manifest)
         nodes = self._build_model_nodes(manifest_nodes)
         edges = self._build_model_edges(manifest_nodes)
         if max_depth is None:
@@ -159,7 +171,7 @@ class LineageService:
 
     def build_column_graph(self) -> dbt_schemas.ColumnLineageGraph:
         manifest, catalog = self._load_artifacts()
-        manifest_nodes = self._merged_nodes(manifest)
+        manifest_nodes = self._lineage_nodes(manifest)
         catalog_nodes = self._catalog_nodes(catalog)
         columns = self._collect_columns(manifest_nodes, catalog_nodes)
 
@@ -600,14 +612,22 @@ class LineageService:
 
     def get_model_lineage(self, model_id: str) -> dbt_schemas.ModelLineageDetail:
         manifest, catalog = self._load_artifacts()
-        manifest_nodes = self._merged_nodes(manifest)
+        manifest_nodes = self._lineage_nodes(manifest)
         catalog_nodes = self._catalog_nodes(catalog)
         node = manifest_nodes.get(model_id)
         if not node:
             return dbt_schemas.ModelLineageDetail(model_id=model_id)
         columns = self._collect_columns(manifest_nodes, catalog_nodes).get(model_id, {})
-        parents = node.get("depends_on", {}).get("nodes", [])
-        children = [child_id for child_id, child_node in manifest_nodes.items() if model_id in child_node.get("depends_on", {}).get("nodes", [])]
+        parents = [
+            parent_id
+            for parent_id in node.get("depends_on", {}).get("nodes", [])
+            if parent_id in manifest_nodes
+        ]
+        children = [
+            child_id
+            for child_id, child_node in manifest_nodes.items()
+            if model_id in child_node.get("depends_on", {}).get("nodes", [])
+        ]
         return dbt_schemas.ModelLineageDetail(
             model_id=model_id,
             parents=sorted(parents),
