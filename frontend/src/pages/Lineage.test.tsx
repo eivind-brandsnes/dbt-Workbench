@@ -198,7 +198,7 @@ const sampleColumnEvolution = {
   changed: [],
 }
 
-const installGetMock = (overrides?: { graph?: any; columnGraph?: any }) => {
+const installGetMock = (overrides?: { graph?: any; columnGraph?: any; modelDetail?: any }) => {
   mockedGet.mockImplementation((url: string) => {
     if (url.startsWith('/config')) return Promise.resolve({ data: { lineage: {}, row_lineage: { enabled: true } } })
     if (url.startsWith('/lineage/graph')) return Promise.resolve({ data: overrides?.graph ?? sampleGraph })
@@ -206,7 +206,7 @@ const installGetMock = (overrides?: { graph?: any; columnGraph?: any }) => {
     if (url.startsWith('/lineage/columns')) return Promise.resolve({ data: overrides?.columnGraph ?? sampleColumnGraph })
     if (url.startsWith('/lineage/upstream/model.two')) return Promise.resolve({ data: sampleImpact })
     if (url.startsWith('/lineage/upstream/model.project.sales.orders')) return Promise.resolve({ data: sampleImpact })
-    if (url.startsWith('/lineage/model/model.two')) return Promise.resolve({ data: sampleModelDetail })
+    if (url.startsWith('/lineage/model/model.two')) return Promise.resolve({ data: overrides?.modelDetail ?? sampleModelDetail })
     if (url.startsWith('/row-lineage/status')) return Promise.resolve({ data: sampleRowStatus })
     if (url.startsWith('/row-lineage/models')) return Promise.resolve({ data: sampleRowModels })
     if (url.startsWith('/schedules/environments')) return Promise.resolve({ data: sampleEnvironments })
@@ -306,6 +306,29 @@ describe('LineagePage', () => {
     expect(await screen.findByText('Column Evolution')).toBeInTheDocument()
     expect(screen.getByText('Added 1')).toBeInTheDocument()
     expect(screen.getByText('two:id')).toBeInTheDocument()
+  })
+
+  it('wraps long model ids in the Selection panel', async () => {
+    const longModelId = 'model.dbt_production_blueprint.this_is_a_very_long_model_identifier_that_should_wrap_without_overflow'
+    installGetMock({
+      modelDetail: {
+        ...sampleModelDetail,
+        model_id: longModelId,
+      },
+    })
+
+    render(
+      <MemoryRouter>
+        <LineagePage />
+      </MemoryRouter>
+    )
+
+    const modelNode = await screen.findByTestId('lineage-node-model.two')
+    fireEvent.click(modelNode)
+
+    const modelIdLabel = await screen.findByText(longModelId)
+    expect(modelIdLabel).toHaveClass('break-all')
+    expect(modelIdLabel).toHaveAttribute('title', longModelId)
   })
 
   it('clamps long lineage node labels while preserving full title text', async () => {

@@ -1317,12 +1317,12 @@ function LineagePage() {
           </div>
 
           <div className="panel-gradient rounded-lg p-3 space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <h3 className="text-sm font-semibold text-text">Selection</h3>
               {selectedNode && (
                 <button
                   onClick={() => navigate(`/models/${selectedNode}`)}
-                  className="text-xs text-accent underline"
+                  className="text-xs text-accent underline shrink-0"
                 >
                   Open model
                 </button>
@@ -1330,7 +1330,9 @@ function LineagePage() {
             </div>
             {selectedNode && modelDetail && (
               <div className="space-y-2">
-                <div className="text-text text-sm font-medium">{modelDetail.model_id}</div>
+                <div className="text-text text-sm font-medium break-all" title={modelDetail.model_id}>
+                  {modelDetail.model_id}
+                </div>
                 <div className="text-[11px] text-muted">Parents: {modelDetail.parents.length} | Children: {modelDetail.children.length}</div>
                 <div className="flex flex-wrap gap-1">
                   {(modelDetail.tags || []).map((tag) => (
@@ -1366,7 +1368,9 @@ function LineagePage() {
             )}
             {selectedColumn && (
               <div className="space-y-1 text-sm text-text">
-                <div className="font-semibold">{selectedColumn}</div>
+                <div className="font-semibold break-all" title={selectedColumn}>
+                  {selectedColumn}
+                </div>
                 <div className="text-[11px] text-muted">Upstream: {impact.upstream.length} | Downstream: {impact.downstream.length}</div>
               </div>
             )}
@@ -1480,7 +1484,7 @@ function LineagePage() {
                   <div className="font-semibold text-muted">Upstream</div>
                   <div className="flex flex-wrap gap-1">
                     {impact.upstream.map((item) => (
-                      <span key={item} className="bg-surface-muted px-2 py-1 rounded text-[11px]">{item}</span>
+                      <span key={item} className="bg-surface-muted px-2 py-1 rounded text-[11px] break-all">{item}</span>
                     ))}
                   </div>
                 </div>
@@ -1488,7 +1492,7 @@ function LineagePage() {
                   <div className="font-semibold text-muted">Downstream</div>
                   <div className="flex flex-wrap gap-1">
                     {impact.downstream.map((item) => (
-                      <span key={item} className="bg-surface-muted px-2 py-1 rounded text-[11px]">{item}</span>
+                      <span key={item} className="bg-surface-muted px-2 py-1 rounded text-[11px] break-all">{item}</span>
                     ))}
                   </div>
                 </div>
