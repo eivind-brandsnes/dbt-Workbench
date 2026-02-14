@@ -1,0 +1,511 @@
+---
+title: dbt Testing Guide - Data Quality & Testing Best Practices
+description: Complete guide to dbt testing including built-in tests, custom tests, and data quality strategies. Learn how to ensure data reliability with dbt tests.
+slug: /guides/dbt-testing-guide
+keywords: [dbt testing, dbt tests, data quality dbt, dbt test guide, dbt data testing, dbt test examples]
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Set up built-in tests',
+    text: 'Configure uniqueness, not_null, accepted_values, and relationships tests in your schema.yml files.',
+  },
+  {
+    name: 'Create custom generic tests',
+    text: 'Build reusable custom tests for business-specific validation rules.',
+  },
+  {
+    name: 'Add singular tests',
+    text: 'Write one-off SQL tests for specific edge cases and complex validations.',
+  },
+  {
+    name: 'Configure test severity',
+    text: 'Set warn vs error severity levels based on data quality requirements.',
+  },
+  {
+    name: 'Monitor test results',
+    text: 'View test health in dbt-Workbench catalog and set up alerts for failures.',
+  },
+];
+
+export const faqItems = [
+  {
+    question: 'What types of tests does dbt support?',
+    answer: 'dbt supports built-in tests (uniqueness, not_null, accepted_values, relationships), custom generic tests, and singular tests (one-off SQL queries).',
+  },
+  {
+    question: 'How do I know if my tests are passing?',
+    answer: 'Run dbt test to execute all tests. In dbt-Workbench, view test health indicators in the catalog viewer and receive notifications for failures.',
+  },
+  {
+    question: 'Can I set different severity levels for tests?',
+    answer: 'Yes. Tests can be configured with severity: warn or severity: error. Warn logs the issue but allows the run to continue, while error stops execution.',
+  },
+  {
+    question: 'Should I test sources or just models?',
+    answer: 'Test both. Source tests catch upstream data issues early, while model tests ensure your transformations produce correct results.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'dbt Testing Guide'},
+  ]}
+/>
+<HowToJsonLd
+  name="dbt Testing Guide"
+  description="Complete guide to implementing data quality tests in dbt including built-in tests, custom generic tests, and best practices for reliable data pipelines."
+  steps={steps}
+/>
+<FaqJsonLd items={faqItems} />
+
+# dbt Testing Guide
+
+Testing is fundamental to data reliability. This guide covers everything you need to implement comprehensive data quality checks in your dbt project using dbt-Workbench.
+
+## Why test your data?
+
+Data teams face quality challenges that testing addresses:
+
+### Catch issues early
+
+Tests identify data problems before they reach downstream consumers. A failed uniqueness test on a primary key prevents bad joins and incorrect aggregations.
+
+### Build trust
+
+Stakeholders trust data products when they know quality checks are in place. Testing documentation serves as a contract about data expectations.
+
+### Enable safe changes
+
+Tests provide safety nets when refactoring models. If tests pass after changes, you have confidence nothing broke.
+
+### Satisfy compliance
+
+Many regulations require data quality validation. Tests provide audit trails proving data meets standards.
+
+## Built-in dbt tests
+
+dbt includes four built-in tests covering common data quality scenarios:
+
+### unique
+
+Ensures column values are unique, essential for primary keys and natural keys.
+
+```yaml
+models:
+  - name: customers
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+```
+
+### not_null
+
+Verifies columns contain no null values, critical for required fields.
+
+```yaml
+models:
+  - name: orders
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+```
+
+### accepted_values
+
+Validates column values match an allowed set, useful for enums and status fields.
+
+```yaml
+models:
+  - name: orders
+    columns:
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['pending', 'shipped', 'delivered', 'cancelled']
+```
+
+### relationships
+
+Checks referential integrity between models, preventing orphaned records.
+
+```yaml
+models:
+  - name: orders
+    columns:
+      - name: customer_id
+        tests:
+          - relationships:
+              to: ref('customers')
+              field: customer_id
+```
+
+## Configuring tests in schema.yml
+
+Tests are defined in `schema.yml` files alongside your models:
+
+```yaml
+version: 2
+
+models:
+  - name: stg_customers
+    description: Staged customer data from raw source
+    columns:
+      - name: customer_id
+        description: Primary key for customers
+        tests:
+          - unique
+          - not_null
+          
+      - name: email
+        description: Customer email address
+        tests:
+          - not_null
+          - unique
+          
+      - name: customer_segment
+        description: Customer classification
+        tests:
+          - accepted_values:
+              values: ['enterprise', 'mid_market', 'smb']
+              config:
+                severity: warn
+```
+
+## Test configuration options
+
+### Severity levels
+
+Control whether test failures stop the pipeline or just warn:
+
+```yaml
+tests:
+  - unique:
+      config:
+        severity: error  # Default - stops execution
+        
+  - accepted_values:
+      config:
+        severity: warn   # Logs issue but continues
+```
+
+### Where clauses
+
+Test subsets of data with where conditions:
+
+```yaml
+tests:
+  - not_null:
+      config:
+        where: "created_at > '2024-01-01'"
+```
+
+### Store failures
+
+Save failing records for investigation:
+
+```yaml
+tests:
+  - unique:
+      config:
+        store_failures: true
+```
+
+## Custom generic tests
+
+Build reusable tests for business-specific logic:
+
+### Creating a custom test
+
+Create `macros/test_positive_value.sql`:
+
+```sql
+{% test positive_value(model, column_name) %}
+
+select *
+from {{ model }}
+where {{ column_name }} <= 0
+
+{% endtest %}
+```
+
+### Using custom tests
+
+```yaml
+models:
+  - name: orders
+    columns:
+      - name: order_amount
+        tests:
+          - positive_value
+```
+
+### Advanced custom tests
+
+Test with parameters:
+
+```sql
+{% test within_range(model, column_name, min_value, max_value) %}
+
+select *
+from {{ model }}
+where {{ column_name }} < {{ min_value }} 
+   or {{ column_name }} > {{ max_value }}
+
+{% endtest %}
+```
+
+Usage:
+
+```yaml
+tests:
+  - within_range:
+      min_value: 0
+      max_value: 100
+```
+
+## Singular tests
+
+One-off SQL tests for specific scenarios:
+
+Create `tests/assert_orders_have_customers.sql`:
+
+```sql
+-- Ensure all orders have valid customers
+select o.order_id
+from {{ ref('orders') }} o
+left join {{ ref('customers') }} c 
+  on o.customer_id = c.customer_id
+where c.customer_id is null
+```
+
+Singular tests fail if the query returns any rows.
+
+## Testing sources
+
+Apply tests to raw source data:
+
+```yaml
+version: 2
+
+sources:
+  - name: raw_orders
+    database: raw_data
+    schema: ecommerce
+    tables:
+      - name: orders
+        columns:
+          - name: order_id
+            tests:
+              - unique
+              - not_null
+          - name: status
+            tests:
+              - accepted_values:
+                  values: ['pending', 'complete', 'cancelled']
+```
+
+## Running tests
+
+### Run all tests
+
+```bash
+dbt test
+```
+
+### Run tests for specific models
+
+```bash
+dbt test --select customers
+dbt test --select customers orders
+```
+
+### Run tests with specific tags
+
+```yaml
+tests:
+  - unique:
+      config:
+        tags: ['critical']
+```
+
+```bash
+dbt test --select tag:critical
+```
+
+## Testing best practices
+
+### 1. Test business-critical paths
+
+Focus tests on data that drives decisions:
+- Primary keys
+- Foreign key relationships
+- Financial calculations
+- User-facing metrics
+
+### 2. Balance coverage and performance
+
+Too many tests slow pipelines. Prioritize:
+- Uniqueness on keys
+- Not_null on required fields
+- Relationships on joins
+- Business rules on critical metrics
+
+### 3. Use appropriate severity
+
+- **error**: Data correctness issues (uniqueness, relationships)
+- **warn**: Data quality concerns (range checks, format validation)
+
+### 4. Document test rationale
+
+Add descriptions explaining why tests matter:
+
+```yaml
+columns:
+  - name: revenue
+    description: Total order revenue. Must be positive.
+    tests:
+      - positive_value
+```
+
+### 5. Test incrementally
+
+As models change, add tests incrementally rather than trying to achieve 100% coverage immediately.
+
+## Monitoring tests in dbt-Workbench
+
+### Test health dashboard
+
+The dbt-Workbench catalog viewer displays:
+- Overall test pass/fail rates
+- Test health by model
+- Historical test trends
+- Recent failures
+
+### Test failure notifications
+
+Configure alerts when tests fail:
+
+1. Set up Slack or email notifications
+2. Receive alerts for critical test failures
+3. Include failure details and model context
+
+### Debugging failed tests
+
+When tests fail:
+
+1. View the failure in dbt-Workbench catalog
+2. Check the compiled test SQL
+3. Query failing records if store_failures is enabled
+4. Investigate upstream sources or model logic
+
+## Advanced testing patterns
+
+### Testing freshness
+
+Ensure source data arrives on time:
+
+```yaml
+sources:
+  - name: raw_orders
+    freshness:
+      warn_after: {count: 12, period: hour}
+      error_after: {count: 24, period: hour}
+    loaded_at_field: created_at
+```
+
+### Testing snapshots
+
+Validate snapshot logic:
+
+```sql
+{% test snapshot_validity(model) %}
+
+select *
+from {{ model }}
+where dbt_valid_to < dbt_valid_from
+
+{% endtest %}
+```
+
+### Testing model contracts
+
+Enforce column types and presence:
+
+```yaml
+models:
+  - name: customers
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: customer_id
+        data_type: int
+      - name: email
+        data_type: varchar
+```
+
+## Testing strategy by data layer
+
+### Sources
+
+Test assumptions about raw data:
+- Uniqueness on source keys
+- Not_null on required fields
+- Freshness checks
+
+### Staging models
+
+Test data cleaning:
+- Uniqueness after deduplication
+- Type casting validations
+- Relationship to sources
+
+### Intermediate models
+
+Test transformation logic:
+- Business rule validations
+- Calculation checks
+- Grain validations
+
+### Marts models
+
+Test final outputs:
+- Uniqueness at grain
+- Required fields
+- Metrics calculations
+- Cross-model consistency
+
+## FAQ
+
+### What types of tests does dbt support?
+
+dbt supports built-in tests (uniqueness, not_null, accepted_values, relationships), custom generic tests, and singular tests (one-off SQL queries).
+
+### How do I know if my tests are passing?
+
+Run dbt test to execute all tests. In dbt-Workbench, view test health indicators in the catalog viewer and receive notifications for failures.
+
+### Can I set different severity levels for tests?
+
+Yes. Tests can be configured with severity: warn or severity: error. Warn logs the issue but allows the run to continue, while error stops execution.
+
+### Should I test sources or just models?
+
+Test both. Source tests catch upstream data issues early, while model tests ensure your transformations produce correct results.
+
+## Related pages
+
+- [dbt catalog viewer](/docs/catalog/)
+- [dbt run orchestration](/docs/run-orchestration/)
+- [Debug failed dbt runs](/docs/guides/debug-failed-dbt-runs/)
+- [dbt docs viewer](/docs/docs-viewer/)

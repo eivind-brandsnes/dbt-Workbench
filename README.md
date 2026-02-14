@@ -1,9 +1,19 @@
-<img src="assets/brand.svg" width="340" height="90" alt="dbt-Workbench logo">
+<img src="assets/brand.svg" width="340" height="90" alt="dbt-Workbench - Open Source dbt UI for Lineage, Runs, and Documentation">
+
+# dbt-Workbench: Open Source dbt UI
 
 A lightweight, open-source UI for dbt that provides model browsing, lineage visualization,
 run orchestration, documentation previews, and environment management — without vendor lock-in.
-Designed for local, on‑prem, and air‑gapped deployments. 
-**Docs Website:** [https://dbt-workbench.github.io/dbt-Workbench/](https://rezer-bleede.github.io/dbt-Workbench/)
+Designed for local, on‑prem, and air‑gapped deployments.
+
+**Keywords:** dbt UI, open source dbt, dbt lineage, data lineage tool, dbt catalog, dbt scheduler, self-hosted dbt, air-gapped dbt
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](frontend)
+
+**Documentation:** [https://dbt-workbench.github.io/dbt-Workbench/](https://dbt-workbench.github.io/dbt-Workbench/)
 
 ---
 ## ✨ Highlights
@@ -656,6 +666,42 @@ npm run test:e2e
 - **Docs website:** `website/` (Docusaurus source + build scripts)
 
 ---
+
+## 🌐 Why Choose dbt-Workbench?
+
+### For dbt Lineage & Visualization
+- **Interactive DAGs:** Explore model dependencies with deterministic D3/dagre layouts
+- **Column-Level Lineage:** Trace data flow from sources to marts at column granularity
+- **Impact Analysis:** Instantly see upstream and downstream impacts of changes
+- **Open Source:** No vendor lock-in, full customization capability
+
+### For dbt Run Orchestration
+- **Web-Based Execution:** Run dbt commands directly from the browser
+- **Real-Time Logs:** Stream logs as commands execute
+- **Run History:** Track all executions with full context
+- **Cron Scheduling:** Automate runs with timezone-aware scheduling
+
+### For Data Teams
+- **Self-Hosted:** Keep all data within your infrastructure
+- **Air-Gapped Support:** Run completely offline in secure environments
+- **Multi-Project:** Manage multiple dbt projects in isolated workspaces
+- **RBAC:** Role-based access control (Viewer, Developer, Admin)
+
+### For Organizations
+- **Cost Effective:** No per-seat or per-run pricing
+- **Compliance Ready:** Audit logging, encryption, access controls
+- **Extensible:** Plugin system for custom integrations
+- **Enterprise Features:** JWT auth, workspace isolation, Git integration
+
+## 🔍 SEO Keywords
+
+dbt-Workbench is designed for teams searching for:
+- **Open source dbt UI alternatives** to dbt Cloud
+- **Self-hosted dbt lineage tools** for data governance
+- **Air-gapped dbt deployment** options for regulated industries
+- **dbt catalog and documentation** viewers for data discovery
+- **SQL workspace for dbt projects** for analytics engineering
+- **Data lineage visualization tools** for impact analysis
 
 ## 🤝 Contributing
 

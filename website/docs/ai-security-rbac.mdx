@@ -1,8 +1,38 @@
 ---
-title: AI Security & RBAC
-description: Security model for AI copilot and action proposals.
+title: AI Security & RBAC - Secure AI for dbt Workflows
+description: Security model and RBAC for dbt-Workbench AI copilot. Workspace isolation, encrypted secrets, proposal-based execution, and comprehensive audit logging.
 slug: /ai-security-rbac
+keywords: [dbt ai security, ai rbac, ai workspace isolation, encrypted ai secrets, ai audit logging]
 ---
+
+import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const faqItems = [
+  {
+    question: 'Who can use AI features?',
+    answer: 'Viewers, Developers, and Admins can all use AI chat features. Only Developers and Admins can confirm executable proposals.',
+  },
+  {
+    question: 'How are AI secrets secured?',
+    answer: 'API keys are encrypted at rest using AI_SECRETS_MASTER_KEY. Raw values are never returned by APIs.',
+  },
+  {
+    question: 'Is AI data workspace-isolated?',
+    answer: 'Yes. All AI entities including settings, secrets, conversations, and proposals are strictly workspace-scoped.',
+  },
+  {
+    question: 'Are AI actions audited?',
+    answer: 'Yes. All prompts, responses, tool traces, and proposal events are persisted for auditing.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'AI Security & RBAC'},
+  ]}
+/>
+<FaqJsonLd items={faqItems} />
 
 # AI Security & RBAC
 

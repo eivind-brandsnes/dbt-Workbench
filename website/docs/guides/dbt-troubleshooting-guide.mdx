@@ -1,0 +1,502 @@
+---
+title: Troubleshooting dbt - Common Issues & Solutions
+description: Troubleshoot common dbt issues including compilation errors, connection problems, test failures, and performance bottlenecks. Step-by-step debugging guide.
+slug: /guides/dbt-troubleshooting-guide
+keywords: [dbt troubleshooting, dbt errors, debug dbt, dbt issues, dbt problems, dbt not working]
+---
+
+import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const faqItems = [
+  {
+    question: 'Why does dbt compile fail?',
+    answer: 'Common causes include syntax errors in SQL, missing references, incorrect Jinja syntax, or missing packages. Check the error message line numbers and verify all dependencies are installed.',
+  },
+  {
+    question: 'How do I fix connection errors?',
+    answer: 'Verify your profiles.yml configuration, check credentials are correct, ensure network access to the warehouse, and confirm the database user has proper permissions.',
+  },
+  {
+    question: 'Why are my tests failing?',
+    answer: 'Test failures indicate data quality issues. Check the failed records if store_failures is enabled, review recent data loads for anomalies, and verify test logic matches expectations.',
+  },
+  {
+    question: 'How do I debug slow models?',
+    answer: 'Check query execution plans in your warehouse, look for missing indexes or clustering keys, review join efficiency, and consider incremental materialization for large datasets.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'dbt Troubleshooting'},
+  ]}
+/>
+<FaqJsonLd items={faqItems} />
+
+# Troubleshooting dbt
+
+When things go wrong with dbt, systematic debugging saves time. This guide covers common issues and their solutions.
+
+## Compilation errors
+
+### Syntax errors
+
+**Symptom:** `dbt compile` fails with SQL syntax error
+
+**Common causes:**
+- Missing commas between columns
+- Unclosed parentheses
+- Invalid SQL syntax
+
+**Solution:**
+
+1. Check line numbers in error messages
+2. Validate SQL in your warehouse's query editor
+3. Look for syntax highlighting issues in your IDE
+
+```sql
+-- Error: Missing comma
+select
+    customer_id
+    customer_name  -- Missing comma here!
+    email
+from customers
+```
+
+### Reference errors
+
+**Symptom:** `Model 'xxx' not found`
+
+**Common causes:**
+- Typo in model name
+- Model doesn't exist yet
+- Wrong path or naming
+
+**Solution:**
+
+1. Verify the model name:
+```bash
+dbt ls | grep model_name
+```
+
+2. Check for typos in ref():
+```sql
+-- Wrong
+{{ ref('cutomers') }}  -- typo!
+
+-- Correct
+{{ ref('customers') }}
+```
+
+### Jinja errors
+
+**Symptom:** Template syntax errors
+
+**Common causes:**
+- Missing closing tags
+- Invalid variable references
+- Logic errors in macros
+
+**Solution:**
+
+1. Check Jinja syntax:
+```sql
+-- Wrong: Missing endif
+{% if is_incremental() %}
+  where updated_at > (select max(updated_at) from {{ this }})
+
+-- Correct
+{% if is_incremental() %}
+  where updated_at > (select max(updated_at) from {{ this }})
+{% endif %}
+```
+
+2. Debug Jinja with print:
+```sql
+{{ log('Variable value: ' ~ my_variable, info=True) }}
+```
+
+## Connection errors
+
+### Database connection failed
+
+**Symptom:** `Database connection failed` or timeout errors
+
+**Common causes:**
+- Wrong credentials
+- Network issues
+- Database server down
+- Firewall blocking
+
+**Solution:**
+
+1. Test connection directly:
+```bash
+dbt debug
+```
+
+2. Verify profiles.yml:
+```yaml
+my_profile:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: your-account  # Check this!
+      user: your-user
+      password: your-password
+      database: analytics
+      warehouse: compute_wh
+      schema: dbt_dev
+```
+
+3. Check environment variables:
+```bash
+echo $SNOWFLAKE_ACCOUNT
+echo $SNOWFLAKE_USER
+```
+
+### Permission denied
+
+**Symptom:** `Insufficient privileges` or `Access denied`
+
+**Solution:**
+
+1. Verify user has required permissions:
+```sql
+-- As admin, check grants
+SHOW GRANTS TO USER dbt_user;
+```
+
+2. Required permissions:
+- CREATE SCHEMA
+- CREATE TABLE
+- CREATE VIEW
+- SELECT on source tables
+
+3. Grant permissions:
+```sql
+GRANT USAGE ON WAREHOUSE compute_wh TO ROLE dbt_role;
+GRANT USAGE ON DATABASE analytics TO ROLE dbt_role;
+GRANT CREATE SCHEMA ON DATABASE analytics TO ROLE dbt_role;
+```
+
+## Test failures
+
+### Uniqueness test failed
+
+**Symptom:** `Uniqueness test failed for column 'xxx'`
+
+**Causes:**
+- Duplicate values in source data
+- Incorrect grain assumption
+- Data quality issues
+
+**Solution:**
+
+1. Find duplicates:
+```sql
+select customer_id, count(*)
+from {{ ref('stg_customers') }}
+group by 1
+having count(*) > 1
+```
+
+2. Check source data quality
+3. Consider composite key if single column isn't unique
+4. Fix upstream data pipeline
+
+### Relationship test failed
+
+**Symptom:** `Relationship test failed` - orphaned records
+
+**Causes:**
+- Referential integrity violation
+- Missing parent records
+- Data loading order issues
+
+**Solution:**
+
+1. Find orphaned records:
+```sql
+select o.customer_id
+from {{ ref('stg_orders') }} o
+left join {{ ref('stg_customers') }} c 
+  on o.customer_id = c.customer_id
+where c.customer_id is null
+```
+
+2. Decide strategy:
+- Fix source data
+- Use inner join instead of left join
+- Accept orphanage (remove test)
+
+### Accepted values test failed
+
+**Symptom:** `Accepted values test failed`
+
+**Solution:**
+
+1. Find unexpected values:
+```sql
+select distinct status
+from {{ ref('stg_orders') }}
+where status not in ('pending', 'complete', 'cancelled')
+```
+
+2. Update accepted values or fix source data
+
+## Performance issues
+
+### Slow compilation
+
+**Symptom:** `dbt compile` takes too long
+
+**Causes:**
+- Too many models
+- Complex macros
+- Inefficient Jinja
+
+**Solutions:**
+
+1. Use partial parsing:
+```bash
+dbt compile --partial-parse
+```
+
+2. Reduce macro complexity
+3. Split large projects
+
+### Slow model execution
+
+**Symptom:** Models take hours to build
+
+**Solutions:**
+
+1. Check query plan in warehouse
+2. Add indexes/clustering keys
+3. Use incremental materialization
+4. Optimize joins
+5. Filter early in CTEs
+
+**See:** [dbt Performance Optimization](/docs/guides/dbt-performance-optimization/)
+
+### Out of memory
+
+**Symptom:** `Out of memory` or warehouse crashes
+
+**Solutions:**
+
+1. Increase warehouse size temporarily:
+```yaml
+{{ config(
+    materialized='table',
+    snowflake_warehouse='LARGE_WH'
+) }}
+```
+
+2. Process data in batches
+3. Use incremental models
+4. Optimize aggregations
+
+## Package issues
+
+### Package not found
+
+**Symptom:** `Package dbt-labs/dbt_utils not found`
+
+**Solution:**
+
+1. Check packages.yml:
+```yaml
+packages:
+  - package: dbt-labs/dbt_utils
+    version: 1.1.1
+```
+
+2. Install packages:
+```bash
+dbt deps
+```
+
+3. Verify package hub is accessible
+
+### Version conflicts
+
+**Symptom:** Package version conflicts
+
+**Solution:**
+
+1. Pin specific versions:
+```yaml
+packages:
+  - package: dbt-labs/dbt_utils
+    version: [">=1.0.0", "<2.0.0"]
+```
+
+2. Clear dbt packages:
+```bash
+rm -rf dbt_packages/
+dbt deps
+```
+
+## Incremental model issues
+
+### Incremental model not updating
+
+**Symptom:** Incremental model shows stale data
+
+**Solutions:**
+
+1. Check incremental logic:
+```sql
+{% if is_incremental() %}
+  where updated_at > (select max(updated_at) from {{ this }})
+{% endif %}
+```
+
+2. Force full refresh:
+```bash
+dbt run --full-refresh --select model_name
+```
+
+3. Check for schema changes
+
+### Duplicate records in incremental model
+
+**Symptom:** Incremental model has duplicates
+
+**Solutions:**
+
+1. Use merge strategy:
+```yaml
+{{ config(
+    materialized='incremental',
+    unique_key='id',
+    incremental_strategy='merge'
+) }}
+```
+
+2. Ensure unique_key is actually unique
+3. Check for late-arriving data handling
+
+## Git and version control
+
+### Merge conflicts
+
+**Symptom:** Git merge conflicts in dbt files
+
+**Solution:**
+
+1. For schema.yml conflicts:
+```bash
+# Accept both changes
+git checkout --ours models/schema.yml
+git checkout --theirs models/schema.yml
+git add models/schema.yml
+```
+
+2. For SQL files:
+- Manually resolve
+- Test compilation after merge
+- Run full test suite
+
+### Schema drift
+
+**Symptom:** Tests fail after team member's changes
+
+**Solutions:**
+
+1. Run full test suite before merging:
+```bash
+dbt test
+```
+
+2. Use CI/CD to catch issues
+3. Communicate breaking changes
+
+## Debugging techniques
+
+### Enable verbose logging
+
+```bash
+dbt run --select model_name --debug
+```
+
+### Print variable values
+
+```sql
+{{ log('My variable: ' ~ my_var, info=True) }}
+```
+
+### Check compiled SQL
+
+```bash
+# View compiled SQL
+cat target/compiled/project_name/models/model_name.sql
+```
+
+### Test models in isolation
+
+```bash
+# Run single model
+dbt run --select model_name
+
+# Run model and children
+dbt run --select model_name+
+```
+
+## Getting help
+
+### Check logs
+
+```bash
+# View recent logs
+tail -f logs/dbt.log
+
+# Search for errors
+grep "ERROR" logs/dbt.log
+```
+
+### Community resources
+
+- **dbt Slack:** #troubleshooting channel
+- **GitHub Issues:** Check existing issues
+- **Documentation:** Official dbt docs
+- **Discourse:** dbt Community forum
+
+### Reporting issues
+
+When reporting issues, include:
+1. dbt version (`dbt --version`)
+2. Full error message
+3. Relevant model code
+4. profiles.yml (redacted)
+5. Steps to reproduce
+
+## FAQ
+
+### Why does dbt compile fail?
+
+Common causes include syntax errors in SQL, missing references, incorrect Jinja syntax, or missing packages. Check the error message line numbers and verify all dependencies are installed.
+
+### How do I fix connection errors?
+
+Verify your profiles.yml configuration, check credentials are correct, ensure network access to the warehouse, and confirm the database user has proper permissions.
+
+### Why are my tests failing?
+
+Test failures indicate data quality issues. Check the failed records if store_failures is enabled, review recent data loads for anomalies, and verify test logic matches expectations.
+
+### How do I debug slow models?
+
+Check query execution plans in your warehouse, look for missing indexes or clustering keys, review join efficiency, and consider incremental materialization for large datasets.
+
+## Related pages
+
+- [Debug failed dbt runs](/docs/guides/debug-failed-dbt-runs/)
+- [dbt Testing Guide](/docs/guides/dbt-testing-guide/)
+- [dbt Performance Optimization](/docs/guides/dbt-performance-optimization/)
+- [dbt Best Practices](/docs/guides/dbt-best-practices/)

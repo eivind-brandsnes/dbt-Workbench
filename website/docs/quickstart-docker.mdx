@@ -1,16 +1,41 @@
 ---
-title: Quickstart with Docker Compose
-description: Run the dbt-Workbench dbt UI locally with Docker Compose and mount dbt artifacts for lineage, runs, and docs.
+title: Quickstart - Run dbt UI with Docker Compose
+description: Get started with dbt-Workbench in minutes using Docker Compose. Set up the open source dbt UI locally with lineage, run orchestration, and catalog features.
 slug: /quickstart-docker
+keywords: [dbt docker, dbt quickstart, dbt ui docker, run dbt locally, dbt local setup, docker compose dbt]
 ---
 
-import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Clone the repository',
+    text: 'Clone dbt-Workbench repository to your local machine.',
+  },
+  {
+    name: 'Run Docker Compose',
+    text: 'Execute docker-compose up --build to start all services.',
+  },
+  {
+    name: 'Access the UI',
+    text: 'Open http://localhost:3000 to access the dbt UI.',
+  },
+  {
+    name: 'Mount your artifacts',
+    text: 'Replace sample_artifacts with your dbt target directory.',
+  },
+];
 
 <BreadcrumbJsonLd
   items={[
     {name: 'Docs', url: '/docs/'},
     {name: 'Quickstart with Docker Compose'},
   ]}
+/>
+<HowToJsonLd
+  name="Quickstart dbt-Workbench with Docker Compose"
+  description="Step-by-step guide to run dbt-Workbench locally using Docker Compose. Set up the open source dbt UI with lineage, run orchestration, and catalog features."
+  steps={steps}
 />
 
 ## Quickstart for the dbt UI

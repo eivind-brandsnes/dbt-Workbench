@@ -1,0 +1,556 @@
+---
+title: dbt Security & Compliance - Enterprise Data Governance
+description: Complete guide to dbt security including authentication, RBAC, data governance, compliance controls, and best practices for enterprise dbt deployments.
+slug: /guides/dbt-security-compliance
+keywords: [dbt security, dbt compliance, dbt governance, data governance, dbt rbac, dbt authentication]
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Enable authentication',
+    text: 'Configure JWT-based authentication in dbt-Workbench to require login for UI access.',
+  },
+  {
+    name: 'Set up RBAC',
+    text: 'Define roles (Viewer, Developer, Admin) and assign appropriate permissions to users.',
+  },
+  {
+    name: 'Implement workspace isolation',
+    text: 'Configure separate workspaces for different teams or projects with strict path scoping.',
+  },
+  {
+    name: 'Configure audit logging',
+    text: 'Enable comprehensive logging of user actions, queries, and configuration changes.',
+  },
+  {
+    name: 'Set up encryption',
+    text: 'Ensure database connections use TLS and secrets are encrypted at rest.',
+  },
+];
+
+export const faqItems = [
+  {
+    question: 'Does dbt-Workbench support SSO?',
+    answer: 'Currently dbt-Workbench supports JWT-based authentication. SSO integration via OIDC/SAML can be added through custom plugins or reverse proxy configuration.',
+  },
+  {
+    question: 'How is data isolated between teams?',
+    answer: 'Workspaces provide strict isolation with separate repositories, artifacts, and settings. Users can only access workspaces they are assigned to.',
+  },
+  {
+    question: 'Can I run dbt-Workbench in a regulated environment?',
+    answer: 'Yes. dbt-Workbench supports air-gapped deployments, audit logging, RBAC, and encryption suitable for regulated industries including healthcare and finance.',
+  },
+  {
+    question: 'What compliance standards are supported?',
+    answer: 'dbt-Workbench provides controls for SOC 2, GDPR, HIPAA, and other frameworks through authentication, audit trails, encryption, and access controls.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'dbt Security & Compliance'},
+  ]}
+/>
+<HowToJsonLd
+  name="dbt Security & Compliance"
+  description="Complete guide to securing dbt deployments with authentication, RBAC, audit logging, encryption, and compliance controls for enterprise environments."
+  steps={steps}
+/>
+<FaqJsonLd items={faqItems} />
+
+# dbt Security & Compliance
+
+Enterprise data teams require robust security controls. This guide covers implementing comprehensive security and compliance for dbt using dbt-Workbench's built-in features.
+
+## Security overview
+
+dbt-Workbench provides defense in depth through multiple security layers:
+
+### Authentication layer
+
+Verify user identity before granting access to the system.
+
+### Authorization layer (RBAC)
+
+Control what authenticated users can see and do.
+
+### Data isolation
+
+Separate projects, credentials, and data between teams.
+
+### Audit and monitoring
+
+Track all actions for compliance and security analysis.
+
+### Encryption
+
+Protect data in transit and at rest.
+
+## Authentication implementation
+
+### Enabling JWT authentication
+
+By default, dbt-Workbench runs in open mode. Enable authentication:
+
+```bash
+# .env file
+AUTH_ENABLED=true
+JWT_SECRET_KEY=your-256-bit-secret-key-here
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_MINUTES=43200
+```
+
+Generate a secure secret:
+
+```bash
+openssl rand -hex 32
+```
+
+### Password policies
+
+Configure strong password requirements:
+
+```bash
+PASSWORD_MIN_LENGTH=12
+PASSWORD_REQUIRE_UPPERCASE=true
+PASSWORD_REQUIRE_LOWERCASE=true
+PASSWORD_REQUIRE_NUMBER=true
+PASSWORD_REQUIRE_SPECIAL=true
+```
+
+### User management
+
+Admins create and manage users:
+
+1. Navigate to **Admin → Users**
+2. Click **Add User**
+3. Set username, email, and initial password
+4. Assign role (Viewer, Developer, Admin)
+5. Assign workspace access
+
+### Session management
+
+- Access tokens expire after 30 minutes (configurable)
+- Refresh tokens valid for 30 days
+- Users can logout to invalidate sessions
+- Admins can force logout users
+
+## Role-based access control (RBAC)
+
+### Role definitions
+
+**Viewer:**
+- View models, lineage, catalog
+- View run history and logs
+- Read documentation
+- Cannot execute commands or modify data
+
+**Developer:**
+- All Viewer permissions
+- Run dbt commands
+- Create/edit environments
+- Create/edit schedules
+- Modify metadata
+
+**Admin:**
+- All Developer permissions
+- Manage users and roles
+- Enable/disable plugins
+- Manage workspaces
+- View audit logs
+- Configure AI settings
+
+### Permission matrix
+
+| Feature | Viewer | Developer | Admin |
+|---------|--------|-----------|-------|
+| View lineage | ✅ | ✅ | ✅ |
+| View catalog | ✅ | ✅ | ✅ |
+| Run dbt commands | ❌ | ✅ | ✅ |
+| Create environments | ❌ | ✅ | ✅ |
+| Create schedules | ❌ | ✅ | ✅ |
+| Manage users | ❌ | ❌ | ✅ |
+| Manage plugins | ❌ | ❌ | ✅ |
+| View audit logs | ❌ | ❌ | ✅ |
+
+### Implementing RBAC
+
+**Step 1: Create roles strategy**
+
+Define who needs what access:
+- **Data analysts** → Viewer (read-only exploration)
+- **Analytics engineers** → Developer (full development access)
+- **Platform team** → Admin (infrastructure management)
+
+**Step 2: Assign users to roles**
+
+```bash
+# Via API or UI
+curl -X POST http://localhost:8000/auth/admin/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "analyst1",
+    "email": "analyst@company.com",
+    "password": "secure-password",
+    "role": "viewer",
+    "workspaces": ["marketing", "sales"]
+  }'
+```
+
+**Step 3: Regular access reviews**
+
+Quarterly reviews:
+- Verify role assignments are appropriate
+- Remove access for departed employees
+- Audit admin access
+- Review workspace assignments
+
+## Workspace isolation
+
+### Multi-project architecture
+
+Organizations often manage multiple dbt projects:
+- Different business units
+- Separate environments (dev/staging/prod)
+- Isolated data domains
+
+### Workspace configuration
+
+```bash
+# Separate workspace for each team
+DEFAULT_WORKSPACE_KEY=marketing
+DEFAULT_WORKSPACE_NAME="Marketing Analytics"
+```
+
+### Path scoping
+
+Workspaces enforce strict path isolation:
+
+```
+/data/repos/
+├── marketing/      # Marketing team workspace
+├── sales/          # Sales team workspace
+├── finance/        # Finance team workspace
+└── platform/       # Platform team workspace
+```
+
+Users cannot access files outside their assigned workspaces.
+
+### Workspace-specific settings
+
+Each workspace has isolated:
+- Git repositories
+- dbt artifacts
+- Environment variables
+- Database connections
+- AI conversations and settings
+- Run history
+
+## Audit logging
+
+### What is logged
+
+dbt-Workbench captures:
+
+**User actions:**
+- Login/logout events
+- Page views
+- dbt command execution
+- Configuration changes
+- Data modifications
+
+**System events:**
+- Scheduler runs
+- Artifact updates
+- Plugin changes
+- Workspace switches
+
+**AI interactions:**
+- Prompts and responses
+- Tool executions
+- Proposal confirmations
+
+### Enabling audit logging
+
+```bash
+# Enable detailed auditing
+AUDIT_LOG_ENABLED=true
+AUDIT_LOG_RETENTION_DAYS=90
+AUDIT_LOG_LEVEL=detailed
+```
+
+### Viewing audit logs
+
+Admins access logs via:
+
+1. **UI**: Admin → Audit Logs
+2. **API**: `/admin/audit-logs` endpoint
+3. **Database**: Query audit table directly
+
+### Exporting audit logs
+
+For compliance reporting:
+
+```bash
+# Export to JSON
+curl http://localhost:8000/admin/audit-logs/export \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -o audit-export.json
+```
+
+### Log retention
+
+Configure retention based on compliance requirements:
+
+```bash
+# GDPR: 3 years
+# HIPAA: 6 years
+# SOX: 7 years
+AUDIT_LOG_RETENTION_DAYS=2555  # 7 years
+```
+
+## Encryption
+
+### Data in transit
+
+**Database connections:**
+
+```yaml
+# profiles.yml
+my_profile:
+  target: prod
+  outputs:
+    prod:
+      type: snowflake
+      authenticator: username_password_mfa
+      ...
+      # TLS enforced by default
+```
+
+**API communications:**
+
+- Always use HTTPS in production
+- TLS 1.2+ required
+- Certificate validation enabled
+
+### Data at rest
+
+**AI secrets encryption:**
+
+```bash
+AI_SECRETS_MASTER_KEY=your-master-encryption-key
+```
+
+Secrets encrypted using AES-256-GCM.
+
+**Database encryption:**
+
+Enable PostgreSQL encryption:
+
+```bash
+# postgresql.conf
+ssl = on
+ssl_cert_file = '/path/to/server.crt'
+ssl_key_file = '/path/to/server.key'
+```
+
+### Key management
+
+**Environment variables:**
+
+Store sensitive keys in environment variables, not code:
+
+```bash
+# .env file (not committed to git)
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+AI_SECRETS_MASTER_KEY=${AI_SECRETS_MASTER_KEY}
+DATABASE_URL=${DATABASE_URL}
+```
+
+**Secret management systems:**
+
+For production, integrate with:
+- HashiCorp Vault
+- AWS Secrets Manager
+- Azure Key Vault
+- Google Secret Manager
+
+## Compliance frameworks
+
+### SOC 2
+
+**Controls implemented:**
+
+| SOC 2 Criteria | dbt-Workbench Controls |
+|---------------|----------------------|
+| Access Control | RBAC, authentication |
+| System Operations | Audit logging, monitoring |
+| Change Management | Git integration, version control |
+| Data Protection | Encryption, workspace isolation |
+
+**Evidence collection:**
+
+- Export audit logs quarterly
+- Document RBAC policies
+- Maintain access reviews
+- Record configuration changes
+
+### GDPR
+
+**Data subject rights:**
+
+**Right to access:**
+- Users can view their own data
+- Admins can export user activity
+
+**Right to erasure:**
+```bash
+# Remove user and associated data
+curl -X DELETE http://localhost:8000/admin/users/user123 \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+**Data minimization:**
+- Collect only necessary data
+- Configure log retention appropriately
+- Anonymize where possible
+
+### HIPAA
+
+For healthcare deployments:
+
+**Technical safeguards:**
+- ✅ Authentication and access controls
+- ✅ Audit controls and logging
+- ✅ Encryption at rest and in transit
+- ✅ Automatic logoff
+
+**Required configuration:**
+
+```bash
+# Enhanced security for HIPAA
+AUTH_ENABLED=true
+ACCESS_TOKEN_EXPIRE_MINUTES=15  # Shorter sessions
+AUDIT_LOG_RETENTION_DAYS=2555   # 7 years
+PASSWORD_MIN_LENGTH=16          # Stronger passwords
+```
+
+**Business Associate Agreement (BAA):**
+
+Document dbt-Workbench as part of your HIPAA compliance:
+- Where PHI is processed
+- Security controls implemented
+- Audit procedures
+
+### PCI DSS
+
+For payment data processing:
+
+**Scope reduction:**
+- Don't store payment card data in dbt
+- Use tokenized references only
+
+**Access controls:**
+- Strict RBAC for anyone accessing payment data flows
+- Regular access reviews
+- Monitor all access to payment-related models
+
+## Security best practices
+
+### Network security
+
+**Firewall rules:**
+
+```bash
+# Allow only necessary ports
+iptables -A INPUT -p tcp --dport 3000 -s 10.0.0.0/8 -j ACCEPT  # Internal only
+iptables -A INPUT -p tcp --dport 8000 -s 10.0.0.0/8 -j ACCEPT  # Internal only
+iptables -A INPUT -p tcp --dport 3000 -j DROP
+iptables -A INPUT -p tcp --dport 8000 -j DROP
+```
+
+**VPN/Private network:**
+
+Deploy dbt-Workbench within private networks, accessible only via VPN for remote users.
+
+### Backup and recovery
+
+**Database backups:**
+
+```bash
+# Daily automated backup
+pg_dump $DATABASE_URL > backup-$(date +%Y%m%d).sql
+
+# Weekly full backup to S3
+aws s3 cp backup-$(date +%Y%m%d).sql s3://dbt-workbench-backups/
+```
+
+**Disaster recovery:**
+
+Document recovery procedures:
+1. Restore database from backup
+2. Reconfigure environment variables
+3. Verify workspace access
+4. Test critical workflows
+
+### Security monitoring
+
+**Failed login attempts:**
+
+Monitor for brute force attacks:
+
+```bash
+# Alert after 5 failed attempts
+grep "login failed" /var/log/dbt-workbench/app.log | \
+  awk '{print $4}' | sort | uniq -c | sort -rn
+```
+
+**Unusual activity:**
+
+Set up alerts for:
+- After-hours access
+- Bulk data exports
+- Configuration changes
+- Failed authorization attempts
+
+### Incident response
+
+**Security incident playbook:**
+
+1. **Identify**: Detect anomalous activity via logs
+2. **Contain**: Disable affected user accounts
+3. **Investigate**: Review audit logs
+4. **Remediate**: Fix vulnerabilities
+5. **Document**: Record incident and response
+6. **Review**: Post-incident analysis
+
+## FAQ
+
+### Does dbt-Workbench support SSO?
+
+Currently dbt-Workbench supports JWT-based authentication. SSO integration via OIDC/SAML can be added through custom plugins or reverse proxy configuration.
+
+### How is data isolated between teams?
+
+Workspaces provide strict isolation with separate repositories, artifacts, and settings. Users can only access workspaces they are assigned to.
+
+### Can I run dbt-Workbench in a regulated environment?
+
+Yes. dbt-Workbench supports air-gapped deployments, audit logging, RBAC, and encryption suitable for regulated industries including healthcare and finance.
+
+### What compliance standards are supported?
+
+dbt-Workbench provides controls for SOC 2, GDPR, HIPAA, and other frameworks through authentication, audit trails, encryption, and access controls.
+
+## Related pages
+
+- [Authentication & RBAC](/docs/auth-rbac/)
+- [Enable JWT authentication](/docs/guides/enable-jwt-auth/)
+- [Air-gapped deployments](/docs/air-gapped-on-prem/)
+- [AI security](/docs/ai-security-rbac/)

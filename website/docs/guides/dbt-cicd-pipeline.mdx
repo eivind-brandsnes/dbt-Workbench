@@ -1,0 +1,555 @@
+---
+title: CI/CD for dbt - Continuous Integration & Deployment
+description: Implement CI/CD pipelines for dbt projects. Learn how to automate testing, documentation generation, and deployments using GitHub Actions, GitLab CI, and dbt Cloud alternatives.
+slug: /guides/dbt-cicd-pipeline
+keywords: [dbt ci/cd, dbt continuous integration, dbt deployment, dbt github actions, dbt automation, dbt pipeline]
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Set up version control',
+    text: 'Organize your dbt project in Git with clear branching strategy (main, develop, feature branches).',
+  },
+  {
+    name: 'Create CI workflow',
+    text: 'Configure automated testing on pull requests using GitHub Actions or GitLab CI.',
+  },
+  {
+    name: 'Add testing jobs',
+    text: 'Include dbt compile, dbt test, and dbt lint in your CI pipeline.',
+  },
+  {
+    name: 'Configure CD deployment',
+    text: 'Set up automated deployment to staging and production environments.',
+  },
+  {
+    name: 'Add notifications',
+    text: 'Configure Slack or email notifications for pipeline failures and successes.',
+  },
+];
+
+export const faqItems = [
+  {
+    question: 'What tests should run in CI?',
+    answer: 'Run dbt deps, dbt compile, and dbt test on every PR. For larger projects, also run sqlfluff linting and check model documentation coverage.',
+  },
+  {
+    question: 'How do I handle different environments in CI/CD?',
+    answer: 'Use separate targets in profiles.yml (ci, staging, prod). Set environment variables in your CI/CD platform to control which target is used.',
+  },
+  {
+    question: 'Should I run full refreshes in CI?',
+    answer: 'Generally no - run slim CI with dbt test only. Full refreshes are expensive and should run in scheduled production jobs, not on every PR.',
+  },
+  {
+    question: 'How do I prevent breaking changes?',
+    answer: 'Use state comparison (dbt ls --state) to detect model changes, require code reviews, run full test suites, and use staging environments before production.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'CI/CD for dbt'},
+  ]}
+/>
+<HowToJsonLd
+  name="CI/CD Pipeline for dbt"
+  description="Implement continuous integration and deployment for dbt projects. Automate testing, documentation generation, and deployments using GitHub Actions and GitLab CI."
+  steps={steps}
+/>
+<FaqJsonLd items={faqItems} />
+
+# CI/CD for dbt
+
+Automating your dbt workflows ensures code quality and streamlines deployments. This guide covers implementing CI/CD pipelines for dbt projects using popular tools.
+
+## Why CI/CD for dbt?
+
+### Benefits
+
+**Code quality:**
+- Automated testing catches issues early
+- Linting enforces style standards
+- Documentation checks ensure completeness
+
+**Team velocity:**
+- Faster feedback on changes
+- Automated deployments reduce manual work
+- Confidence in production releases
+
+**Risk reduction:**
+- Staging environments catch issues before production
+- Rollback capabilities
+- Audit trail of all changes
+
+## CI/CD pipeline overview
+
+A complete dbt CI/CD pipeline includes:
+
+### Continuous Integration (CI)
+
+**On every pull request:**
+1. Install dependencies (`dbt deps`)
+2. Compile models (`dbt compile`)
+3. Run tests (`dbt test`)
+4. Lint SQL (`sqlfluff lint`)
+5. Check documentation coverage
+
+### Continuous Deployment (CD)
+
+**On merge to main:**
+1. Deploy to staging
+2. Run full test suite
+3. Generate documentation
+4. Deploy to production (optional/manual)
+
+## GitHub Actions setup
+
+### Basic CI workflow
+
+Create `.github/workflows/dbt-ci.yml`:
+
+```yaml
+name: dbt CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dbt
+        run: |
+          pip install dbt-core dbt-snowflake  # Adjust adapter as needed
+          dbt --version
+
+      - name: Configure dbt profiles
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << EOF
+          my_project:
+            target: ci
+            outputs:
+              ci:
+                type: snowflake
+                account: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+                user: ${{ secrets.SNOWFLAKE_USER }}
+                password: ${{ secrets.SNOWFLAKE_PASSWORD }}
+                role: ${{ secrets.SNOWFLAKE_ROLE }}
+                database: ${{ secrets.SNOWFLAKE_DATABASE }}
+                warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+                schema: ${{ secrets.SNOWFLAKE_SCHEMA }}_CI_${{ github.run_id }}
+                threads: 4
+          EOF
+
+      - name: Install dbt packages
+        run: dbt deps
+
+      - name: Compile dbt
+        run: dbt compile
+
+      - name: Run dbt tests
+        run: dbt test
+        env:
+          DBT_PROFILES_DIR: ~/.dbt
+```
+
+### Advanced CI with Slim Testing
+
+Optimize CI by testing only modified models:
+
+```yaml
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            models/**/*.sql
+            models/**/*.yml
+
+      - name: Run Slim CI
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          # Download manifest from main branch
+          dbt docs generate --target-path target-main
+          
+          # Run only modified models and their children
+          dbt run --select state:modified+ --state target-main
+          dbt test --select state:modified+ --state target-main
+```
+
+### CD workflow
+
+Create `.github/workflows/dbt-cd.yml`:
+
+```yaml
+name: dbt CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging
+        run: |
+          dbt deps
+          dbt run --target staging
+          dbt test --target staging
+          dbt docs generate --target staging
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production  # Requires manual approval
+    
+    steps:
+      - name: Deploy to Production
+        run: |
+          dbt deps
+          dbt run --target prod
+          dbt test --target prod
+```
+
+## GitLab CI setup
+
+### Basic pipeline
+
+Create `.gitlab-ci.yml`:
+
+```yaml
+stages:
+  - test
+  - deploy
+
+variables:
+  DBT_PROFILES_DIR: "${CI_PROJECT_DIR}/profiles"
+
+.dbt_template: &dbt_definition
+  image: python:3.11-slim
+  before_script:
+    - pip install dbt-core dbt-snowflake
+    - dbt deps
+
+dbt-test:
+  <<: *dbt_definition
+  stage: test
+  script:
+    - dbt compile
+    - dbt test
+  only:
+    - merge_requests
+    - main
+
+dbt-deploy-staging:
+  <<: *dbt_definition
+  stage: deploy
+  script:
+    - dbt run --target staging
+    - dbt test --target staging
+  environment:
+    name: staging
+  only:
+    - main
+
+dbt-deploy-production:
+  <<: *dbt_definition
+  stage: deploy
+  script:
+    - dbt run --target prod
+    - dbt test --target prod
+  environment:
+    name: production
+  when: manual
+  only:
+    - main
+```
+
+## Testing strategies
+
+### Unit testing
+
+Test individual models in isolation:
+
+```yaml
+# Run specific model tests
+dbt test --select stg_customers
+```
+
+### Integration testing
+
+Test model chains:
+
+```yaml
+# Test a model and all its children
+dbt test --select dim_customers+
+
+# Test upstream dependencies too
+dbt test --select +dim_customers
+```
+
+### State-aware testing
+
+Only test changed models:
+
+```yaml
+# Compare against previous state
+dbt test --select state:modified --state path/to/artifacts
+```
+
+## Code quality checks
+
+### SQL linting with sqlfluff
+
+Add to your CI pipeline:
+
+```yaml
+      - name: Install sqlfluff
+        run: pip install sqlfluff
+
+      - name: Lint SQL
+        run: sqlfluff lint models/
+```
+
+Configure `.sqlfluff`:
+
+```ini
+[sqlfluff]
+dialect = snowflake
+templater = jinja
+rules = all
+
+[sqlfluff:indentation]
+tab_width = 4
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+```
+
+### Documentation coverage
+
+Ensure all models are documented:
+
+```yaml
+      - name: Check documentation
+        run: |
+          python scripts/check_docs.py
+```
+
+Create `scripts/check_docs.py`:
+
+```python
+import yaml
+import sys
+from pathlib import Path
+
+def check_documentation():
+    """Check that all models have descriptions."""
+    errors = []
+    
+    for yml_file in Path('models').rglob('*.yml'):
+        with open(yml_file) as f:
+            content = yaml.safe_load(f)
+        
+        if 'models' in content:
+            for model in content['models']:
+                if not model.get('description'):
+                    errors.append(f"Model {model['name']} missing description")
+    
+    if errors:
+        print("Documentation errors:")
+        for error in errors:
+            print(f"  - {error}")
+        sys.exit(1)
+    else:
+        print("All models documented ✓")
+
+if __name__ == '__main__':
+    check_documentation()
+```
+
+## Environment management
+
+### Environment-specific configurations
+
+```yaml
+# profiles.yml
+my_project:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      schema: dbt_dev
+      warehouse: DEV_WH
+      
+    ci:
+      type: snowflake
+      schema: dbt_ci_{{ env_var('GITHUB_RUN_ID') }}
+      warehouse: CI_WH
+      threads: 4
+      
+    staging:
+      type: snowflake
+      schema: dbt_staging
+      warehouse: STAGING_WH
+      
+    prod:
+      type: snowflake
+      schema: dbt_prod
+      warehouse: PROD_WH
+```
+
+### Dynamic schema naming
+
+Create `macros/generate_schema_name.sql`:
+
+```sql
+{% macro generate_schema_name(custom_schema_name, node) -%}
+    {%- set default_schema = target.schema -%}
+    
+    {%- if target.name == 'ci' -%}
+        {{ default_schema }}
+    {%- elif custom_schema_name is none -%}
+        {{ default_schema }}
+    {%- else -%}
+        {{ custom_schema_name | trim }}
+    {%- endif -%}
+{%- endmacro %}
+```
+
+## Deployment patterns
+
+### Blue-Green deployment
+
+Deploy to new schema, then swap:
+
+```yaml
+      - name: Blue-Green Deploy
+        run: |
+          # Deploy to blue schema
+          dbt run --target prod --vars '{schema_suffix: _blue}'
+          
+          # Run tests
+          dbt test --target prod --vars '{schema_suffix: _blue}'
+          
+          # Swap schemas (using dbt hooks or external script)
+          python scripts/swap_schemas.py
+```
+
+### Incremental deployment
+
+Only run changed models in production:
+
+```yaml
+      - name: Incremental Deploy
+        run: |
+          # Download production manifest
+          aws s3 cp s3://dbt-artifacts/manifest.json ./prod-manifest/
+          
+          # Run only changed models
+          dbt run --select state:modified+ --state ./prod-manifest/
+```
+
+## Notifications and monitoring
+
+### Slack notifications
+
+Add to GitHub Actions:
+
+```yaml
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#data-alerts'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+### Metrics tracking
+
+Track deployment metrics:
+
+```yaml
+      - name: Track Metrics
+        run: |
+          echo "::set-output name=run_duration::$(cat logs/dbt.log | grep 'Completed successfully' | awk '{print $5}')"
+          echo "::set-output name=models_run::$(dbt ls --select state:modified | wc -l)"
+```
+
+## Best practices
+
+### 1. Fast feedback
+
+Keep CI under 10 minutes:
+- Use slim CI (only changed models)
+- Parallelize test execution
+- Cache dependencies
+
+### 2. Staging parity
+
+Ensure staging matches production:
+- Same warehouse configuration
+- Representative data volumes
+- Same dbt version
+
+### 3. Immutable deployments
+
+Never modify production directly:
+- All changes through PRs
+- Code review required
+- Automated testing gates
+
+### 4. Rollback capability
+
+Plan for failure:
+- Keep previous manifests
+- Document rollback procedures
+- Test rollback process
+
+## FAQ
+
+### What tests should run in CI?
+
+Run dbt deps, dbt compile, and dbt test on every PR. For larger projects, also run sqlfluff linting and check model documentation coverage.
+
+### How do I handle different environments in CI/CD?
+
+Use separate targets in profiles.yml (ci, staging, prod). Set environment variables in your CI/CD platform to control which target is used.
+
+### Should I run full refreshes in CI?
+
+Generally no - run slim CI with dbt test only. Full refreshes are expensive and should run in scheduled production jobs, not on every PR.
+
+### How do I prevent breaking changes?
+
+Use state comparison (dbt ls --state) to detect model changes, require code reviews, run full test suites, and use staging environments before production.
+
+## Related pages
+
+- [dbt run orchestration](/docs/run-orchestration/)
+- [dbt scheduler](/docs/scheduler/)
+- [dbt Testing Guide](/docs/guides/dbt-testing-guide/)
+- [dbt Best Practices](/docs/guides/dbt-best-practices/)

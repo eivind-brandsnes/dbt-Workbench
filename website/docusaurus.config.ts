@@ -79,7 +79,14 @@ const config: Config = {
     image: 'img/og-image.svg',
     metadata: [
       { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'robots', content: 'index, follow' },
+      { name: 'twitter:site', content: '@dbtworkbench' },
+      { name: 'twitter:creator', content: '@dbtworkbench' },
+      { name: 'robots', content: 'index, follow, max-image-preview:large, max-snippet:-1' },
+      { name: 'googlebot', content: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1' },
+      { name: 'bingbot', content: 'index, follow, max-snippet:-1, max-image-preview:large' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
+      { name: 'theme-color', content: '#0ea5e9' },
+      { name: 'keywords', content: 'dbt, dbt ui, dbt lineage, data lineage, dbt catalog, data catalog, sql workspace, dbt scheduler, open source dbt, dbt documentation, dbt visualization' },
     ],
     colorMode: {
       respectPrefersColorScheme: true,

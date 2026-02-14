@@ -1,7 +1,8 @@
 ---
-title: dbt UI guide for dbt-Workbench
-description: Understand what a dbt UI is, why teams choose an open source dbt UI, and how dbt-Workbench supports lineage, runs, docs, and SQL workflows.
+title: dbt UI - Complete Guide to Open Source dbt Interfaces
+description: Comprehensive guide to dbt UI options. Learn what a dbt UI is, compare open source vs hosted solutions, and discover how dbt-Workbench delivers lineage, runs, docs, and SQL workflows without vendor lock-in.
 slug: /dbt-ui
+keywords: [dbt ui, dbt user interface, open source dbt ui, dbt cloud alternative, self-hosted dbt, dbt web interface]
 ---
 
 import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
@@ -108,6 +109,92 @@ JWT authentication with role-based access control is available and optional. Def
 ### What workflows can I run from the UI?
 Run dbt commands, inspect compiled SQL, browse catalogs, visualize lineage, manage environments, and schedule runs.
 
+## Why teams need a dbt UI
+
+As dbt projects grow from a handful of models to hundreds or thousands, managing them through command line alone becomes challenging. A dbt UI solves critical operational needs:
+
+### Visual data lineage
+
+Understanding dependencies between models is essential for refactoring, debugging, and impact analysis. Without visualization, teams struggle to answer questions like "What breaks if I change this model?" or "Which models depend on this source?"
+
+### Collaboration and documentation
+
+A shared interface enables data analysts, engineers, and stakeholders to explore the data warehouse without SQL expertise. It democratizes access to metadata and reduces "tribal knowledge" dependencies.
+
+### Operational efficiency
+
+Running dbt commands, monitoring jobs, and troubleshooting failures become streamlined when centralized in a web interface. Teams save hours weekly through automation and better visibility.
+
+### Compliance and governance
+
+Enterprise environments require audit trails, access controls, and data lineage documentation. A proper dbt UI provides these governance capabilities out of the box.
+
+## dbt UI options compared
+
+Teams have several options for dbt interfaces, each with different tradeoffs:
+
+### dbt Cloud (SaaS)
+
+**Pros:** Fully managed, collaboration features, IDE, observability
+
+**Cons:** Vendor lock-in, data leaves your infrastructure, pricing scales with usage, limited customization
+
+**Best for:** Teams wanting zero operational overhead and ok with SaaS model
+
+### dbt-Workbench (Open Source)
+
+**Pros:** Self-hosted, air-gapped capable, full control, extensible, no usage limits
+
+**Cons:** Requires infrastructure management
+
+**Best for:** Security-conscious teams, regulated industries, cost-sensitive organizations, air-gapped environments
+
+### Custom internal tools
+
+**Pros:** Tailored exactly to your needs
+
+**Cons:** High development cost, maintenance burden, documentation gap
+
+**Best for:** Large teams with dedicated platform engineering resources
+
+### Command line only
+
+**Pros:** Zero additional infrastructure
+
+**Cons:** Limited collaboration, no visualization, steep learning curve
+
+**Best for:** Small teams, individual practitioners
+
+## When to choose dbt-Workbench
+
+dbt-Workbench is specifically designed for scenarios where control and flexibility matter:
+
+### Air-gapped and on-premise deployments
+
+Financial services, healthcare, and government organizations often cannot use cloud SaaS products due to compliance requirements. dbt-Workbench runs entirely within your network perimeter.
+
+### Cost optimization
+
+With unlimited users and runs, dbt-Workbench eliminates per-seat or per-run pricing concerns that SaaS products impose.
+
+### Custom integration needs
+
+The plugin system and open API enable custom integrations with your existing data stack, CI/CD pipelines, and internal tools.
+
+### Multi-project management
+
+For organizations managing multiple dbt projects across business units, dbt-Workbench's workspace isolation provides clean separation while maintaining centralized governance.
+
+## Getting started with dbt-Workbench
+
+The fastest way to experience dbt-Workbench is with Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+This launches the complete stack with a demo project pre-configured. Visit [Quickstart with Docker Compose](/docs/quickstart-docker/) for detailed setup instructions.
+
 ## Related pages
 
 - [Open source dbt UI overview](/)
@@ -115,3 +202,5 @@ Run dbt commands, inspect compiled SQL, browse catalogs, visualize lineage, mana
 - [dbt run orchestration](/docs/run-orchestration/)
 - [dbt scheduler](/docs/scheduler/)
 - [dbt SQL workspace](/docs/sql-workspace/)
+- [Air-gapped and on-prem dbt UI](/docs/air-gapped-on-prem/)
+- [Migrate from dbt Cloud to dbt-Workbench](/docs/guides/migrate-from-dbt-cloud/)

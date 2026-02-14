@@ -1,0 +1,539 @@
+---
+title: dbt Best Practices - Data Modeling & Project Structure Guide
+description: Learn dbt best practices for data modeling, project organization, testing strategies, documentation, and team collaboration. Build maintainable dbt projects.
+slug: /guides/dbt-best-practices
+keywords: [dbt best practices, dbt data modeling, dbt project structure, dbt patterns, dbt conventions, dbt standards]
+---
+
+import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const faqItems = [
+  {
+    question: 'How should I organize my dbt project?',
+    answer: 'Use a layered architecture: sources → staging → intermediate → marts. Organize by data domain within each layer (core, finance, marketing, etc.).',
+  },
+  {
+    question: 'What naming conventions should I follow?',
+    answer: 'Prefix models by layer: stg_ for staging, int_ for intermediate, fct_ for fact tables, dim_ for dimension tables. Use snake_case consistently.',
+  },
+  {
+    question: 'How do I handle slowly changing dimensions?',
+    answer: 'Use dbt snapshots for SCD Type 2. For simple cases, use merge strategies with updated_at timestamps. Document your SCD approach in model descriptions.',
+  },
+  {
+    question: 'When should I use macros vs models?',
+    answer: 'Use macros for reusable SQL logic that applies across models. Use models for actual data transformations that produce tables or views.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'dbt Best Practices'},
+  ]}
+/>
+<FaqJsonLd items={faqItems} />
+
+# dbt Best Practices
+
+Following best practices ensures your dbt project remains maintainable as it grows. This guide covers proven patterns for data modeling, project organization, and team collaboration.
+
+## Project structure
+
+### Layered architecture
+
+Organize models into clear layers:
+
+```
+models/
+├── staging/           # Clean, light transformations
+│   ├── core/
+│   ├── finance/
+│   └── marketing/
+├── intermediate/      # Complex business logic
+│   ├── customer/
+│   └── product/
+└── marts/            # Business-facing models
+    ├── core/
+    ├── finance/
+    └── marketing/
+```
+
+**Layer definitions:**
+
+**Sources:** Raw data from external systems
+**Staging:** 1:1 with sources, light cleaning
+**Intermediate:** Complex transformations, reusable logic
+**Marts:** Final business models for analytics
+
+### Directory organization
+
+```
+models/
+├── staging/
+│   ├── _staging__models.yml    # All staging model configs
+│   ├── _staging__sources.yml   # Source definitions
+│   ├── stg_customers.sql
+│   ├── stg_orders.sql
+│   └── ...
+├── intermediate/
+│   ├── _intermediate__models.yml
+│   ├── int_customer_orders.sql
+│   └── ...
+└── marts/
+    ├── _marts__models.yml
+    ├── dim_customers.sql
+    ├── fct_orders.sql
+    └── ...
+```
+
+## Naming conventions
+
+### Model naming
+
+**Layer prefixes:**
+
+| Layer | Prefix | Example |
+|-------|--------|---------|
+| Staging | `stg_` | stg_customers |
+| Intermediate | `int_` | int_customer_orders |
+| Facts | `fct_` | fct_orders |
+| Dimensions | `dim_` | dim_customers |
+| Aggregates | `agg_` | agg_daily_sales |
+
+**Content suffixes:**
+
+| Type | Suffix | Example |
+|------|--------|---------|
+| Historical | `_history` | fct_orders_history |
+| Current state | `_current` | dim_customers_current |
+| Daily grain | `_daily` | agg_sales_daily |
+
+### File naming
+
+```
+stg_[source]__[table].sql          # stg_shopify__orders
+int_[entity]_[action].sql          # int_customer_enriched
+fct_[event].sql                    # fct_page_views
+dim_[entity].sql                   # dim_products
+```
+
+### Column naming
+
+**Primary keys:**
+```sql
+-- Always include primary key
+select
+    customer_id,           -- Primary key
+    customer_name,
+    created_at,
+    updated_at
+from {{ source('raw', 'customers') }}
+```
+
+**Timestamp columns:**
+```sql
+-- Use consistent timestamp naming
+created_at      -- When record was created
+updated_at      -- When record was last modified
+valid_from      -- Snapshot validity start
+valid_to        -- Snapshot validity end
+```
+
+**Boolean columns:**
+```sql
+-- Use is_ or has_ prefix
+is_active
+is_premium
+has_orders
+is_valid_email
+```
+
+## Data modeling patterns
+
+### Staging models
+
+**Purpose:** Clean and standardize raw data
+
+**Guidelines:**
+- 1:1 with source tables
+- Light transformations only
+- Standardize column names
+- Basic type casting
+- Simple filtering
+
+```sql
+-- models/staging/stg_customers.sql
+{{ config(materialized='view') }}
+
+with source as (
+    select * from {{ source('raw', 'customers') }}
+),
+
+renamed as (
+    select
+        id as customer_id,
+        first_name,
+        last_name,
+        email,
+        created_at,
+        updated_at,
+        -- Standardize boolean
+        case when status = 'active' then true else false end as is_active
+    from source
+)
+
+select * from renamed
+```
+
+### Intermediate models
+
+**Purpose:** Complex transformations and reusable logic
+
+**Guidelines:**
+- Combine multiple staging models
+- Business logic transformations
+- Aggregations and calculations
+- Can be referenced by multiple marts
+
+```sql
+-- models/intermediate/int_customer_orders.sql
+{{ config(materialized='view') }}
+
+with customers as (
+    select * from {{ ref('stg_customers') }}
+),
+
+orders as (
+    select * from {{ ref('stg_orders') }}
+),
+
+customer_orders as (
+    select
+        c.customer_id,
+        c.customer_name,
+        count(o.order_id) as total_orders,
+        sum(o.amount) as lifetime_value,
+        min(o.created_at) as first_order_date,
+        max(o.created_at) as last_order_date
+    from customers c
+    left join orders o on c.customer_id = o.customer_id
+    group by 1, 2
+)
+
+select * from customer_orders
+```
+
+### Mart models
+
+**Purpose:** Business-ready data for analytics
+
+**Guidelines:**
+- Star schema preferred (facts + dimensions)
+- Clear grain definition
+- Business-friendly naming
+- Document business logic
+
+```sql
+-- models/marts/fct_orders.sql
+{{ config(materialized='table') }}
+
+with orders as (
+    select * from {{ ref('stg_orders') }}
+),
+
+order_items as (
+    select * from {{ ref('stg_order_items') }}
+),
+
+final as (
+    select
+        o.order_id,
+        o.customer_id,
+        o.order_date,
+        o.status,
+        sum(oi.quantity) as total_items,
+        sum(oi.amount) as total_amount
+    from orders o
+    left join order_items oi on o.order_id = oi.order_id
+    group by 1, 2, 3, 4
+)
+
+select * from final
+```
+
+## Testing strategy
+
+### Test coverage hierarchy
+
+**Critical models:** 100% test coverage
+- Primary keys: unique, not_null
+- Foreign keys: relationships
+- Business-critical fields
+
+**Standard models:** 80% test coverage
+- Primary keys
+- Key relationships
+- Important metrics
+
+**Staging models:** Light testing
+- Primary keys
+- Source freshness
+
+### Test configuration
+
+```yaml
+# models/staging/_staging__models.yml
+version: 2
+
+models:
+  - name: stg_customers
+    description: Staged customer data
+    columns:
+      - name: customer_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - not_null
+          - unique
+      - name: customer_segment
+        tests:
+          - accepted_values:
+              values: ['enterprise', 'mid_market', 'smb']
+```
+
+## Documentation
+
+### Model documentation
+
+```sql
+{{
+  config(
+    materialized='table',
+    docs={'node_color': 'gold'}
+  )
+}}
+
+/*
+This model calculates daily revenue metrics.
+
+Grain: One row per day
+
+Key Metrics:
+- gross_revenue: Total revenue before discounts
+- net_revenue: Revenue after discounts
+- order_count: Number of orders
+
+Usage:
+Used in the executive dashboard and financial reports.
+*/
+
+with daily_revenue as (
+    ...
+)
+```
+
+### Schema.yml documentation
+
+```yaml
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      Fact table containing all orders. One row per order.
+      
+      **Grain:** order_id
+      
+      **Owner:** Finance team
+      
+      **Update Frequency:** Hourly
+    
+    columns:
+      - name: order_id
+        description: Primary key, unique identifier for each order
+        
+      - name: customer_id
+        description: >
+          Foreign key to dim_customers.
+          Identifies the customer who placed the order.
+```
+
+## Code organization
+
+### Macros
+
+Organize macros by purpose:
+
+```
+macros/
+├── tests/                  # Custom generic tests
+│   ├── test_positive_value.sql
+│   └── test_valid_email.sql
+├── utils/                  # Utility macros
+│   ├── cents_to_dollars.sql
+│   └── generate_schema_name.sql
+└── grants/                 # Access control
+    └── grant_select.sql
+```
+
+### Snapshots
+
+```
+snapshots/
+├── customers.sql
+├── products.sql
+└── _snapshots.yml
+```
+
+### Seeds
+
+```
+seeds/
+├── country_codes.csv
+├── currency_rates.csv
+└── _seeds.yml
+```
+
+## Version control
+
+### Git workflow
+
+**Branch naming:**
+```
+feature/add-customer-model
+bugfix/fix-order-amount
+hotfix/update-production-credentials
+```
+
+**Commit messages:**
+```
+feat: add customer lifetime value model
+fix: correct order amount calculation
+docs: update README with new setup instructions
+test: add tests for stg_customers
+```
+
+### Pull request template
+
+```markdown
+## Description
+Brief description of changes
+
+## Testing
+- [ ] dbt test passes
+- [ ] Documentation updated
+- [ ] Changes tested in staging
+
+## Checklist
+- [ ] Models follow naming conventions
+- [ ] Tests added for new models
+- [ ] No breaking changes to existing models
+- [ ] Performance impact considered
+```
+
+## Performance considerations
+
+### Materialization choices
+
+**Views:**
+- Small datasets (< 100K rows)
+- Simple transformations
+- Infrequently queried
+- Real-time requirements
+
+**Tables:**
+- Large datasets
+- Complex calculations
+- Frequently queried
+- Snapshot requirements
+
+**Incremental:**
+- Append-only data
+- Large tables (1M+ rows)
+- Regular updates
+
+### Query optimization
+
+**Filter early:**
+```sql
+-- Good: Filter in CTE
+with recent_orders as (
+    select *
+    from {{ ref('stg_orders') }}
+    where created_at >= current_date - 30
+)
+
+-- Avoid: Filter at end
+select *
+from {{ ref('stg_orders') }}
+where created_at >= current_date - 30
+```
+
+**Limit CTE usage:**
+```sql
+-- Instead of many CTEs, consider intermediate models
+-- This enables better caching and reuse
+```
+
+## Team collaboration
+
+### Code review checklist
+
+**Structure:**
+- [ ] Follows naming conventions
+- [ ] Properly layered (staging/intermediate/marts)
+- [ ] Appropriate materialization
+
+**Logic:**
+- [ ] Business logic is correct
+- [ ] Edge cases handled
+- [ ] No hardcoded values
+
+**Quality:**
+- [ ] Tests included
+- [ ] Documentation complete
+- [ ] No performance issues
+
+### Onboarding new team members
+
+**Documentation:**
+- Project README
+- Architecture diagrams
+- Data dictionary
+- Style guide
+
+**Training:**
+- dbt fundamentals
+- Project-specific patterns
+- Code review process
+- Deployment procedures
+
+## FAQ
+
+### How should I organize my dbt project?
+
+Use a layered architecture: sources → staging → intermediate → marts. Organize by data domain within each layer (core, finance, marketing, etc.).
+
+### What naming conventions should I follow?
+
+Prefix models by layer: stg_ for staging, int_ for intermediate, fct_ for fact tables, dim_ for dimension tables. Use snake_case consistently.
+
+### How do I handle slowly changing dimensions?
+
+Use dbt snapshots for SCD Type 2. For simple cases, use merge strategies with updated_at timestamps. Document your SCD approach in model descriptions.
+
+### When should I use macros vs models?
+
+Use macros for reusable SQL logic that applies across models. Use models for actual data transformations that produce tables or views.
+
+## Related pages
+
+- [dbt Testing Guide](/docs/guides/dbt-testing-guide/)
+- [dbt Performance Optimization](/docs/guides/dbt-performance-optimization/)
+- [dbt Security & Compliance](/docs/guides/dbt-security-compliance/)
+- [Manage multiple dbt projects](/docs/guides/manage-multiple-dbt-projects/)

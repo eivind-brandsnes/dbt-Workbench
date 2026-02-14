@@ -1,8 +1,42 @@
 ---
-title: AI Configuration
-description: Configure AI defaults, secrets, and workspace behavior.
+title: AI Configuration - Set Up AI Copilot for dbt
+description: Configure AI copilot defaults, API secrets, and workspace behavior for dbt-Workbench. Supports OpenAI, Anthropic, and Gemini with encrypted secret storage.
 slug: /ai-configuration
+keywords: [dbt ai configuration, ai copilot setup, openai dbt, anthropic dbt, ai workspace settings]
 ---
+
+import {BreadcrumbJsonLd, HowToJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Enable AI Copilot',
+    text: 'Set AI_ENABLED=true and configure AI_SECRETS_MASTER_KEY for encryption.',
+  },
+  {
+    name: 'Choose Default Mode',
+    text: 'Select direct LLM or MCP mode as the workspace default.',
+  },
+  {
+    name: 'Configure API Keys',
+    text: 'Add OpenAI, Anthropic, or Gemini API keys in Settings → AI Copilot.',
+  },
+  {
+    name: 'Set Data Context',
+    text: 'Enable data context toggles for results and run logs as needed.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'AI Configuration'},
+  ]}
+/>
+<HowToJsonLd
+  name="Configure AI Copilot for dbt-Workbench"
+  description="Step-by-step guide to configure AI copilot defaults, API secrets, and workspace behavior."
+  steps={steps}
+/>
 
 # AI Configuration
 

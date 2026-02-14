@@ -5,11 +5,15 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {
   buildBreadcrumbJsonLd,
   buildFaqJsonLd,
-  buildHomeJsonLdGraph,
   buildHowToJsonLd,
+  buildHomeJsonLdGraph,
+  buildWebPageJsonLd,
+  buildArticleJsonLd,
   BreadcrumbItem,
   FaqItem,
   HowToData,
+  WebPageData,
+  ArticleData,
 } from './jsonLdBuilders';
 
 type JsonLdProps = {
@@ -54,4 +58,39 @@ export function HomeJsonLd() {
   const repositoryUrl = `https://github.com/${siteConfig.organizationName}/${siteConfig.projectName}`;
 
   return <JsonLd data={buildHomeJsonLdGraph(siteConfig.url, repositoryUrl)} />;
+}
+
+export function WebPageJsonLd({title, description, datePublished, dateModified}: WebPageData) {
+  const canonicalUrl = useCanonicalUrl();
+
+  return (
+    <JsonLd
+      data={buildWebPageJsonLd({
+        title,
+        description,
+        url: canonicalUrl,
+        datePublished,
+        dateModified,
+        author: 'dbt-Workbench',
+      })}
+    />
+  );
+}
+
+export function ArticleJsonLd({title, description, datePublished, dateModified, image}: ArticleData) {
+  const canonicalUrl = useCanonicalUrl();
+
+  return (
+    <JsonLd
+      data={buildArticleJsonLd({
+        title,
+        description,
+        url: canonicalUrl,
+        datePublished,
+        dateModified,
+        author: 'dbt-Workbench',
+        image,
+      })}
+    />
+  );
 }

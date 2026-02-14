@@ -1,0 +1,578 @@
+---
+title: dbt Performance Optimization - Speed Up Your dbt Runs
+description: Learn proven strategies to optimize dbt performance including incremental models, materialization strategies, and warehouse-specific tuning for faster runs.
+slug: /guides/dbt-performance-optimization
+keywords: [dbt performance, dbt optimization, speed up dbt, dbt incremental models, dbt materialization, fast dbt]
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Profile your queries',
+    text: 'Identify slow models using query history and execution logs from dbt-Workbench run history.',
+  },
+  {
+    name: 'Implement incremental models',
+    text: 'Convert large tables to incremental materialization to process only new or changed data.',
+  },
+  {
+    name: 'Optimize materialization strategies',
+    text: 'Choose appropriate materialization (table, view, ephemeral) based on query patterns and data size.',
+  },
+  {
+    name: 'Add indexes and clustering',
+    text: 'Implement warehouse-specific optimizations like indexes, sort keys, and cluster keys.',
+  },
+  {
+    name: 'Parallelize execution',
+    text: 'Configure threads and optimize model dependencies to maximize parallel execution.',
+  },
+];
+
+export const faqItems = [
+  {
+    question: 'Why is my dbt run slow?',
+    answer: 'Common causes include processing full tables instead of incrementally, expensive joins, lack of indexes, and suboptimal materialization strategies. Profile your queries to identify bottlenecks.',
+  },
+  {
+    question: 'How much faster can incremental models be?',
+    answer: 'Incremental models can reduce runtime by 90%+ for large datasets by processing only new or changed rows instead of full table rebuilds.',
+  },
+  {
+    question: 'Should I always use table materialization?',
+    answer: 'No. Use views for lightweight transformations that are queried infrequently. Use tables for expensive calculations or frequently accessed data.',
+  },
+  {
+    question: 'How many threads should I use?',
+    answer: 'Start with 4-8 threads. Monitor warehouse resources and increase if you have capacity. Too many threads can overwhelm the warehouse and slow everything down.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'dbt Performance Optimization'},
+  ]}
+/>
+<HowToJsonLd
+  name="dbt Performance Optimization"
+  description="Learn proven strategies to optimize dbt performance including incremental models, materialization strategies, and warehouse-specific tuning."
+  steps={steps}
+/>
+<FaqJsonLd items={faqItems} />
+
+# dbt Performance Optimization
+
+Slow dbt runs waste time and compute resources. This guide covers proven strategies to dramatically speed up your dbt pipelines using dbt-Workbench for performance monitoring.
+
+## Understanding dbt performance
+
+Before optimizing, understand what affects dbt performance:
+
+### Model execution time
+
+- Query complexity
+- Data volume processed
+- Join efficiency
+- Aggregation operations
+- Materialization overhead
+
+### Pipeline structure
+
+- Dependency chains (sequential vs parallel)
+- Number of models
+- Materialization types
+- Incremental vs full refresh patterns
+
+### Warehouse resources
+
+- Available compute
+- Concurrent query limits
+- Storage optimization
+- Network latency
+
+## Performance profiling with dbt-Workbench
+
+### Identifying slow models
+
+The dbt-Workbench run history shows execution times for each model:
+
+1. Navigate to **Run History**
+2. Review recent runs
+3. Sort by duration to identify slowest models
+4. Note patterns (always slow vs intermittently slow)
+
+### Analyzing model dependencies
+
+Use the lineage view to understand execution order:
+
+- Long dependency chains force sequential execution
+- Models with many children block downstream work
+- Complex DAGs may have optimization opportunities
+
+### Query performance insights
+
+Enable query logging to capture warehouse-specific metrics:
+- Query execution plans
+- Bytes scanned
+- Slots/warehouse utilization
+- Cache hit rates
+
+## Strategy 1: Incremental models
+
+Incremental models are the most impactful optimization for large datasets.
+
+### How incremental models work
+
+Instead of rebuilding entire tables, incremental models:
+1. Identify new/changed data
+2. Insert or merge only those rows
+3. Leave existing data untouched
+
+### When to use incremental models
+
+Use incremental materialization for:
+- Tables with millions+ rows
+- Event or log data that grows continuously
+- Models that take > 5 minutes to build
+- Sources that append data (not update in place)
+
+### Implementing incremental models
+
+```sql
+{{ config(
+    materialized='incremental',
+    unique_key='order_id',
+    incremental_strategy='merge'  -- or 'delete+insert'
+) }}
+
+select *
+from {{ source('raw_data', 'orders') }}
+
+{% if is_incremental() %}
+  where created_at >= (select max(created_at) from {{ this }})
+{% endif %}
+```
+
+### Incremental strategies
+
+**merge** (default for Snowflake, BigQuery, Databricks):
+- Updates existing rows, inserts new ones
+- Best when source data may change
+
+**delete+insert**:
+- Deletes matching rows, inserts all new data
+- Faster than merge for append-only data
+
+**insert_overwrite**:
+- Replaces entire partitions
+- Best for date-partitioned tables
+
+### Optimizing incremental filters
+
+Efficient filtering is critical:
+
+```sql
+-- Good: Uses indexed timestamp column
+{% if is_incremental() %}
+  where created_at >= (select max(created_at) from {{ this }})
+{% endif %}
+
+-- Better: Use lookback window for late-arriving data
+{% if is_incremental() %}
+  where created_at >= (select dateadd(day, -3, max(created_at)) from {{ this }})
+{% endif %}
+```
+
+## Strategy 2: Materialization optimization
+
+Choosing the right materialization impacts both performance and cost.
+
+### View materialization
+
+```sql
+{{ config(materialized='view') }}
+```
+
+**Use for:**
+- Lightweight transformations
+- Tables queried infrequently
+- Intermediate steps in complex pipelines
+- Real-time data requirements
+
+**Benefits:**
+- Always up-to-date
+- No storage costs
+- Fast to build
+
+**Tradeoffs:**
+- Query time includes transformation logic
+- Not suitable for expensive calculations
+
+### Table materialization
+
+```sql
+{{ config(materialized='table') }}
+```
+
+**Use for:**
+- Expensive calculations
+- Frequently queried data
+- Final mart models
+- Large datasets where views are too slow
+
+**Benefits:**
+- Fast query performance
+- Data snapshot at build time
+
+**Tradeoffs:**
+- Storage costs
+- Stale data between runs
+- Build time for large datasets
+
+### Ephemeral materialization
+
+```sql
+{{ config(materialized='ephemeral') }}
+```
+
+**Use for:**
+- Intermediate transformations
+- Code organization (no physical table needed)
+- Light reusable logic
+
+**Benefits:**
+- No storage overhead
+- Included in parent model SQL
+
+**Tradeoffs:**
+- Can't query directly
+- Complexity in parent queries
+
+### Materialization decision framework
+
+| Scenario | Recommendation |
+|----------|---------------|
+| < 10K rows, simple transform | View |
+| > 1M rows, complex transform | Table |
+| > 10M rows, append-only data | Incremental |
+| Intermediate step, no direct queries | Ephemeral |
+| Frequently queried mart | Table or Incremental |
+| Event/log data | Incremental |
+
+## Strategy 3: Warehouse-specific optimizations
+
+Different warehouses have unique optimization opportunities.
+
+### Snowflake optimizations
+
+**Clustering keys:**
+
+```sql
+{{ config(
+    materialized='table',
+    cluster_by=['customer_id', 'order_date']
+) }}
+```
+
+**Automatic clustering:**
+Monitor clustering depth and let Snowflake recluster automatically.
+
+**Result caching:**
+- Reuse query results when underlying data hasn't changed
+- Enable query acceleration for repeated patterns
+
+**Warehouse sizing:**
+- Use larger warehouses for intensive models
+- Scale down for lightweight transformations
+- Consider multi-cluster warehouses for concurrent users
+
+### BigQuery optimizations
+
+**Partitioning:**
+
+```sql
+{{ config(
+    materialized='table',
+    partition_by={
+      "field": "created_at",
+      "data_type": "timestamp",
+      "granularity": "day"
+    }
+) }}
+```
+
+**Clustering:**
+
+```sql
+{{ config(
+    materialized='table',
+    partition_by={"field": "created_at", "data_type": "timestamp", "granularity": "day"},
+    cluster_by=['customer_id']
+) }}
+```
+
+**Slot allocation:**
+- Reserve slots for consistent performance
+- Use flex slots for bursty workloads
+
+### Redshift optimizations
+
+**Sort keys:**
+
+```sql
+{{ config(
+    materialized='table',
+    sort='created_at',
+    dist='customer_id'
+) }}
+```
+
+**Distribution styles:**
+- **KEY**: Co-locate joined tables
+- **ALL**: Replicate small dimension tables
+- **EVEN**: Default for large fact tables
+
+**VACUUM and ANALYZE:**
+- Schedule regular maintenance
+- Automate via dbt hooks or external scheduler
+
+## Strategy 4: Query optimization
+
+### Efficient joins
+
+**Join on keys:**
+
+```sql
+-- Good: Join on integer keys
+select *
+from orders o
+join customers c on o.customer_id = c.customer_id
+
+-- Avoid: Join on string columns
+select *
+from orders o
+join customers c on o.customer_email = c.email
+```
+
+**Filter before joining:**
+
+```sql
+-- Good: Filter early
+with recent_orders as (
+    select *
+    from orders
+    where created_at >= current_date - 30
+)
+select *
+from recent_orders o
+join customers c on o.customer_id = c.customer_id
+
+-- Avoid: Filter after join
+select *
+from orders o
+join customers c on o.customer_id = c.customer_id
+where o.created_at >= current_date - 30
+```
+
+### Optimize CTEs
+
+**Materialize expensive CTEs:**
+
+```sql
+-- For expensive CTEs used multiple times
+{{ config(materialized='ephemeral') }}
+
+with expensive_calculation as (
+    -- Complex logic here
+)
+select * from expensive_calculation
+```
+
+**Avoid CTEs in final models:**
+
+```sql
+-- Instead of CTEs in mart models, build intermediate models
+-- This enables parallelization and reuse
+```
+
+### Aggregation optimization
+
+**Pre-aggregate when possible:**
+
+```sql
+-- Instead of aggregating in every query
+{{ config(materialized='table') }}
+
+select 
+    customer_id,
+    date_trunc('month', order_date) as order_month,
+    count(*) as order_count,
+    sum(amount) as total_amount
+from orders
+group by 1, 2
+```
+
+**Use approximate functions for large datasets:**
+
+```sql
+-- BigQuery example
+select 
+    customer_id,
+    approx_count_distinct(product_id) as unique_products
+from orders
+group by 1
+```
+
+## Strategy 5: Parallelization
+
+### Configuring threads
+
+Increase parallelism in `profiles.yml`:
+
+```yaml
+my_profile:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      threads: 8  # Increase from default 1
+```
+
+**Guidelines:**
+- Start with 4-8 threads
+- Monitor warehouse utilization
+- Increase if CPU/memory available
+- Decrease if hitting concurrency limits
+
+### Optimizing the DAG
+
+**Reduce dependency chains:**
+
+```
+# Instead of linear chains
+A -> B -> C -> D -> E
+
+# Create parallel branches
+A -> B -> D
+  -> C -> E
+```
+
+**Refactor complex models:**
+
+Split large models into smaller, focused models that can run in parallel.
+
+### Using tags for selective runs
+
+Tag models by priority and run selectively:
+
+```yaml
+models:
+  marts:
+    +tags: ['marts', 'critical']
+    
+models:
+  staging:
+    +tags: ['staging']
+```
+
+Run only critical models:
+
+```bash
+dbt run --select tag:critical
+```
+
+## Strategy 6: Full refresh optimization
+
+Even with incremental models, full refreshes happen.
+
+### Staging full refreshes
+
+**Test with subset:**
+
+```sql
+{{ config(materialized='incremental') }}
+
+select *
+from source_table
+where created_at >= '2024-01-01'  -- Limit during testing
+
+{% if is_incremental() %}
+  and created_at > (select max(created_at) from {{ this }})
+{% endif %}
+```
+
+**Remove limit before production:**
+
+```sql
+select *
+from source_table
+-- Full table for production
+
+{% if is_incremental() %}
+  where created_at > (select max(created_at) from {{ this }})
+{% endif %}
+```
+
+### Full refresh patterns
+
+**Schedule full refresh windows:**
+
+Run full refreshes during low-traffic periods using dbt-Workbench scheduler:
+
+```bash
+# Weekly full refresh
+cron: 0 2 * * 0  # Sundays at 2 AM
+command: dbt run --full-refresh
+```
+
+## Monitoring and maintenance
+
+### Track performance over time
+
+Use dbt-Workbench run history to:
+- Identify performance regressions
+- Compare run times across versions
+- Spot seasonal patterns
+
+### Set up alerts
+
+Configure notifications for:
+- Runs exceeding duration thresholds
+- Models consistently slow
+- Failed incremental logic
+
+### Regular performance reviews
+
+Monthly checks:
+- Review slowest models
+- Check for unused models
+- Validate incremental logic
+- Update clustering/partitioning
+
+## FAQ
+
+### Why is my dbt run slow?
+
+Common causes include processing full tables instead of incrementally, expensive joins, lack of indexes, and suboptimal materialization strategies. Profile your queries to identify bottlenecks.
+
+### How much faster can incremental models be?
+
+Incremental models can reduce runtime by 90%+ for large datasets by processing only new or changed rows instead of full table rebuilds.
+
+### Should I always use table materialization?
+
+No. Use views for lightweight transformations that are queried infrequently. Use tables for expensive calculations or frequently accessed data.
+
+### How many threads should I use?
+
+Start with 4-8 threads. Monitor warehouse resources and increase if you have capacity. Too many threads can overwhelm the warehouse and slow everything down.
+
+## Related pages
+
+- [dbt run orchestration](/docs/run-orchestration/)
+- [dbt scheduler](/docs/scheduler/)
+- [Debug failed dbt runs](/docs/guides/debug-failed-dbt-runs/)
+- [Environments configuration](/docs/environments/)

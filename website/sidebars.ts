@@ -43,6 +43,14 @@ const sidebars: SidebarsConfig = {
         'guides/enable-jwt-auth',
         'guides/add-plugin',
         'guides/run-air-gapped',
+        'guides/migrate-from-dbt-cloud',
+        'guides/dbt-testing-guide',
+        'guides/dbt-performance-optimization',
+        'guides/dbt-security-compliance',
+        'guides/dbt-best-practices',
+        'guides/dbt-cicd-pipeline',
+        'guides/dbt-troubleshooting-guide',
+        'guides/dbt-documentation-guide',
       ],
     },
     {
@@ -53,7 +61,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Project',
-      items: ['contributing', 'roadmap'],
+      items: ['contributing', 'roadmap', 'changelog'],
     },
   ],
 };

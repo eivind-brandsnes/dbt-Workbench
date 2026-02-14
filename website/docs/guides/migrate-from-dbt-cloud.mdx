@@ -1,0 +1,345 @@
+---
+title: Migrate from dbt Cloud to dbt-Workbench - Complete Guide
+description: Step-by-step guide to migrate from dbt Cloud to dbt-Workbench. Learn how to export projects, transfer configurations, and maintain your dbt workflows in a self-hosted environment.
+slug: /guides/migrate-from-dbt-cloud
+keywords: [migrate from dbt cloud, dbt cloud alternative, dbt cloud migration, move from dbt cloud, dbt cloud to open source]
+---
+
+import {BreadcrumbJsonLd, HowToJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const steps = [
+  {
+    name: 'Export your dbt Cloud project',
+    text: 'Download your dbt project files and artifacts from dbt Cloud, including models, tests, and configurations.',
+  },
+  {
+    name: 'Set up dbt-Workbench locally',
+    text: 'Install dbt-Workbench using Docker Compose with the quickstart guide.',
+  },
+  {
+    name: 'Transfer your dbt project',
+    text: 'Move your exported project files into the dbt-Workbench workspace directory.',
+  },
+  {
+    name: 'Configure connections and profiles',
+    text: 'Set up your database connections and dbt profiles in dbt-Workbench.',
+  },
+  {
+    name: 'Validate the migration',
+    text: 'Run dbt commands to verify everything works correctly in the new environment.',
+  },
+  {
+    name: 'Set up scheduling and automation',
+    text: 'Migrate your dbt Cloud jobs to dbt-Workbench scheduler with cron expressions.',
+  },
+];
+
+export const faqItems = [
+  {
+    question: 'Is it difficult to migrate from dbt Cloud?',
+    answer: 'Migration is straightforward since both use standard dbt projects. The main tasks are transferring files, configuring connections, and recreating schedules. Most teams complete migration in 1-2 days.',
+  },
+  {
+    question: 'Will I lose any features moving to dbt-Workbench?',
+    answer: 'dbt-Workbench covers the core dbt Cloud features including lineage, scheduling, documentation, and run history. Some enterprise SaaS features may differ, but the core workflows remain.',
+  },
+  {
+    question: 'Can I run both in parallel during migration?',
+    answer: 'Yes. You can operate dbt Cloud and dbt-Workbench simultaneously during the transition period to ensure nothing breaks before fully switching over.',
+  },
+  {
+    question: 'What about my dbt Cloud job history?',
+    answer: 'Historical run data stays in dbt Cloud. dbt-Workbench will start fresh with new run history from the point of migration. Consider exporting key metrics before switching.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'Guides', url: '/docs/guides/view-dbt-lineage-locally/'},
+    {name: 'Migrate from dbt Cloud'},
+  ]}
+/>
+<HowToJsonLd
+  name="Migrate from dbt Cloud to dbt-Workbench"
+  description="Complete step-by-step guide for migrating from dbt Cloud to dbt-Workbench. Export projects, transfer configurations, and maintain workflows in a self-hosted environment."
+  steps={steps}
+/>
+<FaqJsonLd items={faqItems} />
+
+# Migrate from dbt Cloud to dbt-Workbench
+
+Moving from dbt Cloud to dbt-Workbench gives you full control over your data infrastructure while eliminating vendor lock-in and reducing costs. This guide walks through the complete migration process.
+
+## Why migrate from dbt Cloud?
+
+Teams consider migrating from dbt Cloud for several reasons:
+
+### Cost savings
+
+SaaS pricing scales with usage. For growing teams with many developers and frequent runs, self-hosting can reduce costs significantly.
+
+### Data sovereignty
+
+Keep all data and metadata within your network perimeter. Critical for regulated industries and organizations with strict data governance policies.
+
+### Customization and extensibility
+
+Modify, extend, and integrate dbt-Workbench with your internal tools. The plugin system and open API enable workflows impossible in SaaS products.
+
+### Air-gapped operations
+
+Run dbt completely offline in secure environments without internet access.
+
+## Migration overview
+
+The migration process involves six main phases:
+
+1. **Export** — Download your dbt Cloud project and artifacts
+2. **Setup** — Install dbt-Workbench in your environment
+3. **Transfer** — Move project files and configurations
+4. **Configure** — Set up connections, profiles, and environment variables
+5. **Validate** — Test all functionality before switching
+6. **Automate** — Recreate schedules and notifications
+
+## Phase 1: Export from dbt Cloud
+
+### Download your dbt project
+
+1. Navigate to your dbt Cloud project
+2. Go to the IDE or repository section
+3. Clone or download the complete repository including:
+   - `models/` directory
+   - `tests/` directory
+   - `macros/` directory
+   - `dbt_project.yml`
+   - `packages.yml` (if using packages)
+   - Any custom configurations
+
+### Export artifacts (optional)
+
+If you want historical lineage data:
+
+1. Download recent `manifest.json`, `catalog.json`, and `run_results.json` files
+2. These help maintain lineage continuity during the transition
+
+### Document environment configurations
+
+Record from dbt Cloud:
+- Environment variables
+- Database connection settings
+- dbt profiles configurations
+- Any custom macros or packages
+- Schedule configurations (cron expressions)
+
+## Phase 2: Set up dbt-Workbench
+
+### Quick local setup
+
+```bash
+git clone https://github.com/dbt-workbench/dbt-Workbench.git
+cd dbt-Workbench
+docker-compose up --build
+```
+
+This launches the complete stack at http://localhost:3000.
+
+### Production deployment
+
+For production environments, review:
+- [Air-gapped and on-prem guide](/docs/air-gapped-on-prem/)
+- [Enable JWT authentication](/docs/guides/enable-jwt-auth/)
+- [Configure RBAC](/docs/auth-rbac/)
+
+## Phase 3: Transfer your project
+
+### Move project files
+
+Place your dbt project in the appropriate directory:
+
+```
+dbt-Workbench/
+├── backend/
+│   └── data/
+│       └── repos/
+│           └── default/           # Your project goes here
+│               ├── dbt_project.yml
+│               ├── models/
+│               ├── tests/
+│               └── macros/
+```
+
+### Transfer artifacts
+
+Copy your exported artifacts to the artifacts directory:
+
+```bash
+cp -r /path/to/exported/target/* dbt-Workbench/sample_artifacts/
+```
+
+The backend will automatically detect and load these artifacts.
+
+## Phase 4: Configure connections
+
+### Set up dbt profiles
+
+In dbt-Workbench, navigate to **Environments** and configure your database connections:
+
+1. Add your warehouse credentials
+2. Set up targets (dev, staging, production)
+3. Configure connection-specific variables
+
+### Environment variables
+
+Transfer environment variables from dbt Cloud to dbt-Workbench:
+
+```bash
+# .env file or docker-compose environment
+DBT_PROJECT_PATH=./dbt_project
+DBT_ARTIFACTS_PATH=./dbt_project/target
+POSTGRES_HOST=your-postgres-host
+POSTGRES_USER=your-user
+POSTGRES_PASSWORD=your-password
+```
+
+### Install dbt packages
+
+If your project uses dbt packages:
+
+```bash
+cd backend/data/repos/default
+dbt deps
+```
+
+## Phase 5: Validate the migration
+
+### Test dbt commands
+
+Run key dbt commands to ensure everything works:
+
+```bash
+dbt debug        # Verify connections
+dbt compile      # Test compilation
+dbt run          # Run models
+dbt test         # Run tests
+dbt docs generate # Generate documentation
+```
+
+### Verify in the UI
+
+Check that dbt-Workbench shows:
+- All models in the lineage view
+- Proper column lineage
+- Documentation renders correctly
+- Run history appears
+
+### Test key workflows
+
+Validate your team's critical workflows:
+- Model development cycle
+- Testing and validation
+- Documentation updates
+- Scheduled runs
+
+## Phase 6: Set up automation
+
+### Migrate schedules
+
+Convert dbt Cloud job schedules to dbt-Workbench cron expressions:
+
+| dbt Cloud Schedule | Cron Expression |
+|-------------------|----------------|
+| Every hour | `0 * * * *` |
+| Daily at 9 AM | `0 9 * * *` |
+| Every 15 minutes | `*/15 * * * *` |
+| Weekly on Monday | `0 9 * * 1` |
+
+Create schedules in the UI:
+1. Go to **Scheduler**
+2. Click **New Schedule**
+3. Enter cron expression
+4. Select environment and dbt command
+5. Configure notifications
+
+### Set up notifications
+
+Configure Slack, email, or webhook notifications for run completion and failures:
+
+```bash
+# Environment variables
+NOTIFICATIONS_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+NOTIFICATIONS_EMAIL_SMTP_HOST=smtp.your-domain.com
+NOTIFICATIONS_EMAIL_FROM=dbt-alerts@your-domain.com
+```
+
+### Enable monitoring
+
+Set up health checks and monitoring:
+- API health endpoint: `/health`
+- Log aggregation for troubleshooting
+- Metrics collection for performance monitoring
+
+## Post-migration checklist
+
+- [ ] All models run successfully
+- [ ] Tests pass
+- [ ] Lineage displays correctly
+- [ ] Documentation is accessible
+- [ ] Schedules execute on time
+- [ ] Notifications work
+- [ ] Team members can access the UI
+- [ ] Authentication/authorization configured (if needed)
+- [ ] Backups configured
+- [ ] Disaster recovery plan documented
+
+## Troubleshooting common issues
+
+### Connection failures
+
+**Issue:** Database connections fail after migration
+
+**Solution:** Verify connection strings, credentials, and network access. Use `dbt debug` to test connections.
+
+### Missing packages
+
+**Issue:** dbt packages not installed
+
+**Solution:** Run `dbt deps` in the project directory after transferring files.
+
+### Environment variables not set
+
+**Issue:** Variables referenced in models not available
+
+**Solution:** Ensure all environment variables from dbt Cloud are defined in dbt-Workbench configuration.
+
+### Schedule timezone issues
+
+**Issue:** Schedules run at wrong times
+
+**Solution:** Verify `SCHEDULER_DEFAULT_TIMEZONE` matches your expected timezone (default is UTC).
+
+## FAQ
+
+### Is it difficult to migrate from dbt Cloud?
+
+Migration is straightforward since both use standard dbt projects. The main tasks are transferring files, configuring connections, and recreating schedules. Most teams complete migration in 1-2 days.
+
+### Will I lose any features moving to dbt-Workbench?
+
+dbt-Workbench covers the core dbt Cloud features including lineage, scheduling, documentation, and run history. Some enterprise SaaS features may differ, but the core workflows remain.
+
+### Can I run both in parallel during migration?
+
+Yes. You can operate dbt Cloud and dbt-Workbench simultaneously during the transition period to ensure nothing breaks before fully switching over.
+
+### What about my dbt Cloud job history?
+
+Historical run data stays in dbt Cloud. dbt-Workbench will start fresh with new run history from the point of migration. Consider exporting key metrics before switching.
+
+## Related pages
+
+- [dbt UI overview](/docs/dbt-ui/)
+- [Quickstart with Docker](/docs/quickstart-docker/)
+- [dbt scheduler setup](/docs/scheduler/)
+- [Air-gapped deployments](/docs/air-gapped-on-prem/)
+- [Enable JWT authentication](/docs/guides/enable-jwt-auth/)

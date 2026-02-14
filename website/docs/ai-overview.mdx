@@ -1,8 +1,38 @@
 ---
-title: AI Copilot Overview
-description: Workspace-aware AI copilot with direct LLM and MCP connectivity.
+title: AI Copilot Overview - AI Assistant for dbt Projects
+description: Workspace-aware AI copilot for dbt with direct LLM (OpenAI, Anthropic, Gemini) and MCP connectivity. SQL assistance, lineage Q&A, and run troubleshooting.
 slug: /ai-overview
+keywords: [dbt ai copilot, ai sql assistant, dbt ai assistant, sql copilot, dbt chatbot, ai data catalog]
 ---
+
+import {BreadcrumbJsonLd, FaqJsonLd} from '@site/src/components/seo/JsonLd';
+
+export const faqItems = [
+  {
+    question: 'What AI providers does dbt-Workbench support?',
+    answer: 'dbt-Workbench supports OpenAI, Anthropic Claude, and Google Gemini for direct LLM connectivity, plus MCP (Model Context Protocol) servers.',
+  },
+  {
+    question: 'Can I use AI to write SQL queries?',
+    answer: 'Yes. The SQL Workspace includes AI copilot prompts for explaining, generating, optimizing, and fixing SQL queries.',
+  },
+  {
+    question: 'Is the AI workspace-aware?',
+    answer: 'Yes. All AI interactions are scoped to the current workspace with access to lineage, run history, and catalog metadata.',
+  },
+  {
+    question: 'Are AI-generated actions executed automatically?',
+    answer: 'No. All executable actions require explicit confirmation via the proposal system. Developers or Admins must approve before execution.',
+  },
+];
+
+<BreadcrumbJsonLd
+  items={[
+    {name: 'Docs', url: '/docs/'},
+    {name: 'AI Copilot Overview'},
+  ]}
+/>
+<FaqJsonLd items={faqItems} />
 
 # AI Copilot Overview
 
