@@ -13,7 +13,7 @@ Designed for local, on‑prem, and air‑gapped deployments.
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](frontend)
 
-**Documentation:** [https://dbt-workbench.github.io/dbt-Workbench/](https://dbt-workbench.github.io/dbt-Workbench/)
+**Documentation:** [https://dbt-workbench.github.io/dbt-Workbench/](https://rezer-bleede.github.io/dbt-Workbench/)
 
 ---
 ## ✨ Highlights
