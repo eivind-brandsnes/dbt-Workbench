@@ -22,7 +22,7 @@ const repoRoot = join(__dirname, '..');
 const BACKEND_URL = 'http://localhost:8000';
 const FRONTEND_URL = 'http://localhost:3000';
 const HEALTH_ENDPOINT = '/health';
-const MAX_WAIT_TIME = 120000; // 2 minutes
+const MAX_WAIT_TIME = 180000; // 3 minutes
 const CHECK_INTERVAL = 2000; // 2 seconds
 
 // ANSI color codes for output
@@ -75,27 +75,36 @@ function execCommand(command, args, options = {}) {
 async function waitForUrl(url, endpoint = '', maxWait = MAX_WAIT_TIME) {
   const fullUrl = endpoint ? `${url}${endpoint}` : url;
   const startTime = Date.now();
-  
+
   log(`Waiting for ${fullUrl} to be ready...`, 'yellow');
-  
+
   while (Date.now() - startTime < maxWait) {
     try {
       const response = await fetch(fullUrl);
       if (response.ok) {
-        log(`✓ ${fullUrl} is ready!`, 'green');
+        log(`\n✓ ${fullUrl} is ready!`, 'green');
         return true;
+      } else {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        if (elapsed % 10 === 0) { // Log every 10 seconds
+          log(`\n  Response status: ${response.status}`, 'yellow');
+        }
       }
     } catch (error) {
       // Service not ready yet, continue waiting
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      if (elapsed % 10 === 0) { // Log every 10 seconds
+        log(`\n  Connection error: ${error.message}`, 'yellow');
+      }
     }
-    
+
     // Show progress
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     process.stdout.write(`\r  Elapsed: ${elapsed}s...`);
-    
+
     await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL));
   }
-  
+
   throw new Error(`Timeout waiting for ${fullUrl} to be ready`);
 }
 
@@ -131,6 +140,18 @@ async function main() {
   } catch (error) {
     log(`\n✗ Error: ${error.message}`, 'red');
     testsPassed = false;
+
+    // Log container status for debugging
+    log('\n=== Container Status ===', 'yellow');
+    try {
+      await execCommand('docker', ['compose', '-f', 'docker-compose.yml', 'ps']);
+      log('\n=== Backend Logs (last 50 lines) ===', 'yellow');
+      await execCommand('docker', ['compose', '-f', 'docker-compose.yml', 'logs', '--tail=50', 'backend']);
+      log('\n=== Database Logs (last 50 lines) ===', 'yellow');
+      await execCommand('docker', ['compose', '-f', 'docker-compose.yml', 'logs', '--tail=50', 'db']);
+    } catch (logError) {
+      log(`Failed to get logs: ${logError.message}`, 'yellow');
+    }
   } finally {
     logStep('Step 4: Tearing Down Docker Compose Stack');
     try {

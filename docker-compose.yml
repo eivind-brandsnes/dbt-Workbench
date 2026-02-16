@@ -6,7 +6,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_USER=user
@@ -29,6 +30,12 @@ services:
       - ./profiles:/app/data/profiles
     networks:
       - dbt_workbench
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build: ./frontend
@@ -37,14 +44,21 @@ services:
     environment:
       - VITE_API_BASE_URL=http://backend:8000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - dbt_workbench
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   db:
     image: postgres:13
     ports:
-      - "5432:5432"    
+      - "5432:5432"
     environment:
       - POSTGRES_DB=dbt_workbench
       - POSTGRES_USER=user
@@ -53,6 +67,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - dbt_workbench
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d dbt_workbench"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   dbt_workbench:

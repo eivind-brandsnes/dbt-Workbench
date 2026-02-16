@@ -10,6 +10,7 @@ RUN apt-get update \
        build-essential \
        git \
        libpq-dev \
+       curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
