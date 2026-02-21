@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import styles from './index.module.css';
-import {HomeJsonLd} from '@site/src/components/seo/JsonLd';
+import {FaqJsonLd, HomeJsonLd} from '@site/src/components/seo/JsonLd';
 
 const features = [
   {
@@ -30,6 +30,29 @@ const features = [
   },
 ];
 
+const homeFaqItems = [
+  {
+    question: 'What is dbt-Workbench?',
+    answer:
+      'dbt-Workbench is an open source dbt UI for lineage visualization, run orchestration, catalog browsing, docs previews, and SQL workspace workflows.',
+  },
+  {
+    question: 'Is dbt-Workbench self-hosted?',
+    answer:
+      'Yes. dbt-Workbench is designed for local, on-prem, and air-gapped deployments with no vendor lock-in.',
+  },
+  {
+    question: 'Can I schedule dbt runs with cron?',
+    answer:
+      'Yes. dbt-Workbench includes a scheduler with timezone-aware cron support and run history diagnostics.',
+  },
+  {
+    question: 'Does dbt-Workbench support lineage and column lineage?',
+    answer:
+      'Yes. You can explore deterministic model-level lineage and optional column-level lineage from dbt artifacts.',
+  },
+];
+
 export default function Home(): JSX.Element {
   return (
     <Layout
@@ -37,6 +60,7 @@ export default function Home(): JSX.Element {
       description="Open source dbt-Workbench is a dbt UI for local, on-prem, and air-gapped deployments with no vendor lock-in. Run lineage, orchestration, and documentation workflows anywhere."
     >
       <HomeJsonLd />
+      <FaqJsonLd items={homeFaqItems} />
       <header className={clsx('hero', styles.heroBanner)}>
         <div className="container">
           <Heading as="h1" className={styles.heroTitle}>
@@ -148,6 +172,18 @@ export default function Home(): JSX.Element {
                 </li>
               </ul>
             </div>
+          </div>
+        </section>
+
+        <section className={clsx('container margin-vert--xl', styles.faqSection)}>
+          <Heading as="h2">Frequently asked questions</Heading>
+          <div className={styles.faqGrid}>
+            {homeFaqItems.map((item) => (
+              <article key={item.question} className={styles.faqCard}>
+                <Heading as="h3">{item.question}</Heading>
+                <p>{item.answer}</p>
+              </article>
+            ))}
           </div>
         </section>
       </main>

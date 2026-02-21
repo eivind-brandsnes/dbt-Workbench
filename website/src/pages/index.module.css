@@ -87,6 +87,34 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.faqSection {
+  padding-bottom: 2.5rem;
+}
+
+.faqGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 1.25rem;
+}
+
+.faqCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  background: #f8fafc;
+}
+
+.faqCard h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.02rem;
+}
+
+.faqCard p {
+  margin: 0;
+  color: #334155;
+}
+
 @media screen and (max-width: 996px) {
   .heroBanner {
     padding: 3rem 0 2.5rem;

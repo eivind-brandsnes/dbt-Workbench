@@ -31,7 +31,7 @@ test('docusaurus config falls back to default repo', async () => {
   const configModule = await import('../docusaurus.config?test=default');
   const config = configModule.default;
 
-  assert.equal(config.baseUrl, '/');
+  assert.equal(config.baseUrl, '/dbt-Workbench/');
 });
 
 process.env.GITHUB_REPOSITORY = originalRepository;

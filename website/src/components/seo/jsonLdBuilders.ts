@@ -38,10 +38,28 @@ export type ArticleData = {
   image?: string;
 };
 
+function resolveJsonLdUrl(url: string, siteBaseUrl: string) {
+  if (/^https?:\/\//.test(url)) {
+    return url;
+  }
+
+  if (url.startsWith('/')) {
+    const parsedSiteUrl = new URL(siteBaseUrl);
+    const basePath = parsedSiteUrl.pathname.endsWith('/')
+      ? parsedSiteUrl.pathname
+      : `${parsedSiteUrl.pathname}/`;
+    const siteOrigin = `${parsedSiteUrl.protocol}//${parsedSiteUrl.host}`;
+    const normalizedPath = `${basePath}${url.slice(1)}`.replace(/\/{2,}/g, '/');
+    return new URL(normalizedPath, siteOrigin).toString();
+  }
+
+  return new URL(url, siteBaseUrl).toString();
+}
+
 export function buildBreadcrumbJsonLd(
   items: BreadcrumbItem[],
   canonicalUrl: string,
-  siteUrl: string,
+  siteBaseUrl: string,
 ) {
   return {
     '@context': 'https://schema.org',
@@ -51,10 +69,10 @@ export function buildBreadcrumbJsonLd(
       position: index + 1,
       name: item.name,
       item: item.url
-        ? new URL(item.url, siteUrl).toString()
+        ? resolveJsonLdUrl(item.url, siteBaseUrl)
         : index === items.length - 1
           ? canonicalUrl
-          : siteUrl,
+          : siteBaseUrl,
     })),
   };
 }
@@ -143,46 +161,57 @@ export function buildArticleJsonLd(data: ArticleData) {
   return result;
 }
 
-export function buildHomeJsonLdGraph(siteUrl: string, repositoryUrl: string) {
-  const logoUrl = `${siteUrl}/img/brand.svg`;
-
-  const organization = {
-    '@type': 'Organization',
-    name: 'dbt-Workbench',
-    url: siteUrl,
-    logo: logoUrl,
-    sameAs: [
-      'https://github.com/dbt-workbench',
-    ],
-  };
+export function buildHomeJsonLdGraph(
+  siteBaseUrl: string,
+  repositoryUrl: string,
+  organizationUrl: string,
+) {
+  const normalizedSiteBaseUrl = siteBaseUrl.endsWith('/')
+    ? siteBaseUrl
+    : `${siteBaseUrl}/`;
+  const logoUrl = new URL('img/brand.svg', normalizedSiteBaseUrl).toString();
 
   return {
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': 'WebSite',
+        '@type': 'Organization',
+        '@id': `${normalizedSiteBaseUrl}#organization`,
         name: 'dbt-Workbench',
-        url: siteUrl,
-        publisher: organization,
+        url: normalizedSiteBaseUrl,
+        logo: logoUrl,
+        sameAs: [organizationUrl, repositoryUrl],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${normalizedSiteBaseUrl}#website`,
+        name: 'dbt-Workbench',
+        url: normalizedSiteBaseUrl,
+        inLanguage: 'en',
+        description:
+          'Open source dbt UI for lineage visualization, run orchestration, catalogs, and SQL workspace.',
+        publisher: {
+          '@id': `${normalizedSiteBaseUrl}#organization`,
+        },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${normalizedSiteBaseUrl}search?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
       },
       {
         '@type': 'SoftwareApplication',
+        '@id': `${normalizedSiteBaseUrl}#software`,
         name: 'dbt-Workbench',
         applicationCategory: 'DeveloperApplication',
+        applicationSubCategory: 'Data Engineering Tool',
         operatingSystem: 'Linux, macOS, Windows',
         description:
-          'A lightweight, open-source UI for dbt that provides model browsing, lineage visualization, run orchestration, documentation previews, and environment management — without vendor lock-in. Designed for local, on-prem, and air-gapped deployments.',
-        url: siteUrl,
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'USD',
-        },
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: '4.8',
-          ratingCount: '100',
-        },
+          'A lightweight, open-source UI for dbt that provides model browsing, lineage visualization, run orchestration, documentation previews, and environment management without vendor lock-in.',
+        url: normalizedSiteBaseUrl,
+        isAccessibleForFree: true,
+        softwareHelp: `${normalizedSiteBaseUrl}docs/`,
+        downloadUrl: repositoryUrl,
         featureList: [
           'Lineage visualization',
           'Column-level lineage',
@@ -197,16 +226,26 @@ export function buildHomeJsonLdGraph(siteUrl: string, repositoryUrl: string) {
           'Git integration',
           'Plugin system',
         ],
-        publisher: organization,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        publisher: {
+          '@id': `${normalizedSiteBaseUrl}#organization`,
+        },
       },
       {
         '@type': 'SoftwareSourceCode',
+        '@id': `${normalizedSiteBaseUrl}#source`,
         name: 'dbt-Workbench',
         codeRepository: repositoryUrl,
         programmingLanguage: 'TypeScript, Python',
         runtimePlatform: 'Docker, Node.js',
-        license: 'https://github.com/dbt-workbench/dbt-Workbench/blob/main/LICENSE',
-        publisher: organization,
+        license: `${repositoryUrl}/blob/main/LICENSE`,
+        publisher: {
+          '@id': `${normalizedSiteBaseUrl}#organization`,
+        },
       },
     ],
   };

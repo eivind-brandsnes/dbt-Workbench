@@ -1,13 +1,58 @@
+import { execSync } from 'node:child_process';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { themes as prismThemes } from 'prism-react-renderer';
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-const repository = process.env.GITHUB_REPOSITORY ?? 'dbt-workbench/dbt-Workbench';
+function inferRepositoryFromGitRemote() {
+  try {
+    const remoteUrl = execSync('git config --get remote.origin.url', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim()
+      .replace(/\.git$/, '');
+    const match = remoteUrl.match(/github\.com[:/]([^/]+)\/(.+)$/);
+    if (!match) {
+      return null;
+    }
+
+    return `${match[1]}/${match[2]}`;
+  } catch {
+    return null;
+  }
+}
+
+const repository =
+  process.env.GITHUB_REPOSITORY ??
+  inferRepositoryFromGitRemote() ??
+  'dbt-workbench/dbt-Workbench';
 const [organizationName, projectName] = repository.split('/');
 const siteUrl = `https://${organizationName}.github.io`;
 const isUserOrOrgSite = projectName === `${organizationName}.github.io`;
 const baseUrl = isUserOrOrgSite ? '/' : `/${projectName}/`;
 const ga4Id = process.env.GA4_ID;
+
+function createRobotsTxtPlugin() {
+  return {
+    name: 'dynamic-robots-txt',
+    async postBuild({outDir, siteConfig}) {
+      const siteBaseUrl = new URL(siteConfig.baseUrl, siteConfig.url).toString();
+      const robots = [
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /search',
+        'Disallow: /search?',
+        '',
+        `Sitemap: ${new URL('sitemap.xml', siteBaseUrl).toString()}`,
+        '',
+      ].join('\n');
+
+      await fs.writeFile(path.join(outDir, 'robots.txt'), robots, 'utf8');
+    },
+  };
+}
 
 const config: Config = {
   title: 'dbt-Workbench',
@@ -55,6 +100,7 @@ const config: Config = {
     ],
   ],
   plugins: [
+    createRobotsTxtPlugin,
     [
       '@easyops-cn/docusaurus-search-local',
       {
@@ -78,6 +124,13 @@ const config: Config = {
   themeConfig: {
     image: 'img/og-image.svg',
     metadata: [
+      {
+        name: 'description',
+        content:
+          'Open source dbt UI for lineage visualization, run orchestration, catalog, docs, and SQL workspace in local, on-prem, and air-gapped deployments.',
+      },
+      { name: 'og:type', content: 'website' },
+      { name: 'og:site_name', content: 'dbt-Workbench' },
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:site', content: '@dbtworkbench' },
       { name: 'twitter:creator', content: '@dbtworkbench' },

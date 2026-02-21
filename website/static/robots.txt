@@ -2,5 +2,3 @@ User-agent: *
 Allow: /
 Disallow: /search
 Disallow: /search?
-
-Sitemap: https://dbt-workbench.github.io/dbt-Workbench/sitemap.xml

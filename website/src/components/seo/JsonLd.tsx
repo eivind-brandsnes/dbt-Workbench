@@ -28,6 +28,10 @@ export function JsonLd({data}: JsonLdProps) {
   );
 }
 
+function getSiteBaseUrl(siteUrl: string, baseUrl: string) {
+  return new URL(baseUrl, siteUrl).toString();
+}
+
 export function useCanonicalUrl() {
   const {siteConfig} = useDocusaurusContext();
   const {pathname} = useLocation();
@@ -37,10 +41,11 @@ export function useCanonicalUrl() {
 export function BreadcrumbJsonLd({items}: {items: BreadcrumbItem[]}) {
   const canonicalUrl = useCanonicalUrl();
   const {siteConfig} = useDocusaurusContext();
+  const siteBaseUrl = getSiteBaseUrl(siteConfig.url, siteConfig.baseUrl);
 
   return (
     <JsonLd
-      data={buildBreadcrumbJsonLd(items, canonicalUrl, siteConfig.url)}
+      data={buildBreadcrumbJsonLd(items, canonicalUrl, siteBaseUrl)}
     />
   );
 }
@@ -55,9 +60,11 @@ export function HowToJsonLd({name, description, steps}: HowToData) {
 
 export function HomeJsonLd() {
   const {siteConfig} = useDocusaurusContext();
+  const siteBaseUrl = getSiteBaseUrl(siteConfig.url, siteConfig.baseUrl);
   const repositoryUrl = `https://github.com/${siteConfig.organizationName}/${siteConfig.projectName}`;
+  const organizationUrl = `https://github.com/${siteConfig.organizationName}`;
 
-  return <JsonLd data={buildHomeJsonLdGraph(siteConfig.url, repositoryUrl)} />;
+  return <JsonLd data={buildHomeJsonLdGraph(siteBaseUrl, repositoryUrl, organizationUrl)} />;
 }
 
 export function WebPageJsonLd({title, description, datePublished, dateModified}: WebPageData) {
