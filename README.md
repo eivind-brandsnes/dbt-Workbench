@@ -2,9 +2,9 @@
 
 # dbt-Workbench: Open Source dbt UI
 
-A lightweight, open-source UI for dbt that provides model browsing, lineage visualization,
-run orchestration, documentation previews, and environment management — without vendor lock-in.
-Designed for local, on‑prem, and air‑gapped deployments.
+dbt-Workbench is an **open source dbt UI** for lineage visualization, run orchestration,
+catalog and docs workflows, and environment management without vendor lock-in.
+It is designed for local, on-prem, and air-gapped deployments where teams need full control.
 
 **Keywords:** dbt UI, open source dbt, dbt lineage, data lineage tool, dbt catalog, dbt scheduler, self-hosted dbt, air-gapped dbt
 
@@ -41,8 +41,8 @@ Designed for local, on‑prem, and air‑gapped deployments.
 ---
 
 ## 📸 Screenshots
-<img width="1511" height="731" alt="image" src="https://github.com/user-attachments/assets/776a195d-7c79-4376-999a-0b4831918022" />
-<img width="1499" height="752" alt="image" src="https://github.com/user-attachments/assets/73a7abfc-faad-4233-ad7f-6d70aa148c4c" />
+<img width="1511" height="731" alt="dbt-Workbench lineage graph screenshot" src="assets/screenshots/lineage-readme.png" />
+<img width="1499" height="752" alt="dbt-Workbench run and catalog screenshot" src="assets/screenshots/catalog-readme.png" />
 
 ---
 ## 🚀 Quickstart
@@ -718,7 +718,7 @@ MIT License — fully permissive for commercial and open-source use.
 
 ## ⭐ Star History
 
-[![Stargazers over time](https://starchart.cc/dbt-workbench/dbt-Workbench.svg)](https://starchart.cc/dbt-workbench/dbt-Workbench)
+[![Stargazers over time](https://starchart.cc/rezer-bleede/dbt-Workbench.svg)](https://starchart.cc/rezer-bleede/dbt-Workbench)
 
 
 ## ⭐ Support

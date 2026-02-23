@@ -6,7 +6,8 @@
     "start": "docusaurus start",
     "build": "docusaurus build",
     "serve": "docusaurus serve",
-    "test": "node --test --import tsx ./tests/*.test.ts"
+    "test": "node --test --import tsx ./tests/*.test.ts",
+    "seo:lint": "node ./scripts/seo-lint.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.9.2",

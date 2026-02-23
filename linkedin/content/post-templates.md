@@ -53,7 +53,7 @@ We believe great tools should be open, accessible, and community-driven.
 
 If dbt-Workbench helps your team, please give us a ⭐ on GitHub:
 
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 We're just getting started. Here's to building better data workflows together! 🍻
 
@@ -99,7 +99,7 @@ Ready to give it a try?
 
 docker-compose up --build
 
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataEngineering #OpenSource #SelfHosted
 ```
@@ -145,7 +145,7 @@ Perfect for:
 ✅ Documenting data flow for stakeholders
 
 Try it free:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataLineage #DataEngineering #OpenSource
 ```
@@ -189,7 +189,7 @@ Ready to upgrade your dbt workflow?
 
 docker-compose up --build
 
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataEngineering #OpenSource #DataPipeline
 ```
@@ -251,7 +251,7 @@ Use cases:
 No external dependencies. Everything runs inside dbt-Workbench.
 
 Get started:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataEngineering #Automation #Scheduler
 ```
@@ -302,7 +302,7 @@ Ready to query?
 
 docker-compose up --build
 
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #SQL #DataEngineering #OpenSource #QueryEditor
 ```
@@ -361,7 +361,7 @@ Privacy-first:
 The AI Copilot isn't just a chatbot. It proposes actions that you review and confirm — you're always in control.
 
 Try it free:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #AI #DataEngineering #OpenAI #Copilot
 ```
@@ -417,7 +417,7 @@ We've designed the plugin system to be:
 Ready to build your first plugin?
 
 Full documentation:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #OpenSource #PluginSystem #DataEngineering #Extensibility
 ```
@@ -480,7 +480,7 @@ Use cases:
 → Data mesh architectures with multiple domains
 
 Get started:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataEngineering #Workspaces #MultiProject
 ```
@@ -556,7 +556,7 @@ Pro tips:
 ✓ Enable 2FA if using external identity providers
 
 Full docs:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #Security #DataEngineering #Authentication
 ```
@@ -580,7 +580,7 @@ What's your biggest frustration with dbt Core?
 🔹 Other (comment below)
 
 We built dbt-Workbench to solve these problems. Check it out:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataEngineering #Poll
 ```
@@ -629,7 +629,7 @@ Which dbt feature do you use most in your data pipeline?
 dbt-Workbench has one-click buttons for all of these, plus scheduling and notifications!
 
 Try it free:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataPipeline #Poll #DataEngineering
 ```
@@ -652,7 +652,7 @@ How to contribute:
 
 🐛 **Report Bugs**
 Found an issue? Create a GitHub Issue with details:
-https://github.com/dbt-workbench/dbt-Workbench/issues
+https://github.com/rezer-bleede/dbt-Workbench/issues
 
 💡 **Suggest Features**
 Have an idea? We want to hear it!
@@ -684,8 +684,8 @@ Our contributions:
 
 Ready to dive in?
 
-GitHub: https://github.com/dbt-workbench/dbt-Workbench
-Discussions: https://github.com/dbt-workbench/dbt-Workbench/discussions
+GitHub: https://github.com/rezer-bleede/dbt-Workbench
+Discussions: https://github.com/rezer-bleede/dbt-Workbench/discussions
 
 #OpenSource #Community #dbt #DataEngineering
 ```
@@ -731,7 +731,7 @@ Get a visual interface for all your dbt work:
 → AI copilot
 
 Start free:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #Learning #Resources #DataEngineering
 ```
@@ -769,7 +769,7 @@ Ready to transform your workflow?
 
 docker-compose up --build
 
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataEngineering #Productivity #Workflow
 ```
@@ -808,7 +808,7 @@ What's coming next:
 Your feedback drives our roadmap. Keep the suggestions, issues, and contributions coming!
 
 Join 500+ data engineers who've starred us on GitHub:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #Community #OpenSource #dbt #DataEngineering
 ```
@@ -859,7 +859,7 @@ To us, open source isn't just a license. It's a philosophy.
 Great software should be accessible to everyone.
 
 Join us:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #OpenSource #DataEngineering #Philosophy #Community
 ```
@@ -915,7 +915,7 @@ Unlike tools that only do ONE thing well, dbt-Workbench is a unified control pla
 All in one open-source package.
 
 See how it fits your stack:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #DataEngineering #DataStack #Tools #dbt
 ```
@@ -967,7 +967,7 @@ dbt-Workbench: [Click button] [See lineage] [Done]
 Modern data engineering shouldn't require jq wizardry.
 
 Try the visual way:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #Meme #DataEngineering #DeveloperExperience
 ```
@@ -992,7 +992,7 @@ That's why we built dbt-Workbench in public.
 Your star, issue, or PR shapes the future of this project.
 
 Join us:
-https://github.com/dbt-workbench/dbt-Workbench
+https://github.com/rezer-bleede/dbt-Workbench
 
 #OpenSource #Community #Quote #DataEngineering
 ```
@@ -1103,7 +1103,7 @@ That's exactly why we built [feature]. How does your team handle [problem] today
 
 ### End of Posts
 ```
-🔗 GitHub: https://github.com/dbt-workbench/dbt-Workbench
+🔗 GitHub: https://github.com/rezer-bleede/dbt-Workbench
 📚 Docs: https://dbt-workbench.github.io/dbt-Workbench/
 ⭐ Star us if this helps your team!
 ```

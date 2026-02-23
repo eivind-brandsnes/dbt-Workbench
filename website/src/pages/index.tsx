@@ -5,6 +5,7 @@ import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import styles from './index.module.css';
 import {FaqJsonLd, HomeJsonLd} from '@site/src/components/seo/JsonLd';
+import GitHubCta from '@site/src/components/seo/GitHubCta';
 
 const features = [
   {
@@ -84,6 +85,11 @@ export default function Home(): JSX.Element {
             <Link to="/docs/sql-workspace/">dbt SQL workspace</Link>
             <Link to="/docs/auth-rbac/">dbt RBAC auth</Link>
           </div>
+          <GitHubCta
+            position="top"
+            campaign="homepage_hero_cta"
+            label="Star and contribute on GitHub"
+          />
         </div>
       </header>
 
@@ -118,7 +124,7 @@ export default function Home(): JSX.Element {
           </div>
           <img
             className={styles.screenshot}
-            src="https://github.com/user-attachments/assets/b08476fa-ffe8-4271-a0aa-1acb6a5dba1c"
+            src="/img/screenshots/lineage-ui.png"
             alt="dbt-Workbench lineage graph screenshot"
             loading="lazy"
           />
@@ -170,6 +176,15 @@ export default function Home(): JSX.Element {
                 <li>
                   <Link to="/docs/artifacts/">dbt artifacts viewer</Link>
                 </li>
+                <li>
+                  <Link to="/docs/comparisons/dbt-cloud-vs-dbt-workbench/">dbt platform comparisons</Link>
+                </li>
+                <li>
+                  <Link to="/docs/use-cases/self-hosted-dbt-for-regulated-teams/">dbt use-case playbooks</Link>
+                </li>
+                <li>
+                  <Link to="/docs/tutorials/setup-dbt-ui-in-under-30-minutes/">dbt implementation tutorials</Link>
+                </li>
               </ul>
             </div>
           </div>
@@ -185,6 +200,11 @@ export default function Home(): JSX.Element {
               </article>
             ))}
           </div>
+          <GitHubCta
+            position="bottom"
+            campaign="homepage_footer_cta"
+            label="Explore source code and issues on GitHub"
+          />
         </section>
       </main>
     </Layout>

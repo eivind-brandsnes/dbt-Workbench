@@ -40,8 +40,15 @@ export function useCanonicalUrl() {
 
 export function BreadcrumbJsonLd({items}: {items: BreadcrumbItem[]}) {
   const canonicalUrl = useCanonicalUrl();
+  const {pathname} = useLocation();
   const {siteConfig} = useDocusaurusContext();
   const siteBaseUrl = getSiteBaseUrl(siteConfig.url, siteConfig.baseUrl);
+  const docsBasePath = `${siteConfig.baseUrl.replace(/\/+$/, '')}/docs/`;
+
+  // Docusaurus docs pages already emit BreadcrumbList schema by default.
+  if (pathname.startsWith(docsBasePath)) {
+    return null;
+  }
 
   return (
     <JsonLd

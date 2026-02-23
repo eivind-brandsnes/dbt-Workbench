@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GA4_ID: ${{ secrets.GA4_ID }}
+      GOOGLE_SITE_VERIFICATION: ${{ secrets.GOOGLE_SITE_VERIFICATION }}
+      BING_SITE_VERIFICATION: ${{ secrets.BING_SITE_VERIFICATION }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +38,14 @@ jobs:
       - name: Install dependencies
         working-directory: website
         run: npm ci
+
+      - name: Run docs tests
+        working-directory: website
+        run: npm test
+
+      - name: Run SEO lint checks
+        working-directory: website
+        run: npm run seo:lint
 
       - name: Build
         working-directory: website

@@ -2,6 +2,10 @@
 title: dbt-Workbench plugin system
 description: Plugin system specification and lifecycle details for dbt-Workbench.
 slug: /plugin-system
+keywords: [dbt workbench, dbt-workbench plugin system, plugin-system, open source dbt ui, dbt documentation]
+seo_primary_keyword: "dbt-workbench plugin system"
+seo_intent: "informational"
+last_reviewed: "2026-02-23"
 ---
 
 import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';

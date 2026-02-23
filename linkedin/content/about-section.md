@@ -90,7 +90,7 @@ Designed for local, on-prem, and air-gapped deployments.
 
 ## Quick Links
 
-🔗 **GitHub:** https://github.com/dbt-workbench/dbt-Workbench
+🔗 **GitHub:** https://github.com/rezer-bleede/dbt-Workbench
 🌐 **Documentation:** https://dbt-workbench.github.io/dbt-Workbench/
 📦 **Docker:** `docker-compose up --build`
 

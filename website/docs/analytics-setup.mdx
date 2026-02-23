@@ -3,6 +3,9 @@ title: Analytics setup for dbt-Workbench docs
 description: Optional GA4 setup for the dbt-Workbench documentation site using GA4_ID in GitHub Pages.
 keywords: [dbt analytics, dbt tracking, dbt metrics, dbt monitoring]
 slug: /analytics-setup
+seo_primary_keyword: "analytics setup for dbt-workbench docs"
+seo_intent: "informational"
+last_reviewed: "2026-02-23"
 ---
 
 import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';
@@ -25,6 +28,16 @@ dbt-Workbench includes optional Google Analytics 4 tracking. The GA script is on
 - Trigger a new build by pushing to `main`.
 - Inspect the rendered HTML for the GA script.
 - Confirm real-time events in the GA4 console.
+
+## Optional: Search console verification tags
+
+You can inject verification meta tags at build time with GitHub Actions secrets:
+
+- `GOOGLE_SITE_VERIFICATION` → renders `<meta name="google-site-verification" ...>`
+- `BING_SITE_VERIFICATION` → renders `<meta name="msvalidate.01" ...>`
+
+Add these in **Settings → Secrets and variables → Actions** to enable ownership verification in
+Google Search Console and Bing Webmaster Tools.
 
 ## Related pages
 

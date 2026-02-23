@@ -28,3 +28,20 @@
 .markdown img {
   border-radius: 12px;
 }
+
+.github-cta {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 10px;
+  background: var(--ifm-background-surface-color);
+  font-weight: 600;
+}
+
+.github-cta--top {
+  margin-top: 0.5rem;
+}
+
+.github-cta--bottom {
+  margin-bottom: 1.5rem;
+}

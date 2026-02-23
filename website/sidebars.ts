@@ -55,13 +55,51 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Comparisons',
+      items: [
+        'comparisons/dbt-cloud-vs-dbt-workbench',
+        'comparisons/open-source-dbt-ui-tools',
+        'comparisons/dbt-cloud-vs-air-gapped-dbt',
+        'comparisons/dbt-docs-vs-dbt-workbench',
+        'comparisons/open-source-dbt-orchestration-tools',
+        'comparisons/dbt-workbench-vs-command-line-only',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Use Cases',
+      items: [
+        'use-cases/self-hosted-dbt-for-regulated-teams',
+        'use-cases/dbt-lineage-for-data-governance',
+        'use-cases/dbt-ui-for-analytics-engineering-teams',
+        'use-cases/dbt-ui-for-platform-engineering',
+        'use-cases/reduce-dbt-cloud-costs-with-open-source',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Tutorials',
+      items: [
+        'tutorials/setup-dbt-ui-in-under-30-minutes',
+        'tutorials/dbt-scheduler-production-runbook',
+        'tutorials/dbt-catalog-implementation-checklist',
+        'tutorials/dbt-column-lineage-rollout-guide',
+        'tutorials/migrate-dbt-project-to-self-hosted-ui',
+        'tutorials/troubleshoot-slow-dbt-runs-with-lineage',
+        'tutorials/secure-dbt-ui-with-jwt-rbac',
+        'tutorials/air-gapped-dbt-deployment-checklist',
+        'tutorials/dbt-observability-with-run-history-and-artifacts',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Reference',
       items: ['analytics-setup', 'architecture', 'plugin-system'],
     },
     {
       type: 'category',
       label: 'Project',
-      items: ['contributing', 'roadmap', 'changelog'],
+      items: ['contributing', 'roadmap', 'changelog', 'seo-growth-ops'],
     },
   ],
 };

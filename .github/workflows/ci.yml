@@ -77,3 +77,34 @@ jobs:
           else
             echo "No build script defined, skipping build."
           fi
+
+  docs:
+    name: Docs CI (Docusaurus + SEO)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: website
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run docs unit tests
+        run: npm test
+
+      - name: Run SEO lint checks
+        run: npm run seo:lint
+
+      - name: Build docs site
+        run: npm run build

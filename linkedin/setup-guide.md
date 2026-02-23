@@ -17,7 +17,7 @@
 | **Company Size** | 1-10 employees (or "Open Source" if available) |
 | **Company Type** | Privately Held |
 | **Headquarters** | Your location |
-| **Website** | https://github.com/dbt-workbench/dbt-Workbench |
+| **Website** | https://github.com/rezer-bleede/dbt-Workbench |
 | **LinkedIn URL** | `dbt-workbench` (custom URL once verified) |
 
 ### 2. Complete the About Section

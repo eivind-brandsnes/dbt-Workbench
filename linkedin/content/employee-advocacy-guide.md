@@ -89,7 +89,7 @@ What I've learned:
 [2-3 bullet points about technical growth, community, or impact]
 
 If you're interested in dbt-Workbench:
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (For context: I'm a contributor to this open-source project)
 
@@ -117,7 +117,7 @@ What I've learned:
 • Designing extensible plugin systems
 
 If you're interested in contributing, check it out:
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (For context: I'm a maintainer of this open-source project)
 
@@ -141,7 +141,7 @@ Result: [quantitative or qualitative outcome]
 
 Open-source tools like this make data engineering accessible to everyone.
 
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (I contribute to this project)
 
@@ -168,7 +168,7 @@ New team members onboard 3x faster
 
 Open-source tools make modern data engineering possible for teams of all sizes.
 
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (I contribute to this project)
 
@@ -192,7 +192,7 @@ How it works:
 [Brief explanation of why this is useful]
 
 More features like this in dbt-Workbench:
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (I'm a contributor to this project)
 
@@ -218,7 +218,7 @@ How it works:
 dbt-Workbench parses manifest.json and catalog.json to build a column-level dependency graph. This helps you catch breaking changes before deployment.
 
 More features like this in dbt-Workbench:
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (I'm a contributor to this project)
 
@@ -242,7 +242,7 @@ Why this matters:
 [Brief impact - what problem does it solve?]
 
 Check it out:
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (I contributed to this feature)
 
@@ -267,7 +267,7 @@ Why this matters:
 AI makes dbt more accessible to beginners and helps experienced engineers work faster. The proposal-based flow ensures you're always in control of what executes.
 
 Check it out:
-🔗 https://github.com/dbt-workbench/dbt-Workbench
+🔗 https://github.com/rezer-bleede/dbt-Workbench
 
 (I worked on the AI integration)
 
@@ -301,7 +301,7 @@ Why contribute?
 
 Every PR is reviewed within 48 hours. We welcome first-time contributors!
 
-🔗 https://github.com/dbt-workbench/dbt-Workbench/issues
+🔗 https://github.com/rezer-bleede/dbt-Workbench/issues
 
 (I'm a maintainer, happy to mentor!)
 
@@ -464,10 +464,10 @@ Would love to hear your approach! 👇
 ## Resources for Contributors
 
 ### Official Links
-- **GitHub Repository:** https://github.com/dbt-workbench/dbt-Workbench
+- **GitHub Repository:** https://github.com/rezer-bleede/dbt-Workbench
 - **Documentation:** https://dbt-workbench.github.io/dbt-Workbench/
-- **Issues (for contribution ideas):** https://github.com/dbt-workbench/dbt-Workbench/issues
-- **Discussions:** https://github.com/dbt-workbench/dbt-Workbench/discussions
+- **Issues (for contribution ideas):** https://github.com/rezer-bleede/dbt-Workbench/issues
+- **Discussions:** https://github.com/rezer-bleede/dbt-Workbench/discussions
 - **Company Page:** [Add LinkedIn URL once created]
 
 ### Assets

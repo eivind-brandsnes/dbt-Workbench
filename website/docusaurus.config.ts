@@ -27,12 +27,16 @@ function inferRepositoryFromGitRemote() {
 const repository =
   process.env.GITHUB_REPOSITORY ??
   inferRepositoryFromGitRemote() ??
-  'dbt-workbench/dbt-Workbench';
+  'rezer-bleede/dbt-Workbench';
 const [organizationName, projectName] = repository.split('/');
 const siteUrl = `https://${organizationName}.github.io`;
 const isUserOrOrgSite = projectName === `${organizationName}.github.io`;
 const baseUrl = isUserOrOrgSite ? '/' : `/${projectName}/`;
 const ga4Id = process.env.GA4_ID;
+const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION;
+const bingSiteVerification = process.env.BING_SITE_VERIFICATION;
+const repositoryUrl = `https://github.com/${organizationName}/${projectName}`;
+const repositoryCtaUrl = `${repositoryUrl}?utm_source=docs&utm_medium=organic&utm_campaign=repo_cta`;
 
 function createRobotsTxtPlugin() {
   return {
@@ -94,7 +98,7 @@ const config: Config = {
         sitemap: {
           changefreq: 'weekly',
           priority: 0.5,
-          ignorePatterns: ['/tags/**', '/search/**'],
+          ignorePatterns: ['/tags/**', '/search', '/search/', '/search/**'],
         },
       } satisfies Preset.Options,
     ],
@@ -122,7 +126,7 @@ const config: Config = {
       : null,
   ].filter(Boolean),
   themeConfig: {
-    image: 'img/og-image.svg',
+    image: 'img/og-image-1200x630.png',
     metadata: [
       {
         name: 'description',
@@ -134,12 +138,15 @@ const config: Config = {
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:site', content: '@dbtworkbench' },
       { name: 'twitter:creator', content: '@dbtworkbench' },
-      { name: 'robots', content: 'index, follow, max-image-preview:large, max-snippet:-1' },
-      { name: 'googlebot', content: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1' },
-      { name: 'bingbot', content: 'index, follow, max-snippet:-1, max-image-preview:large' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
       { name: 'theme-color', content: '#0ea5e9' },
       { name: 'keywords', content: 'dbt, dbt ui, dbt lineage, data lineage, dbt catalog, data catalog, sql workspace, dbt scheduler, open source dbt, dbt documentation, dbt visualization' },
+      ...(googleSiteVerification
+        ? [{ name: 'google-site-verification', content: googleSiteVerification }]
+        : []),
+      ...(bingSiteVerification
+        ? [{ name: 'msvalidate.01', content: bingSiteVerification }]
+        : []),
     ],
     colorMode: {
       respectPrefersColorScheme: true,
@@ -162,7 +169,7 @@ const config: Config = {
         { to: '/docs/auth-rbac/', label: 'Auth & RBAC', position: 'left' },
         { type: 'search', position: 'right' },
         {
-          href: `https://github.com/${organizationName}/${projectName}`,
+          href: repositoryCtaUrl,
           label: 'GitHub',
           position: 'right',
         },
@@ -193,7 +200,7 @@ const config: Config = {
             { label: 'Analytics Setup', to: '/docs/analytics-setup/' },
             {
               label: 'GitHub',
-              href: `https://github.com/${organizationName}/${projectName}`,
+              href: repositoryCtaUrl,
             },
           ],
         },

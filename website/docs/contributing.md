@@ -2,6 +2,10 @@
 title: Contributing to dbt-Workbench
 description: Contribution guidelines, workflows, and expectations for dbt-Workbench.
 slug: /contributing
+keywords: [dbt workbench, contributing to dbt-workbench, contributing, open source dbt ui, dbt documentation]
+seo_primary_keyword: "contributing to dbt-workbench"
+seo_intent: "informational"
+last_reviewed: "2026-02-23"
 ---
 
 import {BreadcrumbJsonLd} from '@site/src/components/seo/JsonLd';

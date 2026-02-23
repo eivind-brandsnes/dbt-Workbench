@@ -42,6 +42,8 @@ frontend/playwright.log
 *.png
 !assets/*.png
 !assets/**/*.png
+!website/static/img/*.png
+!website/static/img/screenshots/*.png
 */target/*
 */logs/*
 */dbt.log

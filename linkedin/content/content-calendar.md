@@ -115,7 +115,7 @@ Navigate model relationships at column-level granularity
 
 Perfect for understanding data flow before refactoring.
 
-Try it free: https://github.com/dbt-workbench/dbt-Workbench
+Try it free: https://github.com/rezer-bleede/dbt-Workbench
 
 #dbt #DataLineage #OpenSource
 ```

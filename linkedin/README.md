@@ -246,10 +246,10 @@ linkedin/assets/
 - **Hashtag Analysis:** https://hashtagify.me/
 
 ### Project Resources
-- **GitHub Repository:** https://github.com/dbt-workbench/dbt-Workbench
+- **GitHub Repository:** https://github.com/rezer-bleede/dbt-Workbench
 - **Documentation:** https://dbt-workbench.github.io/dbt-Workbench/
-- **Issues:** https://github.com/dbt-workbench/dbt-Workbench/issues
-- **Discussions:** https://github.com/dbt-workbench/dbt-Workbench/discussions
+- **Issues:** https://github.com/rezer-bleede/dbt-Workbench/issues
+- **Discussions:** https://github.com/rezer-bleede/dbt-Workbench/discussions
 
 ---
 
