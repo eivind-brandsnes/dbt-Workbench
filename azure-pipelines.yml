@@ -1,0 +1,160 @@
+﻿# =============================================================================
+# azure-pipelines-workbench.yml
+# Legg denne i roten av din fork av dbt-Workbench
+#
+# Bygger to separate images:
+#   - dbt-workbench-backend
+#   - dbt-workbench-frontend
+#
+# Forutsetninger i variabelgruppe vg-dbt-poc-test:
+#   - STORAGE-ACCOUNT-KEY       – for File Share montering
+#   - POSTGRES-PASSWORD         – passord til Azure Database for PostgreSQL
+#   - POSTGRES-HOST             – hostname til Azure Database for PostgreSQL
+#   - OPENAI-API-KEY            – valgfritt, kun hvis AI_ENABLED=true
+# =============================================================================
+
+name: dbt-Workbench CI/CD
+
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  - group: vg-dbt-poc-test
+  - name: acrLoginServer
+    value: 'eedataplattformacr-bwevdqgfe0h8hahd.azurecr.io'
+  - name: backendImageName
+    value: 'dbt-workbench-backend'
+  - name: frontendImageName
+    value: 'dbt-workbench-frontend'
+  - name: resourceGroup
+    value: 'ee-dataplattform-dev-rg'
+  - name: containerAppEnv
+    value: 'dbt-env-dev'
+  - name: backendAppName
+    value: 'dbt-workbench-backend-dev'
+  - name: frontendAppName
+    value: 'dbt-workbench-frontend-dev'
+  - name: backendInternalUrl
+    value: 'https://dbt-workbench-backend-dev.internal.$(containerAppEnv).northeurope.azurecontainerapps.io'
+
+stages:
+
+# ─── STAGE 1: Build ───────────────────────────────────────────────────────────
+- stage: Build
+  displayName: '1 · Build og push images'
+  jobs:
+    - job: BuildBackend
+      displayName: 'Build backend'
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - checkout: self
+
+        - task: Docker@2
+          displayName: 'Login til ACR'
+          inputs:
+            command: login
+            containerRegistry: 'EEDataplattformACRServiceConnection'
+
+        - task: Docker@2
+          displayName: 'Build og push backend'
+          inputs:
+            command: buildAndPush
+            repository: $(backendImageName)
+            dockerfile: 'backend/Dockerfile'
+            tags: |
+              $(Build.BuildId)
+              latest
+
+        - script: echo "##vso[task.setvariable variable=imageTag;isOutput=true]$(Build.BuildId)"
+          name: setTag
+
+    - job: BuildFrontend
+      displayName: 'Build frontend'
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - checkout: self
+
+        - task: Docker@2
+          displayName: 'Login til ACR'
+          inputs:
+            command: login
+            containerRegistry: 'EEDataplattformACRServiceConnection'
+
+        - task: Docker@2
+          displayName: 'Build og push frontend'
+          inputs:
+            command: buildAndPush
+            repository: $(frontendImageName)
+            dockerfile: 'frontend/Dockerfile'
+            buildContext: 'frontend'
+            arguments: '--build-arg VITE_API_BASE_URL=$(backendInternalUrl)'
+            tags: |
+              $(Build.BuildId)
+              latest
+
+
+# ─── STAGE 2: Deploy Dev ──────────────────────────────────────────────────────
+- stage: DeployDev
+  displayName: '2 · Deploy til Dev'
+  dependsOn: Build
+  variables:
+    imageTag: $[ stageDependencies.Build.BuildBackend.outputs['setTag.imageTag'] ]
+  jobs:
+    - deployment: Dev
+      environment: 'dev'
+      pool:
+        vmImage: 'ubuntu-latest'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+
+              - task: AzureCLI@2
+                displayName: 'Koble File Share til environment (ReadOnly for Workbench)'
+                inputs:
+                  azureSubscription: 'Eidsiva Energi Digitalisering Dev'
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    az containerapp env storage set --name $(containerAppEnv) --resource-group $(resourceGroup) --storage-name dbt-artifacts-ro --azure-file-account-name eedataplattformdevdls --azure-file-account-key "$(STORAGE-ACCOUNT-KEY)" --azure-file-share-name dbt-artifacts --access-mode ReadOnly
+
+              - task: AzureCLI@2
+                displayName: 'Deploy backend Container App'
+                inputs:
+                  azureSubscription: 'Eidsiva Energi Digitalisering Dev'
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    IDENTITY_ID=$(az identity show --name dbt-acr-identity --resource-group $(resourceGroup) --query id --output tsv)
+
+                    APP_EXISTS=$(az containerapp show --name $(backendAppName) --resource-group $(resourceGroup) --query "name" --output tsv 2>/dev/null)
+
+                    if [ -z "$APP_EXISTS" ]; then
+                      az containerapp create --name $(backendAppName) --resource-group $(resourceGroup) --environment $(containerAppEnv) --image $(acrLoginServer)/$(backendImageName):$(imageTag) --registry-server $(acrLoginServer) --registry-identity $IDENTITY_ID --mi-user-assigned $IDENTITY_ID --target-port 8000 --ingress internal --min-replicas 1 --max-replicas 2 --cpu 0.5 --memory 1Gi --secrets "postgres-password=$(POSTGRES-PASSWORD)" --env-vars "BACKEND_PORT=8000 DBT_ARTIFACTS_PATH=/app/data/artifacts DBT_PROJECT_PATH=/app/data/repos/default APP_ENV=production POSTGRES_HOST=$(POSTGRES-HOST) POSTGRES_USER=dbtworkbench POSTGRES_DB=dbt_workbench POSTGRES_PASSWORD=secretref:postgres-password SQL_WORKSPACE_DEFAULT_CONNECTION_URL=postgresql://dbtworkbench:$(POSTGRES-PASSWORD)@$(POSTGRES-HOST):5432/dbt_workbench AI_ENABLED=false"
+
+                      az rest --method PATCH --url "https://management.azure.com/subscriptions/35626a5b-7f8f-4997-8316-6e3acaba570d/resourceGroups/$(resourceGroup)/providers/Microsoft.App/containerApps/$(backendAppName)?api-version=2024-03-01" --body '{"properties":{"template":{"volumes":[{"name":"artifacts-vol","storageType":"AzureFile","storageName":"dbt-artifacts-ro"}],"containers":[{"name":"dbt-workbench-backend","image":"'"$(acrLoginServer)/$(backendImageName):$(imageTag)"'","volumeMounts":[{"volumeName":"artifacts-vol","mountPath":"/app/data/artifacts"}]}]}}}'
+                    else
+                      az containerapp update --name $(backendAppName) --resource-group $(resourceGroup) --image $(acrLoginServer)/$(backendImageName):$(imageTag)
+                    fi
+
+              - task: AzureCLI@2
+                displayName: 'Deploy frontend Container App'
+                inputs:
+                  azureSubscription: 'Eidsiva Energi Digitalisering Dev'
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    IDENTITY_ID=$(az identity show --name dbt-acr-identity --resource-group $(resourceGroup) --query id --output tsv)
+
+                    APP_EXISTS=$(az containerapp show --name $(frontendAppName) --resource-group $(resourceGroup) --query "name" --output tsv 2>/dev/null)
+
+                    if [ -z "$APP_EXISTS" ]; then
+                      az containerapp create --name $(frontendAppName) --resource-group $(resourceGroup) --environment $(containerAppEnv) --image $(acrLoginServer)/$(frontendImageName):$(imageTag) --registry-server $(acrLoginServer) --registry-identity $IDENTITY_ID --mi-user-assigned $IDENTITY_ID --target-port 3000 --ingress external --min-replicas 1 --max-replicas 2 --cpu 0.25 --memory 0.5Gi --env-vars "VITE_API_BASE_URL=$(backendInternalUrl)"
+                    else
+                      az containerapp update --name $(frontendAppName) --resource-group $(resourceGroup) --image $(acrLoginServer)/$(frontendImageName):$(imageTag)
+                    fi
