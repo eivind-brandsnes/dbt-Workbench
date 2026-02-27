@@ -62,6 +62,7 @@ stages:
           displayName: 'Build og push backend'
           inputs:
             command: buildAndPush
+            arguments: '--progress=plain'
             repository: $(backendImageName)
             dockerfile: 'backend/Dockerfile'
             tags: |
