@@ -14,11 +14,13 @@ psycopg2-binary==2.9.9
 croniter==6.0.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 packaging==24.1
 GitPython==3.1.43
 PyYAML==6.0.1
-dbt-core==1.8.0
+dbt-core==1.10.15
 dbt-postgres==1.8.0
 dbt-duckdb==1.10.0
+dbt-fabric==1.9.8
 dbt-rowlineage==0.1.7
 sqlglot==23.12.2
