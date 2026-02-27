@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # azure-pipelines-workbench.yml
 # Legg denne i roten av din fork av dbt-Workbench
 #
@@ -121,7 +121,7 @@ stages:
                   scriptType: bash
                   scriptLocation: inlineScript
                   inlineScript: |
-                    az containerapp env storage set --name $(containerAppEnv) --resource-group $(resourceGroup) --storage-name dbt-artifacts-ro --azure-file-account-name eedataplattformdevdls --azure-file-account-key "$(STORAGE-ACCOUNT-KEY)" --azure-file-share-name dbt-artifacts --access-mode ReadOnly
+                    az containerapp env storage set --name $(containerAppEnv) --resource-group $(resourceGroup) --storage-name dbt-artifacts-ro --azure-file-account-name eedataplattformdevdls --azure-file-account-key "$(eedataplattformdlskey)" --azure-file-share-name dbt-artifacts --access-mode ReadOnly
 
               - task: AzureCLI@2
                 displayName: 'Deploy backend Container App'
