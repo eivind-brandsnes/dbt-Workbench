@@ -17,8 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Microsoft ODBC Driver 18 – kreves av dbt-fabric
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/12/prod.list \
+# Bruker gpg i stedet for apt-key (fjernet i Debian 13 Trixie)
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+        | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg \
+    && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list \
+        | sed 's|^deb |deb [signed-by=/usr/share/keyrings/microsoft.gpg] |' \
         > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 \
